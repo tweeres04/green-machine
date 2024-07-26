@@ -87,6 +87,7 @@ export default function Index() {
 								<AvatarImage
 									src={`/photos/${p.name}.webp`}
 									className="object-cover"
+									alt={`Avatar for ${p.name}`}
 								/>
 								<AvatarFallback>{p.name[0]}</AvatarFallback>
 							</Avatar>
@@ -110,6 +111,7 @@ export default function Index() {
 											variant="secondary"
 											size="sm"
 											disabled={isUpdatingGoals}
+											aria-label="Remove latest goal"
 										>
 											<Remove />
 										</Button>
@@ -120,13 +122,18 @@ export default function Index() {
 										variant="secondary"
 										size="sm"
 										disabled={isUpdatingGoals}
+										aria-label="Add goal"
 									>
 										<Add />
 									</Button>
 								</Form>
 								{editMode ? (
 									<Form method="post" action={`/players/${p.id}/destroy`}>
-										<Button variant="outline" size="sm">
+										<Button
+											variant="outline"
+											size="sm"
+											aria-label="Remove player"
+										>
 											<RemoveUser />
 										</Button>
 									</Form>
