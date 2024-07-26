@@ -10,5 +10,5 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	await db.insert(players).values({ name })
 
-	return redirect('/')
+	return redirect('/?edit')
 }

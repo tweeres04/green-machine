@@ -1,7 +1,7 @@
 import { ActionFunctionArgs, redirect } from '@remix-run/node'
 import { eq, desc, and } from 'drizzle-orm'
 import { getDb } from '~/lib/getDb'
-import { goldenBootEntries, players } from '~/schema'
+import { goldenBootEntries } from '~/schema'
 
 export async function action({ params }: ActionFunctionArgs) {
 	const db = getDb()
@@ -24,5 +24,5 @@ export async function action({ params }: ActionFunctionArgs) {
 			)
 	}
 
-	return redirect('/')
+	return redirect('/?edit')
 }

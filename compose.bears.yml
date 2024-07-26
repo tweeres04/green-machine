@@ -1,0 +1,15 @@
+services:
+  bears:
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    restart: always
+    volumes:
+      - ./database.bears.db:/app/database.db
+    ports:
+      - 88:3000
+
+networks:
+  default:
+    external: true
+    name: proxy
