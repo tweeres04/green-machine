@@ -14,7 +14,7 @@
 		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:bears:migrate": "drizzle-kit migrate --config=drizzle.config.bears.ts",
+		"db:migrate:bears": "drizzle-kit migrate --config=drizzle.config.bears.ts",
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {

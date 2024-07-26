@@ -1,0 +1,1 @@
+ALTER TABLE `golden_boot_entries` RENAME COLUMN `date` TO `timestamp`;

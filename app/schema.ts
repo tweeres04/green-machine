@@ -3,7 +3,7 @@ import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core'
 export const goldenBootEntries = sqliteTable('golden_boot_entries', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	playerId: integer('player_id').notNull(),
-	date: text('date').notNull(),
+	timestamp: text('timestamp').notNull(),
 	goals: integer('goals').notNull(),
 })
 

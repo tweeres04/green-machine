@@ -6,7 +6,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 	const db = getDb()
 
 	await db.insert(goldenBootEntries).values({
-		date: new Date().toISOString().split('T')[0],
+		timestamp: new Date().toISOString(),
 		goals: 1,
 		playerId: Number(params.playerId),
 	})

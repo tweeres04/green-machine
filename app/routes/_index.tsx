@@ -146,7 +146,7 @@ export default function Index() {
 ${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
 
 					toast({
-						description: 'Standings copied to clipboard!',
+						description: 'Standings copied to clipboard',
 					})
 				}}
 			>
