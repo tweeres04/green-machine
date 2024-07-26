@@ -17,6 +17,7 @@ import { Remove } from '~/components/ui/icons/remove'
 import RemoveUser from '~/components/ui/icons/remove-user'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
+import { Copy } from '~/components/ui/icons/copy'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -24,6 +25,33 @@ export const meta: MetaFunction = () => {
 		{ name: 'description', content: 'Bears' },
 		{ name: 'robots', context: 'noindex' },
 	]
+}
+
+function CopyStandingsButton({
+	players,
+}: {
+	players: Awaited<ReturnType<typeof loader>>
+}) {
+	const { toast } = useToast()
+	return (
+		<Button
+			title="Copy standings"
+			variant="secondary"
+			className="w-full sm:w-auto flex gap-1"
+			onClick={async () => {
+				await window.navigator.clipboard
+					.writeText(`The Bears golden boot standings:
+
+${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
+
+				toast({
+					description: 'Standings copied to clipboard',
+				})
+			}}
+		>
+			<span>Copy standings</span> <Copy />
+		</Button>
+	)
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -64,7 +92,6 @@ export default function Index() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
-	const { toast } = useToast()
 
 	const editMode = searchParams.has('edit')
 
@@ -143,22 +170,7 @@ export default function Index() {
 					))}
 				</ul>
 			</div>
-			<Button
-				variant="secondary"
-				className="w-full sm:w-auto"
-				onClick={async () => {
-					await window.navigator.clipboard
-						.writeText(`The Bears golden boot standings:
-
-${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
-
-					toast({
-						description: 'Standings copied to clipboard',
-					})
-				}}
-			>
-				Copy standings
-			</Button>
+			<CopyStandingsButton players={players} />
 			{editMode ? (
 				<div className="players space-y-3">
 					<h2 className="text-2xl mb-3">New player</h2>
