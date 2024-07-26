@@ -16,6 +16,7 @@ import { Add } from '~/components/ui/icons/add'
 import { Remove } from '~/components/ui/icons/remove'
 import RemoveUser from '~/components/ui/icons/remove-user'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import { useToast } from '~/components/ui/use-toast'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -63,6 +64,7 @@ export default function Index() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
+	const { toast } = useToast()
 
 	const editMode = searchParams.has('edit')
 
@@ -134,6 +136,22 @@ export default function Index() {
 					))}
 				</ul>
 			</div>
+			<Button
+				variant="secondary"
+				className="w-full sm:w-auto"
+				onClick={async () => {
+					await window.navigator.clipboard
+						.writeText(`The Bears golden boot standings:
+
+${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
+
+					toast({
+						description: 'Standings copied to clipboard!',
+					})
+				}}
+			>
+				Copy standings
+			</Button>
 			{editMode ? (
 				<div className="players space-y-3">
 					<h2 className="text-2xl mb-3">New player</h2>
