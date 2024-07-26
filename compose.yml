@@ -1,0 +1,13 @@
+services:
+  green-machine:
+    build:
+      dockerfile: ./Dockerfile
+      context: .
+    restart: always
+    volumes:
+      - ./database.db:/app/database.db
+
+networks:
+  default:
+    external: true
+    name: proxy
