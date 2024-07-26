@@ -78,9 +78,9 @@ export default function Index() {
 			<h1 className="text-3xl">The Bears</h1>
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Golden boot</h2>
-				<ul>
+				<ul className="space-y-2">
 					{players.map((p) => (
-						<li className="flex place-items-center space-y-2 gap-5" key={p.id}>
+						<li className="flex items-center gap-5" key={p.id}>
 							<Avatar>
 								<AvatarImage
 									src={`/photos/${p.name}.webp`}
