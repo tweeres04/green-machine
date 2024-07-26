@@ -10,16 +10,16 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default:
-					'bg-stone-900 text-stone-50 hover:bg-stone-900/90 dark:bg-stone-50 dark:text-stone-900 dark:hover:bg-stone-50/90',
+					'bg-green-900 text-green-50 hover:bg-green-900/90 dark:bg-green-50 dark:text-green-900 dark:hover:bg-green-50/90',
 				destructive:
-					'bg-red-500 text-stone-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-stone-50 dark:hover:bg-red-900/90',
+					'bg-red-500 text-green-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-green-50 dark:hover:bg-red-900/90',
 				outline:
-					'border border-stone-200 bg-transparent hover:bg-stone-100 hover:text-stone-900 dark:border-stone-800 dark:bg-stone-950 dark:hover:bg-stone-800 dark:hover:text-stone-50',
+					'border border-green-200 bg-transparent hover:bg-green-100 hover:text-green-900 dark:border-green-800 dark:bg-green-950 dark:hover:bg-green-800 dark:hover:text-green-50',
 				secondary:
-					'bg-stone-100 text-stone-900 hover:bg-stone-100/80 dark:bg-stone-800 dark:text-stone-50 dark:hover:bg-stone-800/80',
+					'bg-green-100 text-green-900 hover:bg-green-100/80 dark:bg-green-800 dark:text-green-50 dark:hover:bg-green-800/80',
 				ghost:
-					'hover:bg-stone-100 hover:text-stone-900 dark:hover:bg-stone-800 dark:hover:text-stone-50',
-				link: 'text-stone-900 underline-offset-4 hover:underline dark:text-stone-50',
+					'hover:bg-green-100 hover:text-green-900 dark:hover:bg-green-800 dark:hover:text-green-50',
+				link: 'text-green-900 underline-offset-4 hover:underline dark:text-green-50',
 			},
 			size: {
 				default: 'h-10 px-4 py-2',

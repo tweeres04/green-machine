@@ -15,8 +15,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<Meta />
 				<Links />
+				<style
+					dangerouslySetInnerHTML={{
+						__html: `
+						html {
+							font-size: 20px;
+						}
+					`,
+					}}
+				></style>
 			</head>
-			<body className="bg-green-100">
+			<body className="bg-green-50">
 				{children}
 				<ScrollRestoration />
 				<Scripts />

@@ -1,13 +1,15 @@
-import type {
-	ActionFunctionArgs,
-	LoaderFunctionArgs,
-	MetaFunction,
-} from '@remix-run/node'
-import { Form, useLoaderData, useNavigation } from '@remix-run/react'
+import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import {
+	Form,
+	useLoaderData,
+	useLocation,
+	useNavigation,
+	useSearchParams,
+} from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { goldenBootEntries, players } from '../schema'
-import { asc, desc, eq, like, sql } from 'drizzle-orm'
+import { asc, desc, eq, sql } from 'drizzle-orm'
 
 import { getDb } from '~/lib/getDb'
 import { useEffect, useRef } from 'react'
@@ -40,11 +42,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	return playersWithGoals
 }
 
-export default function Index() {
+function useClearNewPlayerForm(
+	formRef: React.MutableRefObject<HTMLFormElement | null>
+) {
 	const navigation = useNavigation()
-	const players = useLoaderData<typeof loader>()
-	const formRef = useRef<HTMLFormElement>()
-
 	const isAddingPlayer =
 		navigation.state === 'submitting' &&
 		navigation.formAction === '/players' &&
@@ -54,56 +55,70 @@ export default function Index() {
 		if (!isAddingPlayer) {
 			formRef.current?.reset()
 		}
-	}, [isAddingPlayer])
+	}, [formRef, isAddingPlayer])
+}
+
+export default function Index() {
+	const players = useLoaderData<typeof loader>()
+	const formRef = useRef<HTMLFormElement>(null)
+	const [searchParams] = useSearchParams()
+
+	const editMode = searchParams.has('edit')
+
+	useClearNewPlayerForm(formRef)
 
 	return (
-		<div className="max-w-[700px] mx-auto space-y-10 px-2">
+		<div className="max-w-[700px] mx-auto space-y-10 p-2">
 			<h1 className="text-3xl">Green Machine</h1>
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Golden boot</h2>
 				<ul>
 					{players.map((p) => (
-						<li className="flex place-items-center space-y-1 gap-5" key={p.id}>
+						<li className="flex place-items-center space-y-2 gap-5" key={p.id}>
 							<span className="grow">{p.name}</span>
 							<span>
 								{p.goals} goal{p.goals !== 1 ? 's' : ''}
 							</span>
 							<div className="flex gap-1">
 								<Form method="post" action={`/players/${p.id}/goals`}>
-									<Button variant="outline" size="sm">
-										<Add className="w-4 h-14" />
+									<Button variant="secondary" size="sm">
+										<Add />
 									</Button>
 								</Form>
 								<Form
 									method="post"
 									action={`/players/${p.id}/goals/destroy_latest`}
 								>
-									<Button variant="destructive" size="sm">
-										<Remove className="w-4 h-14" />
+									<Button variant="secondary" size="sm">
+										<Remove />
 									</Button>
 								</Form>
-								<Form method="post" action={`/players/${p.id}/destroy`}>
-									<Button variant="destructive" size="sm">
-										<RemoveUser className="w-4 h-14" />
-									</Button>
-								</Form>
+								{editMode ? (
+									<Form method="post" action={`/players/${p.id}/destroy`}>
+										<Button variant="outline" size="sm">
+											<RemoveUser />
+										</Button>
+									</Form>
+								) : null}
 							</div>
 						</li>
 					))}
 				</ul>
 			</div>
-			<div className="players space-y-3">
-				<h2 className="text-2xl mb-3">New player</h2>
-				<Form
-					method="post"
-					action="/players"
-					className="space-y-3"
-					ref={formRef}
-				>
-					<Input name="name" />
-					<Button>Add player</Button>
-				</Form>
-			</div>
+			{editMode ? (
+				<div className="players space-y-3">
+					<h2 className="text-2xl mb-3">New player</h2>
+					<Form
+						method="post"
+						action="/players"
+						className="space-y-3"
+						ref={formRef}
+					>
+						<Input name="name" />
+						<Button>Add player</Button>
+					</Form>
+				</div>
+			) : null}
 		</div>
 	)
 }
