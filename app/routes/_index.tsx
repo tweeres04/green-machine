@@ -61,9 +61,15 @@ function useClearNewPlayerForm(
 export default function Index() {
 	const players = useLoaderData<typeof loader>()
 	const formRef = useRef<HTMLFormElement>(null)
+	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
 
 	const editMode = searchParams.has('edit')
+
+	const isAddingGoal =
+		navigation.state === 'submitting' &&
+		/\/players\/\d+?\/goals/.test(navigation.formAction) &&
+		navigation.formMethod === 'POST'
 
 	useClearNewPlayerForm(formRef)
 
@@ -80,17 +86,23 @@ export default function Index() {
 								{p.goals} goal{p.goals !== 1 ? 's' : ''}
 							</span>
 							<div className="flex gap-1">
+								{editMode ? (
+									<Form
+										method="post"
+										action={`/players/${p.id}/goals/destroy_latest`}
+									>
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={isAddingGoal}
+										>
+											<Remove />
+										</Button>
+									</Form>
+								) : null}
 								<Form method="post" action={`/players/${p.id}/goals`}>
 									<Button variant="secondary" size="sm">
 										<Add />
-									</Button>
-								</Form>
-								<Form
-									method="post"
-									action={`/players/${p.id}/goals/destroy_latest`}
-								>
-									<Button variant="secondary" size="sm">
-										<Remove />
 									</Button>
 								</Form>
 								{editMode ? (
