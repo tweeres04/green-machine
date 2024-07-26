@@ -18,6 +18,7 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
+		"@radix-ui/react-avatar": "^1.1.0",
 		"@radix-ui/react-slot": "^1.1.0",
 		"@remix-run/node": "^2.10.3",
 		"@remix-run/react": "^2.10.3",

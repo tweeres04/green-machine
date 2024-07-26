@@ -15,6 +15,7 @@ import { useEffect, useRef } from 'react'
 import { Add } from '~/components/ui/icons/add'
 import { Remove } from '~/components/ui/icons/remove'
 import RemoveUser from '~/components/ui/icons/remove-user'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -73,13 +74,21 @@ export default function Index() {
 	useClearNewPlayerForm(formRef)
 
 	return (
-		<div className="max-w-[700px] mx-auto space-y-10 p-2">
-			<h1 className="text-3xl">Bears</h1>
+		<div className="max-w-[700px] mx-auto space-y-8 p-2">
+			<h1 className="text-3xl">The Bears</h1>
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Golden boot</h2>
 				<ul>
 					{players.map((p) => (
 						<li className="flex place-items-center space-y-2 gap-5" key={p.id}>
+							<Avatar>
+								<AvatarImage
+									src={`/photos/${p.name}.webp`}
+									className="object-cover"
+								/>
+								<AvatarFallback>{p.name[0]}</AvatarFallback>
+							</Avatar>
+
 							<span className="grow">{p.name}</span>
 							<span>
 								{p.goals} goal{p.goals !== 1 ? 's' : ''}
