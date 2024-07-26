@@ -66,7 +66,7 @@ export default function Index() {
 
 	const editMode = searchParams.has('edit')
 
-	const isAddingGoal =
+	const isUpdatingGoals =
 		navigation.state === 'submitting' &&
 		/\/players\/\d+?\/goals/.test(navigation.formAction) &&
 		navigation.formMethod === 'POST'
@@ -91,8 +91,13 @@ export default function Index() {
 
 							<span className="grow">{p.name}</span>
 							<span>
-								{p.goals} goal{p.goals !== 1 ? 's' : ''}
+								{Array.from({ length: p.goals }).map((_, i) => (
+									<span key={i} className="inline-block -ml-2">
+										⚽️
+									</span>
+								))}
 							</span>
+							<span>{p.goals}</span>
 							<div className="flex gap-1">
 								{editMode ? (
 									<Form
@@ -102,14 +107,18 @@ export default function Index() {
 										<Button
 											variant="secondary"
 											size="sm"
-											disabled={isAddingGoal}
+											disabled={isUpdatingGoals}
 										>
 											<Remove />
 										</Button>
 									</Form>
 								) : null}
 								<Form method="post" action={`/players/${p.id}/goals`}>
-									<Button variant="secondary" size="sm">
+									<Button
+										variant="secondary"
+										size="sm"
+										disabled={isUpdatingGoals}
+									>
 										<Add />
 									</Button>
 								</Form>
