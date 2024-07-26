@@ -2,7 +2,6 @@ import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import {
 	Form,
 	useLoaderData,
-	useLocation,
 	useNavigation,
 	useSearchParams,
 } from '@remix-run/react'
@@ -19,8 +18,8 @@ import RemoveUser from '~/components/ui/icons/remove-user'
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: 'Green Machine' },
-		{ name: 'description', content: 'Green machine' },
+		{ title: 'Bears' },
+		{ name: 'description', content: 'Bears' },
 		{ name: 'robots', context: 'noindex' },
 	]
 }
@@ -75,7 +74,7 @@ export default function Index() {
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-10 p-2">
-			<h1 className="text-3xl">Green Machine</h1>
+			<h1 className="text-3xl">Bears</h1>
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Golden boot</h2>
 				<ul>

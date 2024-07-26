@@ -10,16 +10,16 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default:
-					'bg-green-900 text-green-50 hover:bg-green-900/90 dark:bg-green-50 dark:text-green-900 dark:hover:bg-green-50/90',
+					'bg-orange-900 text-orange-50 hover:bg-orange-900/90 dark:bg-orange-50 dark:text-orange-900 dark:hover:bg-orange-50/90',
 				destructive:
-					'bg-red-500 text-green-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-green-50 dark:hover:bg-red-900/90',
+					'bg-red-500 text-orange-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-orange-50 dark:hover:bg-red-900/90',
 				outline:
-					'border border-green-200 bg-transparent hover:bg-green-100 hover:text-green-900 dark:border-green-800 dark:bg-green-950 dark:hover:bg-green-800 dark:hover:text-green-50',
+					'border border-orange-200 bg-transparent hover:bg-orange-100 hover:text-orange-900 dark:border-orange-800 dark:bg-orange-950 dark:hover:bg-orange-800 dark:hover:text-orange-50',
 				secondary:
-					'bg-green-100 text-green-900 hover:bg-green-100/80 dark:bg-green-800 dark:text-green-50 dark:hover:bg-green-800/80',
+					'bg-orange-100 text-orange-900 hover:bg-orange-100/80 dark:bg-orange-800 dark:text-orange-50 dark:hover:bg-orange-800/80',
 				ghost:
-					'hover:bg-green-100 hover:text-green-900 dark:hover:bg-green-800 dark:hover:text-green-50',
-				link: 'text-green-900 underline-offset-4 hover:underline dark:text-green-50',
+					'hover:bg-orange-100 hover:text-orange-900 dark:hover:bg-orange-800 dark:hover:text-orange-50',
+				link: 'text-orange-900 underline-offset-4 hover:underline dark:text-orange-50',
 			},
 			size: {
 				default: 'h-10 px-4 py-2',
