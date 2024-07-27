@@ -112,7 +112,7 @@ function NextGame({ games }: { games: Game[] }) {
 		minute: 'numeric',
 	}).format(new Date(nextGame?.time))
 
-	return (
+	return nextGame ? (
 		<div className="next-game">
 			<div className="flex mb-2">
 				<h2 className="text-2xl grow">Next game</h2>
@@ -137,7 +137,7 @@ vs ${nextGame.opponent}`)
 			<div className="text-[14px]">{nextGame.field}</div>
 			<div className="text-[14px]">vs {nextGame.opponent}</div>
 		</div>
-	)
+	) : null
 }
 
 export default function Index() {
