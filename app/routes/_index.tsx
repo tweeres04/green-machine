@@ -18,6 +18,7 @@ import RemoveUser from '~/components/ui/icons/remove-user'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Copy } from '~/components/ui/icons/copy'
+import { loadGames } from '~/lib/loadGames'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -30,7 +31,7 @@ export const meta: MetaFunction = () => {
 function CopyStandingsButton({
 	players,
 }: {
-	players: Awaited<ReturnType<typeof loader>>
+	players: Awaited<ReturnType<typeof loader>>['playersWithGoals']
 }) {
 	const { toast } = useToast()
 	return (
@@ -57,7 +58,9 @@ ${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
 export async function loader({ request }: LoaderFunctionArgs) {
 	const db = getDb()
 
-	const playersWithGoals = await db
+	const gamesPromise = loadGames()
+
+	const playersWithGoalsPromise = db
 		.select({
 			id: players.id,
 			name: players.name,
@@ -68,7 +71,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		.groupBy(players.id)
 		.orderBy(desc(sql`goals`), asc(players.name))
 
-	return playersWithGoals
+	const [playersWithGoals, games] = await Promise.all([
+		playersWithGoalsPromise,
+		gamesPromise,
+	])
+
+	return { playersWithGoals, games }
 }
 
 function useClearNewPlayerForm(
@@ -87,8 +95,30 @@ function useClearNewPlayerForm(
 	}, [formRef, isAddingPlayer])
 }
 
+type Game = { time: string; field: string; opponent: string }
+
+function NextGame({ games }: { games: Game[] }) {
+	const now = new Date()
+	const nextGame = games.filter((game) => new Date(game.time) > now)[0]
+
+	return (
+		<div className="next-game">
+			<h2 className="text-2xl mb-2">Next game</h2>
+			<div className="font-bold">
+				{new Intl.DateTimeFormat('en-CA', {
+					weekday: 'long',
+					hour: 'numeric',
+					minute: 'numeric',
+				}).format(new Date(nextGame?.time))}
+			</div>
+			<div className="text-[14px]">{nextGame.field}</div>
+			<div className="text-[14px]">vs {nextGame.opponent}</div>
+		</div>
+	)
+}
+
 export default function Index() {
-	const players = useLoaderData<typeof loader>()
+	const { playersWithGoals, games } = useLoaderData<typeof loader>()
 	const formRef = useRef<HTMLFormElement>(null)
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
@@ -105,10 +135,11 @@ export default function Index() {
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
 			<h1 className="text-3xl">The Bears</h1>
+			<NextGame games={games as Game[]} />
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Golden boot</h2>
 				<ul className="space-y-2">
-					{players.map((p) => (
+					{playersWithGoals.map((p) => (
 						<li className="flex items-center gap-5" key={p.id}>
 							<Avatar>
 								<AvatarImage
@@ -170,7 +201,7 @@ export default function Index() {
 					))}
 				</ul>
 			</div>
-			<CopyStandingsButton players={players} />
+			<CopyStandingsButton players={playersWithGoals} />
 			{editMode ? (
 				<div className="players space-y-3">
 					<h2 className="text-2xl mb-3">New player</h2>
