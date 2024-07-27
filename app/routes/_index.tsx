@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import {
 	Form,
+	Link,
 	useLoaderData,
 	useNavigation,
 	useSearchParams,
@@ -19,6 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Copy } from '~/components/ui/icons/copy'
 import { loadGames } from '~/lib/loadGames'
+import { Eye } from '~/components/ui/icons/eye'
+import { Pencil } from '~/components/ui/icons/pencil'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -161,13 +164,18 @@ export default function Index() {
 			</div>
 			<NextGame games={games as Game[]} />
 			<div className="golden-boot">
-				<div className="flex">
-					<h2 className="grow text-2xl mb-3">Golden boot</h2>
+				<div className="flex gap-1 mb-3 items-center">
+					<h2 className="grow text-2xl">Golden boot</h2>
+					<Link to={editMode ? '/' : '/?edit'}>
+						<Button variant="secondary">
+							{editMode ? <Eye /> : <Pencil />}
+						</Button>
+					</Link>
 					<CopyStandingsButton players={playersWithGoals} />
 				</div>
 				<ul className="space-y-2">
 					{playersWithGoals.map((p) => (
-						<li className="flex items-center gap-5" key={p.id}>
+						<li className="flex items-center gap-3" key={p.id}>
 							<Avatar>
 								<AvatarImage
 									src={`/photos/${p.name}.webp`}
@@ -178,16 +186,18 @@ export default function Index() {
 							</Avatar>
 
 							<span className="grow">{p.name}</span>
-							<span>
-								{Array.from({ length: p.goals }).map((_, i) => (
-									<span key={i} className="inline-block -ml-2">
-										⚽️
-									</span>
-								))}
-							</span>
-							<span>{p.goals}</span>
-							<div className="flex gap-1">
-								{editMode ? (
+							{editMode ? null : (
+								<span className="text-2xl">
+									{Array.from({ length: p.goals }).map((_, i) => (
+										<span key={i} className="inline-block -ml-2">
+											⚽️
+										</span>
+									))}
+								</span>
+							)}
+							<span className="text-2xl">{p.goals === 0 ? '-' : p.goals}</span>
+							{editMode ? (
+								<div className="flex gap-1">
 									<Form
 										method="post"
 										action={`/players/${p.id}/goals/destroy_latest`}
@@ -201,18 +211,16 @@ export default function Index() {
 											<Remove />
 										</Button>
 									</Form>
-								) : null}
-								<Form method="post" action={`/players/${p.id}/goals`}>
-									<Button
-										variant="secondary"
-										size="sm"
-										disabled={isUpdatingGoals}
-										aria-label="Add goal"
-									>
-										<Add />
-									</Button>
-								</Form>
-								{editMode ? (
+									<Form method="post" action={`/players/${p.id}/goals`}>
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={isUpdatingGoals}
+											aria-label="Add goal"
+										>
+											<Add />
+										</Button>
+									</Form>
 									<Form method="post" action={`/players/${p.id}/destroy`}>
 										<Button
 											variant="outline"
@@ -222,8 +230,8 @@ export default function Index() {
 											<RemoveUser />
 										</Button>
 									</Form>
-								) : null}
-							</div>
+								</div>
+							) : null}
 						</li>
 					))}
 				</ul>
