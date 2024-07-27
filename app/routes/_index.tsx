@@ -25,8 +25,11 @@ import { Pencil } from '~/components/ui/icons/pencil'
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: 'Bears' },
-		{ name: 'description', content: 'Bears' },
+		{ title: 'The Bears' },
+		{
+			name: 'description',
+			content: 'The Bears next game and golden boot standings',
+		},
 		{ name: 'robots', context: 'noindex' },
 	]
 }
