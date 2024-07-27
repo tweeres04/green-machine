@@ -152,7 +152,14 @@ export default function Index() {
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
-			<h1 className="text-3xl">The Bears</h1>
+			<div className="flex items-center gap-2">
+				<img
+					src="/bears.png"
+					alt="Bears logo"
+					className="size-16 object-cover"
+				/>
+				<h1 className="grow text-3xl">The Bears</h1>
+			</div>
 			<NextGame games={games as Game[]} />
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Golden boot</h2>
