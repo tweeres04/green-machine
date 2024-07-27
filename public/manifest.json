@@ -1,0 +1,16 @@
+{
+	"name": "The Bears",
+	"short_name": "The Bears",
+	"description": "The Bears",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#FFF7ED",
+	"theme_color": "#FFF7ED",
+	"icons": [
+		{
+			"src": "/bears.png",
+			"sizes": "100x100",
+			"type": "image/png"
+		}
+	]
+}
