@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					property="og:description"
 					content="The Bears next game and golden boot standings"
 				/>
-				<meta property="og:image" content="/bears.png" />
+				<meta property="og:image" content="/bears512.png" />
 
 				{/* <!-- Twitter Meta Tags --> */}
 				<meta name="twitter:card" content="summary_large_image" />
@@ -44,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					name="twitter:description"
 					content="The Bears next game and golden boot standings"
 				/>
-				<meta name="twitter:image" content="/bears.png" />
+				<meta name="twitter:image" content="/bears512.png" />
 
 				{/* <!-- Meta Tags Generated via https://www.opengraph.xyz --></meta> */}
 
