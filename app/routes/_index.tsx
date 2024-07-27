@@ -38,7 +38,6 @@ function CopyStandingsButton({
 		<Button
 			title="Copy standings"
 			variant="secondary"
-			className="w-full sm:w-auto flex gap-1"
 			onClick={async () => {
 				await window.navigator.clipboard
 					.writeText(`The Bears golden boot standings:
@@ -50,7 +49,7 @@ ${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
 				})
 			}}
 		>
-			<span>Copy standings</span> <Copy />
+			<Copy />
 		</Button>
 	)
 }
@@ -162,7 +161,10 @@ export default function Index() {
 			</div>
 			<NextGame games={games as Game[]} />
 			<div className="golden-boot">
-				<h2 className="text-2xl mb-3">Golden boot</h2>
+				<div className="flex">
+					<h2 className="grow text-2xl mb-3">Golden boot</h2>
+					<CopyStandingsButton players={playersWithGoals} />
+				</div>
 				<ul className="space-y-2">
 					{playersWithGoals.map((p) => (
 						<li className="flex items-center gap-5" key={p.id}>
@@ -226,7 +228,6 @@ export default function Index() {
 					))}
 				</ul>
 			</div>
-			<CopyStandingsButton players={playersWithGoals} />
 			{editMode ? (
 				<div className="players space-y-3">
 					<h2 className="text-2xl mb-3">New player</h2>
