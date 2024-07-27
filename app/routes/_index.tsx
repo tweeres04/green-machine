@@ -100,17 +100,35 @@ type Game = { time: string; field: string; opponent: string }
 function NextGame({ games }: { games: Game[] }) {
 	const now = new Date()
 	const nextGame = games.filter((game) => new Date(game.time) > now)[0]
+	const { toast } = useToast()
+	const formattedTime = new Intl.DateTimeFormat('en-CA', {
+		weekday: 'long',
+		hour: 'numeric',
+		minute: 'numeric',
+	}).format(new Date(nextGame?.time))
 
 	return (
 		<div className="next-game">
-			<h2 className="text-2xl mb-2">Next game</h2>
-			<div className="font-bold">
-				{new Intl.DateTimeFormat('en-CA', {
-					weekday: 'long',
-					hour: 'numeric',
-					minute: 'numeric',
-				}).format(new Date(nextGame?.time))}
+			<div className="flex mb-2">
+				<h2 className="text-2xl grow">Next game</h2>
+				<Button
+					title="Copy next game"
+					variant="secondary"
+					onClick={async () => {
+						await window.navigator.clipboard.writeText(`Bears next game:
+
+${formattedTime}
+${nextGame.field}
+vs ${nextGame.opponent}`)
+						toast({
+							description: 'Next game copied to clipboard',
+						})
+					}}
+				>
+					<Copy />
+				</Button>
 			</div>
+			<div className="font-bold">{formattedTime}</div>
 			<div className="text-[14px]">{nextGame.field}</div>
 			<div className="text-[14px]">vs {nextGame.opponent}</div>
 		</div>
