@@ -106,11 +106,13 @@ function NextGame({ games }: { games: Game[] }) {
 	const now = new Date()
 	const nextGame = games.filter((game) => new Date(game.time) > now)[0]
 	const { toast } = useToast()
-	const formattedTime = new Intl.DateTimeFormat('en-CA', {
-		weekday: 'long',
-		hour: 'numeric',
-		minute: 'numeric',
-	}).format(new Date(nextGame?.time))
+	const formattedTime = nextGame
+		? new Intl.DateTimeFormat('en-CA', {
+				weekday: 'long',
+				hour: 'numeric',
+				minute: 'numeric',
+		  }).format(new Date(nextGame?.time))
+		: null
 
 	return nextGame ? (
 		<div className="next-game">
