@@ -23,10 +23,10 @@ import RemoveUser from '~/components/ui/icons/remove-user'
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: 'The Bears' },
+		{ title: 'Gree Machine' },
 		{
 			name: 'description',
-			content: 'The Bears next game and golden boot standings',
+			content: 'Green Machine stats',
 		},
 		{ name: 'robots', context: 'noindex' },
 	]
@@ -43,8 +43,7 @@ function CopyStandingsButton({
 			title="Copy standings"
 			variant="secondary"
 			onClick={async () => {
-				await window.navigator.clipboard
-					.writeText(`The Bears golden boot standings:
+				await window.navigator.clipboard.writeText(`Green Machine stats:
 
 ${players
 	.map((p) => {
@@ -122,7 +121,7 @@ function NextGame({ games }: { games: Game[] }) {
 					title="Copy next game"
 					variant="secondary"
 					onClick={async () => {
-						await window.navigator.clipboard.writeText(`Bears next game:
+						await window.navigator.clipboard.writeText(`Green Machine next game:
 
 ${formattedTime}
 ${nextGame.field}
@@ -162,7 +161,7 @@ export default function Index() {
 			<div className="flex items-center gap-2">
 				<img
 					src="/green_machine.svg"
-					alt="Bears logo"
+					alt="Green Machine logo"
 					className="size-16 object-cover"
 				/>
 				<h1 className="grow text-3xl">Green Machine</h1>

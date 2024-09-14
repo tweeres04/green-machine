@@ -1,14 +1,14 @@
 {
-	"name": "The Bears",
-	"short_name": "The Bears",
-	"description": "The Bears",
+	"name": "Green Machine",
+	"short_name": "Green Machine",
+	"description": "Green Machine",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#FFF7ED",
-	"theme_color": "#FFF7ED",
+	"background_color": "rgb(240, 253, 244)",
+	"theme_color": "rgb(240, 253, 244)",
 	"icons": [
 		{
-			"src": "/bears512.png",
+			"src": "/green_machine.svg",
 			"sizes": "512x512",
 			"type": "image/png"
 		}

@@ -7,8 +7,8 @@ import { getDb } from '~/lib/getDb'
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: 'Bears goals' },
-		{ name: 'description', content: 'Bears goals' },
+		{ title: 'Green Machine stats' },
+		{ name: 'description', content: 'Green Machine stats' },
 		{ name: 'robots', context: 'noindex' },
 	]
 }
@@ -34,7 +34,7 @@ export default function Index() {
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
-			<h1 className="text-3xl">The Bears</h1>
+			<h1 className="text-3xl">Green Machine</h1>
 			<div className="golden-boot">
 				<h2 className="text-2xl mb-3">Stats</h2>
 				<table className="w-full">
