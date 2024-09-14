@@ -8,5 +8,5 @@ export async function action({ params }: ActionFunctionArgs) {
 
 	await db.delete(players).where(eq(players.id, Number(params.playerId)))
 
-	return redirect('/')
+	return redirect('/?edit')
 }

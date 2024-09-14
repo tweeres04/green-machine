@@ -1,11 +1,11 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f23c34fa-0b7b-4811-90f4-f5d4aef916cf",
+  "id": "62ce598e-bd85-4f70-97ba-de1643e24670",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "golden_boot_entries": {
-      "name": "golden_boot_entries",
+    "games": {
+      "name": "games",
       "columns": {
         "id": {
           "name": "id",
@@ -14,25 +14,25 @@
           "notNull": true,
           "autoincrement": true
         },
-        "player_id": {
-          "name": "player_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "date": {
-          "name": "date",
+        "datetime": {
+          "name": "datetime",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "goals": {
-          "name": "goals",
-          "type": "integer",
+        "field": {
+          "name": "field",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "opponent": {
+          "name": "opponent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         }
       },
@@ -53,6 +53,43 @@
         },
         "name": {
           "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "stat_entries": {
+      "name": "stat_entries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

@@ -7,3 +7,6 @@ node_modules
 database.db
 database.*.db
 photos_backup
+
+*.afdesign~lock~
+.DS_Store

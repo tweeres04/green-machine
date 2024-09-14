@@ -8,7 +8,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 	await db.insert(statEntries).values({
 		timestamp: new Date().toISOString(),
 		playerId: Number(params.playerId),
-		type: 'goal',
+		type: 'assist',
 	})
 
 	const referrer = new URL(request.headers.get('referer') ?? '/')

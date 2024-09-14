@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import type { MetaFunction } from '@remix-run/node'
 import {
 	Form,
 	Link,
@@ -8,20 +8,18 @@ import {
 } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-import { goldenBootEntries, players } from '../schema'
-import { asc, desc, eq, sql } from 'drizzle-orm'
 
 import { getDb } from '~/lib/getDb'
 import { useEffect, useRef } from 'react'
 import { Add } from '~/components/ui/icons/add'
 import { Remove } from '~/components/ui/icons/remove'
-import RemoveUser from '~/components/ui/icons/remove-user'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Copy } from '~/components/ui/icons/copy'
 import { loadGames } from '~/lib/loadGames'
 import { Eye } from '~/components/ui/icons/eye'
 import { Pencil } from '~/components/ui/icons/pencil'
+import RemoveUser from '~/components/ui/icons/remove-user'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -37,7 +35,7 @@ export const meta: MetaFunction = () => {
 function CopyStandingsButton({
 	players,
 }: {
-	players: Awaited<ReturnType<typeof loader>>['playersWithGoals']
+	players: Awaited<ReturnType<typeof loader>>['playersWithStats']
 }) {
 	const { toast } = useToast()
 	return (
@@ -48,7 +46,13 @@ function CopyStandingsButton({
 				await window.navigator.clipboard
 					.writeText(`The Bears golden boot standings:
 
-${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
+${players
+	.map((p) => {
+		const goals = p.statEntries.filter((s) => s.type === 'goal').length
+		const assists = p.statEntries.filter((s) => s.type === 'assist').length
+		return `${p.name}: ${goals}G ${assists}A`
+	})
+	.join('\n')}`)
 
 				toast({
 					description: 'Standings copied to clipboard',
@@ -60,28 +64,24 @@ ${players.map((p) => `${p.name}: ${p.goals}`).join('\n')}`)
 	)
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader() {
 	const db = getDb()
 
 	const gamesPromise = loadGames()
 
-	const playersWithGoalsPromise = db
-		.select({
-			id: players.id,
-			name: players.name,
-			goals: sql<number>`coalesce(sum(goals), 0) as goals`,
-		})
-		.from(players)
-		.leftJoin(goldenBootEntries, eq(players.id, goldenBootEntries.playerId))
-		.groupBy(players.id)
-		.orderBy(desc(sql`goals`), asc(players.name))
+	const playersWithStatsPromise = db.query.players.findMany({
+		with: {
+			statEntries: true,
+		},
+		orderBy: (players, { asc }) => [asc(players.name)],
+	})
 
-	const [playersWithGoals, games] = await Promise.all([
-		playersWithGoalsPromise,
+	const [playersWithStats, games] = await Promise.all([
+		playersWithStatsPromise,
 		gamesPromise,
 	])
 
-	return { playersWithGoals, games }
+	return { playersWithStats, games }
 }
 
 function useClearNewPlayerForm(
@@ -143,16 +143,16 @@ vs ${nextGame.opponent}`)
 }
 
 export default function Index() {
-	const { playersWithGoals, games } = useLoaderData<typeof loader>()
+	const { playersWithStats, games } = useLoaderData<typeof loader>()
 	const formRef = useRef<HTMLFormElement>(null)
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
 
 	const editMode = searchParams.has('edit')
 
-	const isUpdatingGoals =
+	const isUpdating =
 		navigation.state === 'submitting' &&
-		/\/players\/\d+?\/goals/.test(navigation.formAction) &&
+		/\/players\/\d+?\/(goals|assists)/.test(navigation.formAction) &&
 		navigation.formMethod === 'POST'
 
 	useClearNewPlayerForm(formRef)
@@ -161,11 +161,11 @@ export default function Index() {
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
 			<div className="flex items-center gap-2">
 				<img
-					src="/bears.png"
+					src="/green_machine.svg"
 					alt="Bears logo"
 					className="size-16 object-cover"
 				/>
-				<h1 className="grow text-3xl">The Bears</h1>
+				<h1 className="grow text-3xl">Green Machine</h1>
 			</div>
 			<NextGame games={games as Game[]} />
 			<div className="golden-boot">
@@ -176,69 +176,108 @@ export default function Index() {
 							{editMode ? <Eye /> : <Pencil />}
 						</Button>
 					</Link>
-					<CopyStandingsButton players={playersWithGoals} />
+					{/* <CopyStandingsButton players={playersWithGoals} /> */}
 				</div>
 				<ul className="space-y-2">
-					{playersWithGoals.map((p) => (
-						<li className="flex items-center gap-3" key={p.id}>
-							<Avatar>
-								<AvatarImage
-									src={`/photos/${p.name}.webp`}
-									className="object-cover"
-									alt={`Avatar for ${p.name}`}
-								/>
-								<AvatarFallback>{p.name[0]}</AvatarFallback>
-							</Avatar>
+					{playersWithStats.map((p) => {
+						const goalCount = p.statEntries.filter(
+							(s) => s.type === 'goal'
+						).length
+						const assistCount = p.statEntries.filter(
+							(s) => s.type === 'assist'
+						).length
+						return (
+							<li className="flex items-center gap-3" key={p.id}>
+								<Avatar>
+									<AvatarImage
+										src={`/photos/${p.name}.webp`}
+										className="object-cover"
+										alt={`Avatar for ${p.name}`}
+									/>
+									<AvatarFallback>{p.name[0]}</AvatarFallback>
+								</Avatar>
 
-							<span className="grow">{p.name}</span>
-							{editMode ? null : (
+								<span className="grow">{p.name}</span>
+								{editMode ? null : (
+									<span className="text-2xl">
+										{p.statEntries.map(({ type }, i) => (
+											<span key={i} className="inline-block -ml-2">
+												{type === 'goal' ? '⚽️' : '🍎'}
+											</span>
+										))}
+									</span>
+								)}
 								<span className="text-2xl">
-									{Array.from({ length: p.goals }).map((_, i) => (
-										<span key={i} className="inline-block -ml-2">
-											⚽️
-										</span>
-									))}
+									{p.statEntries.length === 0
+										? '-'
+										: `${goalCount}G ${assistCount}A`}
 								</span>
-							)}
-							<span className="text-2xl">{p.goals === 0 ? '-' : p.goals}</span>
-							{editMode ? (
-								<div className="flex gap-1">
-									<Form
-										method="post"
-										action={`/players/${p.id}/goals/destroy_latest`}
-									>
-										<Button
-											variant="secondary"
-											size="sm"
-											disabled={isUpdatingGoals}
-											aria-label="Remove latest goal"
+								{editMode ? (
+									<div className="flex gap-1">
+										<Form method="post" action={`/players/${p.id}/assists`}>
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Add assist"
+											>
+												🍎
+												<Add />
+											</Button>
+										</Form>
+										<Form
+											method="post"
+											action={`/players/${p.id}/assists/destroy_latest`}
 										>
-											<Remove />
-										</Button>
-									</Form>
-									<Form method="post" action={`/players/${p.id}/goals`}>
-										<Button
-											variant="secondary"
-											size="sm"
-											disabled={isUpdatingGoals}
-											aria-label="Add goal"
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Remove assist"
+											>
+												🍎
+												<Remove />
+											</Button>
+										</Form>
+										<Form method="post" action={`/players/${p.id}/goals`}>
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Add goal"
+											>
+												⚽️
+												<Add />
+											</Button>
+										</Form>
+										<Form
+											method="post"
+											action={`/players/${p.id}/goals/destroy_latest`}
 										>
-											<Add />
-										</Button>
-									</Form>
-									<Form method="post" action={`/players/${p.id}/destroy`}>
-										<Button
-											variant="outline"
-											size="sm"
-											aria-label="Remove player"
-										>
-											<RemoveUser />
-										</Button>
-									</Form>
-								</div>
-							) : null}
-						</li>
-					))}
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Remove goal"
+											>
+												⚽️
+												<Remove />
+											</Button>
+										</Form>
+										<Form method="post" action={`/players/${p.id}/destroy`}>
+											<Button
+												variant="outline"
+												size="sm"
+												aria-label="Remove player"
+											>
+												<RemoveUser />
+											</Button>
+										</Form>
+									</div>
+								) : null}
+							</li>
+						)
+					})}
 				</ul>
 			</div>
 			{editMode ? (

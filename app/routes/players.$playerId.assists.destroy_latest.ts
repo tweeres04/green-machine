@@ -12,7 +12,7 @@ export async function action({ params }: ActionFunctionArgs) {
 		.where(
 			and(
 				eq(statEntries.playerId, Number(params.playerId)),
-				eq(statEntries.type, 'goal')
+				eq(statEntries.type, 'assist')
 			)
 		)
 		.orderBy(desc(statEntries.id))
