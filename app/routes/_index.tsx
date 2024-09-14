@@ -46,6 +46,11 @@ function CopyStandingsButton({
 				await window.navigator.clipboard.writeText(`Green Machine stats:
 
 ${players
+	.toSorted((a, b) => {
+		const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
+		const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
+		return bGoals - aGoals
+	})
 	.map((p) => {
 		const goals = p.statEntries.filter((s) => s.type === 'goal').length
 		const assists = p.statEntries.filter((s) => s.type === 'assist').length
@@ -175,7 +180,7 @@ export default function Index() {
 							{editMode ? <Eye /> : <Pencil />}
 						</Button>
 					</Link>
-					{/* <CopyStandingsButton players={playersWithGoals} /> */}
+					<CopyStandingsButton players={playersWithStats} />
 				</div>
 				<ul className="space-y-2">
 					{playersWithStats.map((p) => {
