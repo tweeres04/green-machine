@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import { goldenBootEntries, players } from '../schema'
+import { statEntries, players } from '../schema'
 import { eq } from 'drizzle-orm'
 
 import { getDb } from '~/lib/getDb'
@@ -13,44 +13,44 @@ export const meta: MetaFunction = () => {
 	]
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader() {
 	const db = getDb()
 
-	const goals = await db
+	const stats = await db
 		.select({
-			id: goldenBootEntries.id,
+			id: statEntries.id,
 			player: players.name,
-			timestamp: goldenBootEntries.timestamp,
-			goals: goldenBootEntries.goals,
+			timestamp: statEntries.timestamp,
+			type: statEntries.type,
 		})
-		.from(goldenBootEntries)
-		.leftJoin(players, eq(players.id, goldenBootEntries.playerId))
+		.from(statEntries)
+		.leftJoin(players, eq(players.id, statEntries.playerId))
 
-	return goals
+	return stats
 }
 
 export default function Index() {
-	const goals = useLoaderData<typeof loader>()
+	const statEntries = useLoaderData<typeof loader>()
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
 			<h1 className="text-3xl">The Bears</h1>
 			<div className="golden-boot">
-				<h2 className="text-2xl mb-3">Goals</h2>
+				<h2 className="text-2xl mb-3">Stats</h2>
 				<table className="w-full">
 					<thead>
 						<tr>
 							<th>Date</th>
 							<th>Player</th>
-							<th className="text-right">Goals</th>
+							<th>Type</th>
 						</tr>
 					</thead>
 					<tbody>
-						{goals.map((g) => (
-							<tr key={g.id}>
-								<td>{g.timestamp}</td>
-								<td>{g.player}</td>
-								<td className="text-right">{g.goals}</td>
+						{statEntries.map((se) => (
+							<tr key={se.id}>
+								<td>{se.timestamp}</td>
+								<td>{se.player}</td>
+								<td>{se.type}</td>
 							</tr>
 						))}
 					</tbody>
