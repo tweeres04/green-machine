@@ -29,16 +29,31 @@ import { type Team } from '~/schema'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
-		team: { name },
+		team: { name, slug },
 	} = data as { team: Team }
 
+	const title = `${name} - TeamStats`
+	const description = `Team stats for ${name}. Add goals and assists for each player. Copy the standings to share with your team.`
+	const url = `https://teamstats.tweeres.com/${slug}`
+
 	return [
-		{ title: `${name} - TeamStats` },
+		{ title },
 		{
 			name: 'description',
-			content: `${name} stats`,
+			content: description,
 		},
 		{ name: 'robots', context: 'noindex' },
+		{
+			taname: 'link',
+			rel: 'canonical',
+			href: url,
+		},
+		{ name: 'og:title', content: title },
+		{ name: 'og:type', content: 'website' },
+		{ name: 'og:description', content: description },
+		// { name: 'og:image', content: `` }, todo: add og:image
+		{ name: 'og:url', content: url },
+		{ tagName: 'link', rel: 'canonical', href: url },
 	]
 }
 

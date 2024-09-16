@@ -13,6 +13,7 @@ export const meta: MetaFunction = () => {
 			content: 'Set up stats for your sports team',
 		},
 		{ name: 'robots', context: 'noindex' },
+		{ taname: 'link', rel: 'canonical', href: 'https://teamstats.tweeres.com' },
 	]
 }
 
