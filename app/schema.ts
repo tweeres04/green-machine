@@ -7,6 +7,7 @@ export const teams = sqliteTable(
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		name: text('name').notNull(),
 		slug: text('slug').notNull(),
+		color: text('color').notNull().default('gray'),
 	},
 	(table) => ({
 		slugIdx: index('slug_idx').on(table.slug),

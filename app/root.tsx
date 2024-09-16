@@ -28,7 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					}}
 				></style>
 			</head>
-			<body className="bg-green-50">
+			<body>
 				{children}
 				<ScrollRestoration />
 				<Scripts />
