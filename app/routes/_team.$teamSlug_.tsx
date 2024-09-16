@@ -200,7 +200,7 @@ vs ${nextGame.opponent}`)
 
 export default function Team() {
 	const { team } = useLoaderData<typeof loader>()
-	const { name, color, slug, players } = team
+	const { name, slug, players } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
@@ -216,131 +216,112 @@ export default function Team() {
 	useClearNewPlayerForm(formRef)
 
 	return (
-		<TeamColorContext.Provider value={color}>
-			<div className={`bg-${color}-50 w-full h-dvh`}>
-				<div className={`max-w-[700px] mx-auto space-y-8 p-2`}>
-					<div className="flex items-center gap-2">
-						<Avatar>
-							<AvatarImage
-								src={`/photos/${name}.webp`}
-								className="object-cover"
-								alt={`Avatar for ${name}`}
-							/>
-							<AvatarFallback>{name[0]}</AvatarFallback>
-						</Avatar>
-						<h1 className="grow text-3xl">{name}</h1>
-						<Button asChild variant="link">
-							<Link to={`/${slug}/edit`}>Team settings</Link>
-						</Button>
-					</div>
-					<div className="flex gap-1 mb-3 items-center">
-						<h2 className="grow text-2xl">Stats</h2>
-						<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
-							<Button variant="secondary">
-								{editMode ? <Eye /> : <Pencil />}
-							</Button>
-						</Link>
-						<CopyStandingsButton players={players} />
-					</div>
-					<ul className="space-y-2">
-						{players.map((p) => {
-							const goalCount = p.statEntries.filter(
-								(s) => s.type === 'goal'
-							).length
-							const assistCount = p.statEntries.filter(
-								(s) => s.type === 'assist'
-							).length
-							return (
-								<li className="flex items-center gap-3" key={p.id}>
-									<Avatar>
-										<AvatarImage
-											src={`/photos/${p.name}.webp`}
-											className="object-cover"
-											alt={`Avatar for ${p.name}`}
-										/>
-										<AvatarFallback>{p.name[0]}</AvatarFallback>
-									</Avatar>
-									<span className="grow">{p.name}</span>
-									{editMode ? null : (
-										<span className="text-2xl">
-											{p.statEntries.map(({ type }, i) => (
-												<span key={i} className="inline-block -ml-2">
-													{type === 'goal' ? '⚽️' : '🍎'}
-												</span>
-											))}
-										</span>
-									)}
-									<span className="text-2xl">
-										{p.statEntries.length === 0
-											? '-'
-											: `${goalCount}G ${assistCount}A`}
-									</span>
-									{editMode ? (
-										<div className="flex gap-1">
-											<fetcher.Form
-												method="post"
-												action={`/players/${p.id}/assists/destroy_latest`}
-											>
-												<Button
-													variant="secondary"
-													size="sm"
-													disabled={isUpdating}
-													aria-label="Remove assist"
-												>
-													🍎
-													<Remove />
-												</Button>
-											</fetcher.Form>
-											<fetcher.Form
-												method="post"
-												action={`/players/${p.id}/assists`}
-											>
-												<Button
-													variant="secondary"
-													size="sm"
-													disabled={isUpdating}
-													aria-label="Add assist"
-												>
-													🍎
-													<Add />
-												</Button>
-											</fetcher.Form>
-											<fetcher.Form
-												method="post"
-												action={`/players/${p.id}/goals/destroy_latest`}
-											>
-												<Button
-													variant="secondary"
-													size="sm"
-													disabled={isUpdating}
-													aria-label="Remove goal"
-												>
-													⚽️
-													<Remove />
-												</Button>
-											</fetcher.Form>
-											<fetcher.Form
-												method="post"
-												action={`/players/${p.id}/goals`}
-											>
-												<Button
-													variant="secondary"
-													size="sm"
-													disabled={isUpdating}
-													aria-label="Add goal"
-												>
-													⚽️
-													<Add />
-												</Button>
-											</fetcher.Form>
-										</div>
-									) : null}
-								</li>
-							)
-						})}
-					</ul>
-				</div>
+		<>
+			<div className="flex items-center gap-2">
+				<Avatar>
+					<AvatarFallback>{name[0]}</AvatarFallback>
+				</Avatar>
+				<h1 className="grow text-3xl">{name}</h1>
+				<Button asChild variant="link">
+					<Link to={`/${slug}/edit`}>Team settings</Link>
+				</Button>
 			</div>
-		</TeamColorContext.Provider>
+			<div className="flex gap-1 mb-3 items-center">
+				<h2 className="grow text-2xl">Stats</h2>
+				<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
+					<Button variant="secondary">{editMode ? <Eye /> : <Pencil />}</Button>
+				</Link>
+				<CopyStandingsButton players={players} />
+			</div>
+			<ul className="space-y-2">
+				{players.map((p) => {
+					const goalCount = p.statEntries.filter(
+						(s) => s.type === 'goal'
+					).length
+					const assistCount = p.statEntries.filter(
+						(s) => s.type === 'assist'
+					).length
+					return (
+						<li className="flex items-center gap-3" key={p.id}>
+							<Avatar>
+								<AvatarFallback>{p.name[0]}</AvatarFallback>
+							</Avatar>
+							<span className="grow">{p.name}</span>
+							{editMode ? null : (
+								<span className="text-2xl">
+									{p.statEntries.map(({ type }, i) => (
+										<span key={i} className="inline-block -ml-2">
+											{type === 'goal' ? '⚽️' : '🍎'}
+										</span>
+									))}
+								</span>
+							)}
+							<span className="text-2xl">
+								{p.statEntries.length === 0
+									? '-'
+									: `${goalCount}G ${assistCount}A`}
+							</span>
+							{editMode ? (
+								<div className="flex gap-1">
+									<fetcher.Form
+										method="post"
+										action={`/players/${p.id}/assists/destroy_latest`}
+									>
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={isUpdating}
+											aria-label="Remove assist"
+										>
+											🍎
+											<Remove />
+										</Button>
+									</fetcher.Form>
+									<fetcher.Form
+										method="post"
+										action={`/players/${p.id}/assists`}
+									>
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={isUpdating}
+											aria-label="Add assist"
+										>
+											🍎
+											<Add />
+										</Button>
+									</fetcher.Form>
+									<fetcher.Form
+										method="post"
+										action={`/players/${p.id}/goals/destroy_latest`}
+									>
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={isUpdating}
+											aria-label="Remove goal"
+										>
+											⚽️
+											<Remove />
+										</Button>
+									</fetcher.Form>
+									<fetcher.Form method="post" action={`/players/${p.id}/goals`}>
+										<Button
+											variant="secondary"
+											size="sm"
+											disabled={isUpdating}
+											aria-label="Add goal"
+										>
+											⚽️
+											<Add />
+										</Button>
+									</fetcher.Form>
+								</div>
+							) : null}
+						</li>
+					)
+				})}
+			</ul>
+		</>
 	)
 }
