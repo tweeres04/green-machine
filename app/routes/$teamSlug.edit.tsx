@@ -11,7 +11,6 @@ import {
 } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-import { TeamColorContext } from '~/lib/teamColorContext'
 
 import { getDb } from '~/lib/getDb'
 import { useEffect, useRef } from 'react'
@@ -127,7 +126,7 @@ export default function EditTeam() {
 					<input type="hidden" name="slug" value={slug} />
 					<select
 						name="color"
-						className="w-full p-2 border rounded"
+						className="w-full p-2 border rounded bg-white"
 						defaultValue={color}
 					>
 						<option value="gray">Gray</option>
