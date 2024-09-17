@@ -273,6 +273,7 @@ export default function Team() {
 											size="sm"
 											disabled={isUpdating}
 											aria-label="Remove assist"
+											className="relative"
 										>
 											🍎
 											<Remove />
@@ -287,6 +288,7 @@ export default function Team() {
 											size="sm"
 											disabled={isUpdating}
 											aria-label="Add assist"
+											className="relative"
 										>
 											🍎
 											<Add />
@@ -301,6 +303,7 @@ export default function Team() {
 											size="sm"
 											disabled={isUpdating}
 											aria-label="Remove goal"
+											className="relative"
 										>
 											⚽️
 											<Remove />
@@ -312,6 +315,7 @@ export default function Team() {
 											size="sm"
 											disabled={isUpdating}
 											aria-label="Add goal"
+											className="relative"
 										>
 											⚽️
 											<Add />

@@ -1,4 +1,6 @@
-export function Remove() {
+import { cn } from '~/lib/utils'
+
+export function Remove({ className }: { className?: string }) {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -6,7 +8,7 @@ export function Remove() {
 			viewBox="0 0 24 24"
 			strokeWidth={1.5}
 			stroke="currentColor"
-			className="size-5"
+			className={cn('absolute top-0 right-0 size-4', className)}
 		>
 			<path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
 		</svg>
