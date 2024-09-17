@@ -9,7 +9,7 @@ import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
 import { useEffect, useRef } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import RemoveUser from '~/components/ui/icons/remove-user'
 import invariant from 'tiny-invariant'
 import { type Team } from '~/schema'
@@ -98,11 +98,6 @@ export default function EditTeam() {
 		<>
 			<div className="flex items-center gap-2">
 				<Avatar>
-					<AvatarImage
-						src={`/photos/${name}.webp`}
-						className="object-cover"
-						alt={`Avatar for ${name}`}
-					/>
 					<AvatarFallback>{name[0]}</AvatarFallback>
 				</Avatar>
 				<h1 className="grow text-3xl">{name}</h1>
