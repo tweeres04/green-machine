@@ -16,14 +16,13 @@ import { getDb } from '~/lib/getDb'
 import { useEffect, useRef } from 'react'
 import { Add } from '~/components/ui/icons/add'
 import { Remove } from '~/components/ui/icons/remove'
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Copy } from '~/components/ui/icons/copy'
 import { Eye } from '~/components/ui/icons/eye'
 import { Pencil } from '~/components/ui/icons/pencil'
 import invariant from 'tiny-invariant'
 import { type Team } from '~/schema'
-import { TeamColorContext } from '~/lib/teamColorContext'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -233,7 +232,7 @@ export default function Team() {
 				</Link>
 				<CopyStandingsButton players={players} />
 			</div>
-			<ul className="space-y-2">
+			<ul className="space-y-2 overflow-x-auto">
 				{players.map((p) => {
 					const goalCount = p.statEntries.filter(
 						(s) => s.type === 'goal'
@@ -243,9 +242,11 @@ export default function Team() {
 					).length
 					return (
 						<li className="flex items-center gap-3" key={p.id}>
-							<Avatar>
-								<AvatarFallback>{p.name[0]}</AvatarFallback>
-							</Avatar>
+							{editMode ? null : (
+								<Avatar>
+									<AvatarFallback>{p.name[0]}</AvatarFallback>
+								</Avatar>
+							)}
 							<span className="grow">{p.name}</span>
 							{editMode ? null : (
 								<span className="text-2xl">
