@@ -3,12 +3,7 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import {
-	Link,
-	useFetcher,
-	useLoaderData,
-	useNavigation,
-} from '@remix-run/react'
+import { Link, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
@@ -76,11 +71,13 @@ export async function loader({ params: { teamSlug } }: LoaderFunctionArgs) {
 function useClearNewPlayerForm(
 	formRef: React.MutableRefObject<HTMLFormElement | null>
 ) {
-	const navigation = useNavigation()
-	const isAddingPlayer =
-		navigation.state === 'submitting' &&
-		/teams\/.+\/players/.test(navigation.formAction) &&
-		navigation.formMethod === 'POST'
+	const fetchers = useFetchers()
+	const isAddingPlayer = fetchers.some(
+		(fetcher) =>
+			fetcher.state === 'submitting' &&
+			/teams\/.+\/players/.test(fetcher.formAction) &&
+			fetcher.formMethod === 'POST'
+	)
 
 	useEffect(() => {
 		if (!isAddingPlayer) {
