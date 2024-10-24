@@ -197,6 +197,13 @@ vs ${nextGame.opponent}`)
 	) : null
 }
 
+type OptimisticState =
+	| 'submittingGoal'
+	| 'removingGoal'
+	| 'submittingAssist'
+	| 'removingAssist'
+	| null
+
 export default function Team() {
 	const { team } = useLoaderData<typeof loader>()
 	const { name, slug, players } = team
@@ -234,12 +241,27 @@ export default function Team() {
 			</div>
 			<ul className="space-y-2 overflow-x-auto">
 				{players.map((p) => {
-					const goalCount = p.statEntries.filter(
-						(s) => s.type === 'goal'
-					).length
-					const assistCount = p.statEntries.filter(
-						(s) => s.type === 'assist'
-					).length
+					const optimisticState: OptimisticState =
+						fetcher.state === 'submitting' || fetcher.state === 'loading'
+							? fetcher.formAction === `/players/${p.id}/goals`
+								? 'submittingGoal'
+								: fetcher.formAction === `/players/${p.id}/goals/destroy_latest`
+								? 'removingGoal'
+								: fetcher.formAction === `/players/${p.id}/assists`
+								? 'submittingAssist'
+								: fetcher.formAction ===
+								  `/players/${p.id}/assists/destroy_latest`
+								? 'removingAssist'
+								: null
+							: null
+					const goalCount =
+						p.statEntries.filter((s) => s.type === 'goal').length +
+						(optimisticState === 'submittingGoal' ? 1 : 0) +
+						(optimisticState === 'removingGoal' ? -1 : 0)
+					const assistCount =
+						p.statEntries.filter((s) => s.type === 'assist').length +
+						(optimisticState === 'submittingAssist' ? 1 : 0) +
+						(optimisticState === 'removingAssist' ? -1 : 0)
 					return (
 						<li className="flex items-center gap-3" key={p.id}>
 							{editMode ? null : (
