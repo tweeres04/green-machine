@@ -148,13 +148,6 @@ export default function EditTeam() {
 							</Avatar>
 							<span className="grow">{p.name}</span>
 							<span className="text-2xl">
-								{p.statEntries.map(({ type }, i) => (
-									<span key={i} className="inline-block -ml-2">
-										{type === 'goal' ? '⚽️' : '🍎'}
-									</span>
-								))}
-							</span>
-							<span className="text-2xl">
 								{p.statEntries.length === 0
 									? '-'
 									: `${goalCount}G ${assistCount}A`}
