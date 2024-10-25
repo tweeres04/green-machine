@@ -13,7 +13,6 @@ import {
 import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
-import { useEffect, useRef } from 'react'
 import { Add } from '~/components/ui/icons/add'
 import { Remove } from '~/components/ui/icons/remove'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
@@ -24,6 +23,7 @@ import { Pencil } from '~/components/ui/icons/pencil'
 import invariant from 'tiny-invariant'
 import { StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
+import { format } from 'date-fns'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -140,62 +140,8 @@ export async function loader({
 	return { team }
 }
 
-function useClearNewPlayerForm(
-	formRef: React.MutableRefObject<HTMLFormElement | null>
-) {
-	const navigation = useNavigation()
-	const isAddingPlayer =
-		navigation.state === 'submitting' &&
-		/teams\/.+\/players/.test(navigation.formAction) &&
-		navigation.formMethod === 'POST'
-
-	useEffect(() => {
-		if (!isAddingPlayer) {
-			formRef.current?.reset()
-		}
-	}, [formRef, isAddingPlayer])
-}
-
-type Game = { time: string; field: string; opponent: string }
-
-function NextGame({ games }: { games: Game[] }) {
-	const now = new Date()
-	const nextGame = games.filter((game) => new Date(game.time) > now)[0]
-	const { toast } = useToast()
-	const formattedTime = nextGame
-		? new Intl.DateTimeFormat('en-CA', {
-				weekday: 'long',
-				hour: 'numeric',
-				minute: 'numeric',
-		  }).format(new Date(nextGame?.time))
-		: null
-
-	return nextGame ? (
-		<div className="next-game">
-			<div className="flex mb-2">
-				<h2 className="text-2xl grow">Next game</h2>
-				<Button
-					title="Copy next game"
-					variant="secondary"
-					onClick={async () => {
-						await window.navigator.clipboard.writeText(`Next game:
-
-${formattedTime}
-${nextGame.field}
-vs ${nextGame.opponent}`)
-						toast({
-							description: 'Next game copied to clipboard',
-						})
-					}}
-				>
-					<Copy />
-				</Button>
-			</div>
-			<div className="font-bold">{formattedTime}</div>
-			<div className="text-[14px]">{nextGame.field}</div>
-			<div className="text-[14px]">vs {nextGame.opponent}</div>
-		</div>
-	) : null
+function formatTimestamp(timestamp: string) {
+	return format(timestamp, 'MMM d')
 }
 
 type OptimisticState =
@@ -208,7 +154,6 @@ type OptimisticState =
 export default function Team() {
 	const { team } = useLoaderData<typeof loader>()
 	const { name, slug, players } = team
-	const formRef = useRef<HTMLFormElement>(null)
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
 	const fetcher = useFetcher()
@@ -219,8 +164,6 @@ export default function Team() {
 		navigation.state === 'submitting' &&
 		/\/players\/\d+?\/(goals|assists|destroy)/.test(navigation.formAction) &&
 		navigation.formMethod === 'POST'
-
-	useClearNewPlayerForm(formRef)
 
 	function days() {
 		return Array.from(
@@ -260,10 +203,8 @@ export default function Team() {
 								<th></th> {/* Avatar */}
 								<th className="hidden md:table-cell"></th> {/* Name */}
 								{days().map((day) => (
-									<th key={day} className="text-xs -rotate-90 h-10">
-										{new Date(day)
-											.toLocaleDateString()
-											.match(/\d{1,2}\/\d{1,2}/)}
+									<th key={day} className="text-xs [writing-mode:vertical-lr]">
+										{formatTimestamp(day)}
 									</th>
 								))}
 								<th></th> {/* Totals */}
@@ -337,7 +278,7 @@ export default function Team() {
 															'inline-block text-xs',
 															i !== 0 ? '-ml-2' : null
 														)}
-														title={new Date(timestamp).toLocaleDateString()}
+														title={formatTimestamp(timestamp)}
 													>
 														{type === 'goal' ? '⚽️' : '🍎'}
 													</span>
