@@ -185,9 +185,7 @@ export default function Team() {
 		return Array.from(
 			new Set(
 				players.flatMap((p) =>
-					p.statEntries.flatMap(
-						(se) => new Date(se.timestamp).toISOString().split('T')[0]
-					)
+					p.statEntries.flatMap((se) => se.timestamp.split('T')[0])
 				)
 			)
 		).toSorted() as string[]
