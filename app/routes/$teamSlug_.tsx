@@ -24,6 +24,12 @@ import invariant from 'tiny-invariant'
 import { StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
 import { format } from 'date-fns'
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '~/components/ui/popover'
+import { capitalize } from 'lodash-es'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -252,9 +258,14 @@ export default function Team() {
 						return (
 							<tr key={p.id}>
 								<td className="sticky left-0">
-									<Avatar title={p.name}>
-										<AvatarFallback>{p.name[0]}</AvatarFallback>
-									</Avatar>
+									<Popover>
+										<PopoverTrigger>
+											<Avatar title={p.name}>
+												<AvatarFallback>{p.name[0]}</AvatarFallback>
+											</Avatar>
+										</PopoverTrigger>
+										<PopoverContent>{p.name}</PopoverContent>
+									</Popover>
 								</td>
 								{editMode ? null : (
 									<td className="hidden md:table-cell">{p.name}</td>
@@ -272,16 +283,22 @@ export default function Team() {
 												)}
 											>
 												{entries.map(({ type, timestamp }, i) => (
-													<span
-														key={i}
-														className={cn(
-															'inline-block text-xs',
-															i !== 0 ? '-ml-2' : null
-														)}
-														title={formatTimestamp(timestamp)}
-													>
-														{type === 'goal' ? '⚽️' : '🍎'}
-													</span>
+													<Popover key={`${type}${timestamp}`}>
+														<PopoverTrigger>
+															<span
+																className={cn(
+																	'inline-block text-xs',
+																	i !== 0 ? '-ml-2' : null
+																)}
+															>
+																{type === 'goal' ? '⚽️' : '🍎'}
+															</span>
+														</PopoverTrigger>
+														<PopoverContent>
+															{capitalize(type)} by {p.name} on{' '}
+															{formatTimestamp(timestamp)}
+														</PopoverContent>
+													</Popover>
 												))}
 											</td>
 									  ))}
