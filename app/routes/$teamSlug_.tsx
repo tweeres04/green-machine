@@ -22,7 +22,8 @@ import { Copy } from '~/components/ui/icons/copy'
 import { Eye } from '~/components/ui/icons/eye'
 import { Pencil } from '~/components/ui/icons/pencil'
 import invariant from 'tiny-invariant'
-import { type Team } from '~/schema'
+import { StatEntry, type Team } from '~/schema'
+import { cn } from '~/lib/utils'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -221,6 +222,18 @@ export default function Team() {
 
 	useClearNewPlayerForm(formRef)
 
+	function days() {
+		return Array.from(
+			new Set(
+				players.flatMap((p) =>
+					p.statEntries.flatMap(
+						(se) => new Date(se.timestamp).toISOString().split('T')[0]
+					)
+				)
+			)
+		).toSorted() as string[]
+	}
+
 	return (
 		<>
 			<div className="flex items-center gap-2">
@@ -239,116 +252,172 @@ export default function Team() {
 				</Link>
 				<CopyStandingsButton players={players} />
 			</div>
-			<ul className="space-y-2 overflow-x-auto">
-				{players.map((p) => {
-					const optimisticState: OptimisticState =
-						fetcher.state === 'submitting' || fetcher.state === 'loading'
-							? fetcher.formAction === `/players/${p.id}/goals`
-								? 'submittingGoal'
-								: fetcher.formAction === `/players/${p.id}/goals/destroy_latest`
-								? 'removingGoal'
-								: fetcher.formAction === `/players/${p.id}/assists`
-								? 'submittingAssist'
-								: fetcher.formAction ===
-								  `/players/${p.id}/assists/destroy_latest`
-								? 'removingAssist'
+			<div className="overflow-x-auto w-full">
+				<table className="w-full">
+					{editMode ? null : (
+						<thead>
+							<tr>
+								<th></th> {/* Avatar */}
+								<th className="hidden md:table-cell"></th> {/* Name */}
+								{days().map((day) => (
+									<th key={day} className="text-xs -rotate-90 h-10">
+										{new Date(day)
+											.toLocaleDateString()
+											.match(/\d{1,2}\/\d{1,2}/)}
+									</th>
+								))}
+								<th></th> {/* Totals */}
+							</tr>
+						</thead>
+					)}
+
+					{players.map((p) => {
+						const optimisticState: OptimisticState =
+							fetcher.state === 'submitting' || fetcher.state === 'loading'
+								? fetcher.formAction === `/players/${p.id}/goals`
+									? 'submittingGoal'
+									: fetcher.formAction ===
+									  `/players/${p.id}/goals/destroy_latest`
+									? 'removingGoal'
+									: fetcher.formAction === `/players/${p.id}/assists`
+									? 'submittingAssist'
+									: fetcher.formAction ===
+									  `/players/${p.id}/assists/destroy_latest`
+									? 'removingAssist'
+									: null
 								: null
-							: null
-					const goalCount =
-						p.statEntries.filter((s) => s.type === 'goal').length +
-						(optimisticState === 'submittingGoal' ? 1 : 0) +
-						(optimisticState === 'removingGoal' ? -1 : 0)
-					const assistCount =
-						p.statEntries.filter((s) => s.type === 'assist').length +
-						(optimisticState === 'submittingAssist' ? 1 : 0) +
-						(optimisticState === 'removingAssist' ? -1 : 0)
-					return (
-						<li className="flex items-center gap-3" key={p.id}>
-							{editMode ? null : (
-								<Avatar>
-									<AvatarFallback>{p.name[0]}</AvatarFallback>
-								</Avatar>
-							)}
-							<span className="grow">{p.name}</span>
-							{editMode ? null : (
-								<span className="text-2xl">
-									{p.statEntries.map(({ type }, i) => (
-										<span key={i} className="inline-block -ml-2">
-											{type === 'goal' ? '⚽️' : '🍎'}
-										</span>
-									))}
-								</span>
-							)}
-							<span className="text-2xl">
-								{p.statEntries.length === 0
-									? '-'
-									: `${goalCount}G ${assistCount}A`}
-							</span>
-							{editMode ? (
-								<div className="flex gap-1">
-									<fetcher.Form
-										method="post"
-										action={`/players/${p.id}/assists/destroy_latest`}
-									>
-										<Button
-											variant="secondary"
-											size="sm"
-											disabled={isUpdating}
-											aria-label="Remove assist"
-											className="relative"
+						const goalCount =
+							p.statEntries.filter((s) => s.type === 'goal').length +
+							(optimisticState === 'submittingGoal' ? 1 : 0) +
+							(optimisticState === 'removingGoal' ? -1 : 0)
+						const assistCount =
+							p.statEntries.filter((s) => s.type === 'assist').length +
+							(optimisticState === 'submittingAssist' ? 1 : 0) +
+							(optimisticState === 'removingAssist' ? -1 : 0)
+						const statEntriesByDay: [string, StatEntry[]][] =
+							p.statEntries.reduce(
+								(acc: [string, StatEntry[]][], se) => {
+									const date = new Date(se.timestamp)
+										.toISOString()
+										.split('T')[0]
+									const dateEntryPair = acc.find(([d]) => d === date)
+									dateEntryPair[1]?.push(se)
+
+									return acc
+								},
+								days().map((d) => [d, []])
+							)
+
+						return (
+							<tr key={p.id}>
+								<td className="sticky left-0">
+									<Avatar title={p.name}>
+										<AvatarFallback>{p.name[0]}</AvatarFallback>
+									</Avatar>
+								</td>
+								{editMode ? null : (
+									<td className="hidden md:table-cell">{p.name}</td>
+								)}
+								{editMode
+									? null
+									: statEntriesByDay.map(([date, entries], i) => (
+											<td
+												key={date}
+												className={cn(
+													'text-center text-nowrap',
+													i !== statEntriesByDay.length - 1
+														? 'border-r border-green-900/25 border-dashed'
+														: null
+												)}
+											>
+												{entries.map(({ type, timestamp }, i) => (
+													<span
+														key={i}
+														className={cn(
+															'inline-block text-xs',
+															i !== 0 ? '-ml-2' : null
+														)}
+														title={new Date(timestamp).toLocaleDateString()}
+													>
+														{type === 'goal' ? '⚽️' : '🍎'}
+													</span>
+												))}
+											</td>
+									  ))}
+								<td className="text-2xl text-right text-nowrap sticky right-0">
+									{p.statEntries.length === 0
+										? '-'
+										: `${goalCount}G ${assistCount}A`}
+								</td>
+								{editMode ? (
+									<td className="flex gap-1">
+										<fetcher.Form
+											method="post"
+											action={`/players/${p.id}/assists/destroy_latest`}
 										>
-											🍎
-											<Remove />
-										</Button>
-									</fetcher.Form>
-									<fetcher.Form
-										method="post"
-										action={`/players/${p.id}/assists`}
-									>
-										<Button
-											variant="secondary"
-											size="sm"
-											disabled={isUpdating}
-											aria-label="Add assist"
-											className="relative"
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Remove assist"
+												className="relative"
+											>
+												🍎
+												<Remove />
+											</Button>
+										</fetcher.Form>
+										<fetcher.Form
+											method="post"
+											action={`/players/${p.id}/assists`}
 										>
-											🍎
-											<Add />
-										</Button>
-									</fetcher.Form>
-									<fetcher.Form
-										method="post"
-										action={`/players/${p.id}/goals/destroy_latest`}
-									>
-										<Button
-											variant="secondary"
-											size="sm"
-											disabled={isUpdating}
-											aria-label="Remove goal"
-											className="relative"
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Add assist"
+												className="relative"
+											>
+												🍎
+												<Add />
+											</Button>
+										</fetcher.Form>
+										<fetcher.Form
+											method="post"
+											action={`/players/${p.id}/goals/destroy_latest`}
 										>
-											⚽️
-											<Remove />
-										</Button>
-									</fetcher.Form>
-									<fetcher.Form method="post" action={`/players/${p.id}/goals`}>
-										<Button
-											variant="secondary"
-											size="sm"
-											disabled={isUpdating}
-											aria-label="Add goal"
-											className="relative"
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Remove goal"
+												className="relative"
+											>
+												⚽️
+												<Remove />
+											</Button>
+										</fetcher.Form>
+										<fetcher.Form
+											method="post"
+											action={`/players/${p.id}/goals`}
 										>
-											⚽️
-											<Add />
-										</Button>
-									</fetcher.Form>
-								</div>
-							) : null}
-						</li>
-					)
-				})}
-			</ul>
+											<Button
+												variant="secondary"
+												size="sm"
+												disabled={isUpdating}
+												aria-label="Add goal"
+												className="relative"
+											>
+												⚽️
+												<Add />
+											</Button>
+										</fetcher.Form>
+									</td>
+								) : null}
+							</tr>
+						)
+					})}
+				</table>
+			</div>
 		</>
 	)
 }
