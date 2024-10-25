@@ -388,7 +388,7 @@ export default function Team() {
 													})}
 												</td>
 										  ))}
-									<td className="text-2xl text-right text-nowrap sticky right-0">
+									<td className="text-lg text-right text-nowrap sticky right-0">
 										{p.statEntries.length === 0
 											? '-'
 											: `${goalCount}G ${assistCount}A`}
