@@ -228,236 +228,241 @@ export default function Team() {
 						</thead>
 					)}
 
-					{players.map((p) => {
-						const optimisticState: OptimisticState =
-							fetcher.state === 'submitting' || fetcher.state === 'loading'
-								? fetcher.formAction === `/players/${p.id}/goals`
-									? 'submittingGoal'
-									: fetcher.formAction ===
-									  `/players/${p.id}/goals/destroy_latest`
-									? 'removingGoal'
-									: fetcher.formAction === `/players/${p.id}/assists`
-									? 'submittingAssist'
-									: fetcher.formAction ===
-									  `/players/${p.id}/assists/destroy_latest`
-									? 'removingAssist'
+					<tbody>
+						{players.map((p) => {
+							const optimisticState: OptimisticState =
+								fetcher.state === 'submitting' || fetcher.state === 'loading'
+									? fetcher.formAction === `/players/${p.id}/goals`
+										? 'submittingGoal'
+										: fetcher.formAction ===
+										  `/players/${p.id}/goals/destroy_latest`
+										? 'removingGoal'
+										: fetcher.formAction === `/players/${p.id}/assists`
+										? 'submittingAssist'
+										: fetcher.formAction ===
+										  `/players/${p.id}/assists/destroy_latest`
+										? 'removingAssist'
+										: null
 									: null
-								: null
-						const goalCount =
-							p.statEntries.filter((s) => s.type === 'goal').length +
-							(optimisticState === 'submittingGoal' ? 1 : 0) +
-							(optimisticState === 'removingGoal' ? -1 : 0)
-						const assistCount =
-							p.statEntries.filter((s) => s.type === 'assist').length +
-							(optimisticState === 'submittingAssist' ? 1 : 0) +
-							(optimisticState === 'removingAssist' ? -1 : 0)
-						const statEntriesByDay: [string, StatEntry[]][] =
-							p.statEntries.reduce(
-								(acc: [string, StatEntry[]][], se) => {
-									const date = new Date(se.timestamp)
-										.toISOString()
-										.split('T')[0]
-									const dateEntryPair = acc.find(([d]) => d === date)
-									dateEntryPair[1]?.push(se)
+							const goalCount =
+								p.statEntries.filter((s) => s.type === 'goal').length +
+								(optimisticState === 'submittingGoal' ? 1 : 0) +
+								(optimisticState === 'removingGoal' ? -1 : 0)
+							const assistCount =
+								p.statEntries.filter((s) => s.type === 'assist').length +
+								(optimisticState === 'submittingAssist' ? 1 : 0) +
+								(optimisticState === 'removingAssist' ? -1 : 0)
+							const statEntriesByDay: [string, StatEntry[]][] =
+								p.statEntries.reduce(
+									(acc: [string, StatEntry[]][], se) => {
+										const date = new Date(se.timestamp)
+											.toISOString()
+											.split('T')[0]
+										const dateEntryPair = acc.find(([d]) => d === date)
+										dateEntryPair[1]?.push(se)
 
-									return acc
-								},
-								days().map((d) => [d, []])
-							)
+										return acc
+									},
+									days().map((d) => [d, []])
+								)
 
-						return (
-							<tr key={p.id}>
-								<td className="sticky left-0">
-									<Popover>
-										<PopoverTrigger>
-											<Avatar title={p.name}>
-												<AvatarFallback>{p.name[0]}</AvatarFallback>
-											</Avatar>
-										</PopoverTrigger>
-										<PopoverContent>{p.name}</PopoverContent>
-									</Popover>
-								</td>
-								{editMode ? null : (
-									<td className="hidden md:table-cell">{p.name}</td>
-								)}
-								{editMode
-									? null
-									: statEntriesByDay.map(([date, entries], i) => (
-											<td
-												key={date}
-												className={cn(
-													'text-center text-nowrap',
-													i !== statEntriesByDay.length - 1
-														? 'border-r border-green-900/25 border-dashed'
-														: null
-												)}
-											>
-												{entries.map(({ id, type, timestamp }, i) => {
-													const localTimestamp = parseISO(timestamp)
-													const localTimestampString = formatISO(
-														localTimestamp
-													).slice(0, 19) // Chop off offset
-
-													const isSubmitting =
-														fetcher.state === 'submitting' &&
-														fetcher.formAction === `/stats/${id}`
-
-													return (
-														<Dialog key={`${type}${timestamp}`}>
-															<Popover>
-																<PopoverTrigger>
-																	<span
-																		className={cn(
-																			'inline-block text-xs',
-																			i !== 0 ? '-ml-2' : null
-																		)}
-																	>
-																		{type === 'goal' ? '⚽️' : '🍎'}
-																	</span>
-																</PopoverTrigger>
-																<PopoverContent>
-																	<div>
-																		{capitalize(type)} by {p.name} on{' '}
-																		{formatTimestamp(timestamp)}
-																	</div>
-																	<div className="text-center">
-																		<DialogTrigger asChild>
-																			<Button variant="link" size="sm">
-																				Edit
-																			</Button>
-																		</DialogTrigger>
-																	</div>
-																</PopoverContent>
-															</Popover>
-															<DialogContent>
-																<DialogHeader>
-																	<DialogTitle>Edit {type}</DialogTitle>
-																</DialogHeader>
-																<fetcher.Form
-																	action={`/stats/${id}`}
-																	method="PATCH"
-																>
-																	<div className="pb-4">
-																		<Input
-																			className="w-auto"
-																			type="datetime-local"
-																			defaultValue={localTimestampString}
-																			step="1"
-																			onChange={(e) => {
-																				const timestampInput =
-																					e.target.parentElement?.querySelector<HTMLInputElement>(
-																						'#timestamp_input' // I should use a ref at some point
-																					)
-																				invariant(
-																					timestampInput,
-																					'timestampInput not found'
-																				)
-																				timestampInput.value = new Date(
-																					e.target.value
-																				).toISOString()
-																			}}
-																		/>
-																		<input
-																			type="hidden"
-																			name="timestamp"
-																			id="timestamp_input"
-																			defaultValue={new Date(
-																				localTimestampString
-																			).toISOString()}
-																		/>
-																	</div>
-																	<DialogFooter>
-																		<DialogClose asChild>
-																			<Button variant="secondary" type="button">
-																				Cancel
-																			</Button>
-																		</DialogClose>
-																		<Button
-																			type="submit"
-																			disabled={isSubmitting}
-																		>
-																			Save
-																		</Button>
-																	</DialogFooter>
-																</fetcher.Form>
-															</DialogContent>
-														</Dialog>
-													)
-												})}
-											</td>
-									  ))}
-								<td className="text-2xl text-right text-nowrap sticky right-0">
-									{p.statEntries.length === 0
-										? '-'
-										: `${goalCount}G ${assistCount}A`}
-								</td>
-								{editMode ? (
-									<td className="flex gap-1">
-										<fetcher.Form
-											method="post"
-											action={`/players/${p.id}/assists/destroy_latest`}
-										>
-											<Button
-												variant="secondary"
-												size="sm"
-												disabled={isUpdating}
-												aria-label="Remove assist"
-												className="relative"
-											>
-												🍎
-												<Remove />
-											</Button>
-										</fetcher.Form>
-										<fetcher.Form
-											method="post"
-											action={`/players/${p.id}/assists`}
-										>
-											<Button
-												variant="secondary"
-												size="sm"
-												disabled={isUpdating}
-												aria-label="Add assist"
-												className="relative"
-											>
-												🍎
-												<Add />
-											</Button>
-										</fetcher.Form>
-										<fetcher.Form
-											method="post"
-											action={`/players/${p.id}/goals/destroy_latest`}
-										>
-											<Button
-												variant="secondary"
-												size="sm"
-												disabled={isUpdating}
-												aria-label="Remove goal"
-												className="relative"
-											>
-												⚽️
-												<Remove />
-											</Button>
-										</fetcher.Form>
-										<fetcher.Form
-											method="post"
-											action={`/players/${p.id}/goals`}
-										>
-											<Button
-												variant="secondary"
-												size="sm"
-												disabled={isUpdating}
-												aria-label="Add goal"
-												className="relative"
-											>
-												⚽️
-												<Add />
-											</Button>
-										</fetcher.Form>
+							return (
+								<tr key={p.id}>
+									<td className="sticky left-0">
+										<Popover>
+											<PopoverTrigger>
+												<Avatar title={p.name}>
+													<AvatarFallback>{p.name[0]}</AvatarFallback>
+												</Avatar>
+											</PopoverTrigger>
+											<PopoverContent>{p.name}</PopoverContent>
+										</Popover>
 									</td>
-								) : null}
-							</tr>
-						)
-					})}
+									{editMode ? null : (
+										<td className="hidden md:table-cell">{p.name}</td>
+									)}
+									{editMode
+										? null
+										: statEntriesByDay.map(([date, entries], i) => (
+												<td
+													key={date}
+													className={cn(
+														'text-center text-nowrap',
+														i !== statEntriesByDay.length - 1
+															? 'border-r border-green-900/25 border-dashed'
+															: null
+													)}
+												>
+													{entries.map(({ id, type, timestamp }, i) => {
+														const localTimestamp = parseISO(timestamp)
+														const localTimestampString = formatISO(
+															localTimestamp
+														).slice(0, 19) // Chop off offset
+
+														const isSubmitting =
+															fetcher.state === 'submitting' &&
+															fetcher.formAction === `/stats/${id}`
+
+														return (
+															<Dialog key={`${type}${timestamp}`}>
+																<Popover>
+																	<PopoverTrigger>
+																		<span
+																			className={cn(
+																				'inline-block text-xs',
+																				i !== 0 ? '-ml-2' : null
+																			)}
+																		>
+																			{type === 'goal' ? '⚽️' : '🍎'}
+																		</span>
+																	</PopoverTrigger>
+																	<PopoverContent>
+																		<div>
+																			{capitalize(type)} by {p.name} on{' '}
+																			{formatTimestamp(timestamp)}
+																		</div>
+																		<div className="text-center">
+																			<DialogTrigger asChild>
+																				<Button variant="link" size="sm">
+																					Edit
+																				</Button>
+																			</DialogTrigger>
+																		</div>
+																	</PopoverContent>
+																</Popover>
+																<DialogContent>
+																	<DialogHeader>
+																		<DialogTitle>Edit {type}</DialogTitle>
+																	</DialogHeader>
+																	<fetcher.Form
+																		action={`/stats/${id}`}
+																		method="PATCH"
+																	>
+																		<div className="pb-4">
+																			<Input
+																				className="w-auto"
+																				type="datetime-local"
+																				defaultValue={localTimestampString}
+																				step="1"
+																				onChange={(e) => {
+																					const timestampInput =
+																						e.target.parentElement?.querySelector<HTMLInputElement>(
+																							'#timestamp_input' // I should use a ref at some point
+																						)
+																					invariant(
+																						timestampInput,
+																						'timestampInput not found'
+																					)
+																					timestampInput.value = new Date(
+																						e.target.value
+																					).toISOString()
+																				}}
+																			/>
+																			<input
+																				type="hidden"
+																				name="timestamp"
+																				id="timestamp_input"
+																				defaultValue={new Date(
+																					localTimestampString
+																				).toISOString()}
+																			/>
+																		</div>
+																		<DialogFooter>
+																			<DialogClose asChild>
+																				<Button
+																					variant="secondary"
+																					type="button"
+																				>
+																					Cancel
+																				</Button>
+																			</DialogClose>
+																			<Button
+																				type="submit"
+																				disabled={isSubmitting}
+																			>
+																				Save
+																			</Button>
+																		</DialogFooter>
+																	</fetcher.Form>
+																</DialogContent>
+															</Dialog>
+														)
+													})}
+												</td>
+										  ))}
+									<td className="text-2xl text-right text-nowrap sticky right-0">
+										{p.statEntries.length === 0
+											? '-'
+											: `${goalCount}G ${assistCount}A`}
+									</td>
+									{editMode ? (
+										<td className="flex gap-1">
+											<fetcher.Form
+												method="post"
+												action={`/players/${p.id}/assists/destroy_latest`}
+											>
+												<Button
+													variant="secondary"
+													size="sm"
+													disabled={isUpdating}
+													aria-label="Remove assist"
+													className="relative"
+												>
+													🍎
+													<Remove />
+												</Button>
+											</fetcher.Form>
+											<fetcher.Form
+												method="post"
+												action={`/players/${p.id}/assists`}
+											>
+												<Button
+													variant="secondary"
+													size="sm"
+													disabled={isUpdating}
+													aria-label="Add assist"
+													className="relative"
+												>
+													🍎
+													<Add />
+												</Button>
+											</fetcher.Form>
+											<fetcher.Form
+												method="post"
+												action={`/players/${p.id}/goals/destroy_latest`}
+											>
+												<Button
+													variant="secondary"
+													size="sm"
+													disabled={isUpdating}
+													aria-label="Remove goal"
+													className="relative"
+												>
+													⚽️
+													<Remove />
+												</Button>
+											</fetcher.Form>
+											<fetcher.Form
+												method="post"
+												action={`/players/${p.id}/goals`}
+											>
+												<Button
+													variant="secondary"
+													size="sm"
+													disabled={isUpdating}
+													aria-label="Add goal"
+													className="relative"
+												>
+													⚽️
+													<Add />
+												</Button>
+											</fetcher.Form>
+										</td>
+									) : null}
+								</tr>
+							)
+						})}
+					</tbody>
 				</table>
 			</div>
 		</>
