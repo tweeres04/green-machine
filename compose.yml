@@ -6,6 +6,8 @@ services:
     restart: always
     volumes:
       - ./database.db:/app/database.db
+    environment:
+      - TZ=America/Vancouver
 
 networks:
   default:
