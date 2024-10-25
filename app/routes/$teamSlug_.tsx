@@ -23,13 +23,23 @@ import { Pencil } from '~/components/ui/icons/pencil'
 import invariant from 'tiny-invariant'
 import { StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
-import { format } from 'date-fns'
+import { format, formatISO, parseISO } from 'date-fns'
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '~/components/ui/popover'
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '~/components/ui/dialog'
 import { capitalize } from 'lodash-es'
+import { Input } from '~/components/ui/input'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -282,24 +292,98 @@ export default function Team() {
 														: null
 												)}
 											>
-												{entries.map(({ type, timestamp }, i) => (
-													<Popover key={`${type}${timestamp}`}>
-														<PopoverTrigger>
-															<span
-																className={cn(
-																	'inline-block text-xs',
-																	i !== 0 ? '-ml-2' : null
-																)}
-															>
-																{type === 'goal' ? '⚽️' : '🍎'}
-															</span>
-														</PopoverTrigger>
-														<PopoverContent>
-															{capitalize(type)} by {p.name} on{' '}
-															{formatTimestamp(timestamp)}
-														</PopoverContent>
-													</Popover>
-												))}
+												{entries.map(({ id, type, timestamp }, i) => {
+													const localTimestamp = parseISO(timestamp)
+													const localTimestampString = formatISO(
+														localTimestamp
+													).slice(0, 19) // Chop off offset
+
+													const isSubmitting =
+														fetcher.state === 'submitting' &&
+														fetcher.formAction === `/stats/${id}`
+
+													return (
+														<Dialog key={`${type}${timestamp}`}>
+															<Popover>
+																<PopoverTrigger>
+																	<span
+																		className={cn(
+																			'inline-block text-xs',
+																			i !== 0 ? '-ml-2' : null
+																		)}
+																	>
+																		{type === 'goal' ? '⚽️' : '🍎'}
+																	</span>
+																</PopoverTrigger>
+																<PopoverContent>
+																	<div>
+																		{capitalize(type)} by {p.name} on{' '}
+																		{formatTimestamp(timestamp)}
+																	</div>
+																	<div className="text-center">
+																		<DialogTrigger asChild>
+																			<Button variant="link" size="sm">
+																				Edit
+																			</Button>
+																		</DialogTrigger>
+																	</div>
+																</PopoverContent>
+															</Popover>
+															<DialogContent>
+																<DialogHeader>
+																	<DialogTitle>Edit {type}</DialogTitle>
+																</DialogHeader>
+																<fetcher.Form
+																	action={`/stats/${id}`}
+																	method="PATCH"
+																>
+																	<div className="pb-4">
+																		<Input
+																			className="w-auto"
+																			type="datetime-local"
+																			defaultValue={localTimestampString}
+																			step="1"
+																			onChange={(e) => {
+																				const timestampInput =
+																					e.target.parentElement?.querySelector<HTMLInputElement>(
+																						'#timestamp_input' // I should use a ref at some point
+																					)
+																				invariant(
+																					timestampInput,
+																					'timestampInput not found'
+																				)
+																				timestampInput.value = new Date(
+																					e.target.value
+																				).toISOString()
+																			}}
+																		/>
+																		<input
+																			type="hidden"
+																			name="timestamp"
+																			id="timestamp_input"
+																			defaultValue={new Date(
+																				localTimestampString
+																			).toISOString()}
+																		/>
+																	</div>
+																	<DialogFooter>
+																		<DialogClose asChild>
+																			<Button variant="secondary" type="button">
+																				Cancel
+																			</Button>
+																		</DialogClose>
+																		<Button
+																			type="submit"
+																			disabled={isSubmitting}
+																		>
+																			Save
+																		</Button>
+																	</DialogFooter>
+																</fetcher.Form>
+															</DialogContent>
+														</Dialog>
+													)
+												})}
 											</td>
 									  ))}
 								<td className="text-2xl text-right text-nowrap sticky right-0">
