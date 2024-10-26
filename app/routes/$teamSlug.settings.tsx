@@ -3,7 +3,7 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import { Link, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
+import { useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import RemoveUser from '~/components/ui/icons/remove-user'
 import invariant from 'tiny-invariant'
 import { type Team } from '~/schema'
+import Nav from '~/components/ui/nav'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -96,15 +97,7 @@ export default function EditTeam() {
 
 	return (
 		<>
-			<div className="flex items-center gap-2">
-				<Avatar>
-					<AvatarFallback>{name[0]}</AvatarFallback>
-				</Avatar>
-				<h1 className="grow text-3xl">{name}</h1>
-				<Button asChild variant="link">
-					<Link to={`/${slug}`}>Team stats</Link>
-				</Button>
-			</div>
+			<Nav title="Team settings" team={team} />
 			<div className="space-y-3">
 				<h3 className="text-xl mb-3">Team Color</h3>
 				<fetcher.Form

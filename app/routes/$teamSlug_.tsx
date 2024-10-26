@@ -40,6 +40,7 @@ import {
 } from '~/components/ui/dialog'
 import { capitalize } from 'lodash-es'
 import { Input } from '~/components/ui/input'
+import Nav from '~/components/ui/nav'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -173,7 +174,7 @@ type OptimisticState =
 
 export default function Team() {
 	const { team } = useLoaderData<typeof loader>()
-	const { name, slug, players } = team
+	const { slug, players } = team
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
 	const fetcher = useFetcher()
@@ -202,15 +203,7 @@ export default function Team() {
 
 	return (
 		<>
-			<div className="flex items-center gap-2">
-				<Avatar>
-					<AvatarFallback>{name[0]}</AvatarFallback>
-				</Avatar>
-				<h1 className="grow text-3xl">{name}</h1>
-				<Button asChild variant="link">
-					<Link to={`/${slug}/edit`}>Team settings</Link>
-				</Button>
-			</div>
+			<Nav team={team} />
 			<div className="flex gap-1 mb-3 items-center">
 				<h2 className="grow text-2xl">Stats</h2>
 				<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
@@ -276,7 +269,7 @@ export default function Team() {
 
 							return (
 								<tr key={p.id}>
-									<td className="sticky left-0">
+									<td className={`sticky left-0 bg-${team.color}-50`}>
 										<Popover>
 											<PopoverTrigger>
 												<Avatar title={p.name}>
@@ -398,7 +391,9 @@ export default function Team() {
 													})}
 												</td>
 										  ))}
-									<td className="text-lg text-right text-nowrap sticky right-0">
+									<td
+										className={`text-lg text-right text-nowrap sticky right-0 bg-${team.color}-50`}
+									>
 										{p.statEntries.length === 0
 											? '-'
 											: `${goalCount}G ${assistCount}A`}

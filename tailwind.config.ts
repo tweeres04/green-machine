@@ -37,6 +37,7 @@ const safelist = teamColors.flatMap((teamColor) => {
 		`text-${teamColor}-50`,
 		`text-${teamColor}-900`,
 		`dark:text-${teamColor}-50`,
+		`focus-visible:ring-${teamColor}-950`,
 	]
 })
 

@@ -10,6 +10,7 @@ import { formatISO } from 'date-fns'
 import invariant from 'tiny-invariant'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import Nav from '~/components/ui/nav'
 import { getDb } from '~/lib/getDb'
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -41,7 +42,7 @@ export default function Games() {
 	const datepickerTimestampString = formatISO(new Date()).slice(0, 16) // Chop off offset
 	return (
 		<>
-			<h1 className="text-2xl">Games</h1>
+			<Nav title="Games" team={team} />
 			{team.games.map((game) => (
 				<fetcher.Form
 					key={game.id}
@@ -51,83 +52,85 @@ export default function Games() {
 				/>
 			))}
 			{team.games.length > 0 ? (
-				<table className="w-full">
-					<thead>
-						<tr>
-							<th className="text-left">Date and time</th>
-							<th className="text-left">Opponent</th>
-							<th className="text-left">Location</th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						{team.games.map((game) => {
-							const formId = `game_form_${game.id}`
-							const datepickerTimestampString = formatISO(game.timestamp).slice(
-								0,
-								19
-							) // Chop off offset
-							const saving =
-								fetcher.formAction === `/games/${game.id}` &&
-								(fetcher.state === 'submitting' || fetcher.state === 'loading')
-							return (
-								<tr key={game.id}>
-									<td className="relative">
-										<Input
-											type="datetime-local"
-											id={`timestamp_input_${game.id}`}
-											defaultValue={datepickerTimestampString}
-											step="60"
-											onChange={(e) => {
-												const timestampInput =
-													e.target.parentElement?.querySelector<HTMLInputElement>(
-														'#hidden_timestamp_input' // I should use a ref at some point
-													)
-												invariant(timestampInput, 'timestampInput not found')
-												timestampInput.value = formatISO(e.target.value)
-											}}
-											variant="transparent"
-										/>
-										<input
-											type="hidden"
-											name="timestamp"
-											id="hidden_timestamp_input"
-											form={formId}
-											defaultValue={game.timestamp}
-										/>
-									</td>
-									<td>
-										<Input
-											name="opponent"
-											defaultValue={game.opponent}
-											form={formId}
-											variant="transparent"
-										/>
-									</td>
-									<td>
-										<Input
-											name="location"
-											defaultValue={game.location}
-											form={formId}
-											variant="transparent"
-										/>
-									</td>
-									<td>
-										<Button
-											type="submit"
-											size="sm"
-											variant="secondary"
-											form={formId}
-											disabled={saving}
-										>
-											Save
-										</Button>
-									</td>
-								</tr>
-							)
-						})}
-					</tbody>
-				</table>
+				<div className="w-full overflow-x-auto">
+					<table className="w-full">
+						<thead>
+							<tr>
+								<th className="text-left px-1">Date and time</th>
+								<th className="text-left px-1 min-w-32">Opponent</th>
+								<th className="text-left px-1 min-w-32">Location</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							{team.games.map((game) => {
+								const formId = `game_form_${game.id}`
+								const datepickerTimestampString = formatISO(
+									game.timestamp
+								).slice(0, 19) // Chop off offset
+								const saving =
+									fetcher.formAction === `/games/${game.id}` &&
+									(fetcher.state === 'submitting' ||
+										fetcher.state === 'loading')
+								return (
+									<tr key={game.id}>
+										<td className="relative">
+											<Input
+												type="datetime-local"
+												id={`timestamp_input_${game.id}`}
+												defaultValue={datepickerTimestampString}
+												step="60"
+												onChange={(e) => {
+													const timestampInput =
+														e.target.parentElement?.querySelector<HTMLInputElement>(
+															'#hidden_timestamp_input' // I should use a ref at some point
+														)
+													invariant(timestampInput, 'timestampInput not found')
+													timestampInput.value = formatISO(e.target.value)
+												}}
+												variant="transparent"
+											/>
+											<input
+												type="hidden"
+												name="timestamp"
+												id="hidden_timestamp_input"
+												form={formId}
+												defaultValue={game.timestamp}
+											/>
+										</td>
+										<td>
+											<Input
+												name="opponent"
+												defaultValue={game.opponent}
+												form={formId}
+												variant="transparent"
+											/>
+										</td>
+										<td>
+											<Input
+												name="location"
+												defaultValue={game.location}
+												form={formId}
+												variant="transparent"
+											/>
+										</td>
+										<td className={`bg-${team.color}-50 sticky right-0`}>
+											<Button
+												type="submit"
+												size="sm"
+												variant="secondary"
+												form={formId}
+												disabled={saving}
+											>
+												Save
+											</Button>
+										</td>
+									</tr>
+								)
+							})}
+						</tbody>
+					</table>
+				</div>
 			) : (
 				<p>No games yet</p>
 			)}
