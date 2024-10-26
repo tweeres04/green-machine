@@ -156,8 +156,12 @@ export async function loader({
 	return { team }
 }
 
-function formatTimestamp(timestamp: string) {
-	return format(timestamp, 'MMM d')
+const dateFormat = 'MMM d'
+function formatLocalIsoDateString(dateIsoString: string) {
+	const date = parseISO(dateIsoString)
+	const result = format(date, dateFormat)
+
+	return result
 }
 
 type OptimisticState =
@@ -185,7 +189,12 @@ export default function Team() {
 		return Array.from(
 			new Set(
 				players.flatMap((p) =>
-					p.statEntries.flatMap((se) => se.timestamp.split('T')[0])
+					p.statEntries.flatMap((se) => {
+						const date = parseISO(se.timestamp)
+						const isoString = formatISO(date, { representation: 'date' })
+
+						return isoString
+					})
 				)
 			)
 		).toSorted() as string[]
@@ -218,7 +227,7 @@ export default function Team() {
 								<th className="hidden md:table-cell"></th> {/* Name */}
 								{days().map((day) => (
 									<th key={day} className="text-xs [writing-mode:vertical-lr]">
-										{formatTimestamp(day)}
+										{formatLocalIsoDateString(day)}
 									</th>
 								))}
 								<th></th> {/* Totals */}
@@ -253,10 +262,11 @@ export default function Team() {
 							const statEntriesByDay: [string, StatEntry[]][] =
 								p.statEntries.reduce(
 									(acc: [string, StatEntry[]][], se) => {
-										const date = new Date(se.timestamp)
-											.toISOString()
-											.split('T')[0]
-										const dateEntryPair = acc.find(([d]) => d === date)
+										const date = parseISO(se.timestamp)
+										const dateString = formatISO(date, {
+											representation: 'date',
+										})
+										const dateEntryPair = acc.find(([d]) => d === dateString)
 										dateEntryPair[1]?.push(se)
 
 										return acc
@@ -293,7 +303,7 @@ export default function Team() {
 												>
 													{entries.map(({ id, type, timestamp }, i) => {
 														const localTimestamp = parseISO(timestamp)
-														const localTimestampString = formatISO(
+														const datepickerTimestampString = formatISO(
 															localTimestamp
 														).slice(0, 19) // Chop off offset
 
@@ -317,7 +327,7 @@ export default function Team() {
 																	<PopoverContent>
 																		<div>
 																			{capitalize(type)} by {p.name} on{' '}
-																			{formatTimestamp(timestamp)}
+																			{format(localTimestamp, dateFormat)}
 																		</div>
 																		<div className="text-center">
 																			<DialogTrigger asChild>
@@ -340,7 +350,7 @@ export default function Team() {
 																			<Input
 																				className="w-auto"
 																				type="datetime-local"
-																				defaultValue={localTimestampString}
+																				defaultValue={datepickerTimestampString}
 																				step="1"
 																				onChange={(e) => {
 																					const timestampInput =
@@ -361,7 +371,7 @@ export default function Team() {
 																				name="timestamp"
 																				id="timestamp_input"
 																				defaultValue={new Date(
-																					localTimestampString
+																					datepickerTimestampString
 																				).toISOString()}
 																			/>
 																		</div>
