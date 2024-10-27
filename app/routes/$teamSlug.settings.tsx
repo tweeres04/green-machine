@@ -89,7 +89,7 @@ function useClearNewPlayerForm(
 
 export default function EditTeam() {
 	const { team } = useLoaderData<typeof loader>()
-	const { id, name, slug, players, color } = team
+	const { id, slug, players, color } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
 
@@ -168,7 +168,7 @@ export default function EditTeam() {
 				>
 					<input type="hidden" name="slug" value={slug} />
 					<Input name="name" />
-					<Button>Add player</Button>
+					<Button className="w-full sm:w-auto">Add player</Button>
 				</fetcher.Form>
 			</div>
 		</>
