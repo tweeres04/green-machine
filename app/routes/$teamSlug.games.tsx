@@ -24,6 +24,7 @@ import {
 import More from '~/components/ui/icons/more'
 import { Game, Team } from '~/schema'
 import { useEffect, useState } from 'react'
+import { cn } from '~/lib/utils'
 
 function GameForm({
 	closeModal,
@@ -104,6 +105,7 @@ function GameForm({
 
 function MoreButton({ team, game }: { team: Team; game: Game }) {
 	const [dialogOpen, setDialogOpen] = useState(false)
+	const fetcher = useFetcher()
 
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -117,6 +119,25 @@ function MoreButton({ team, game }: { team: Team; game: Game }) {
 					<DialogTrigger asChild>
 						<DropdownMenuItem>Edit</DropdownMenuItem>
 					</DialogTrigger>
+					<fetcher.Form>
+						<DropdownMenuItem
+							onClick={() => {
+								fetcher.submit(
+									{
+										cancelledAt: game?.cancelledAt
+											? null
+											: new Date().toISOString(),
+									},
+									{
+										action: `/games/${game.id}`,
+										method: 'patch',
+									}
+								)
+							}}
+						>
+							{game.cancelledAt ? 'Uncancel' : 'Cancel'}
+						</DropdownMenuItem>
+					</fetcher.Form>
 				</DropdownMenuContent>
 			</DropdownMenu>
 
@@ -176,7 +197,7 @@ export default function Games() {
 			))}
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">
-					<table className="w-full">
+					<table className="w-full [&_td]:pt-2">
 						<thead>
 							<tr>
 								<th className="text-left px-1">Date/time</th>
@@ -189,12 +210,20 @@ export default function Games() {
 							{team.games.map((game) => (
 								<tr key={game.id}>
 									<td className="relative">
-										{game.timestamp
-											? format(game.timestamp, "E MMM d 'at' h:mma")
-											: 'TBD'}
+										<div
+											className={cn(game.cancelledAt ? 'line-through' : null)}
+										>
+											{game.timestamp
+												? format(game.timestamp, "E MMM d 'at' h:mma")
+												: 'TBD'}
+										</div>
 									</td>
-									<td>{game.opponent}</td>
-									<td>{game.location}</td>
+									<td className={cn(game.cancelledAt ? 'line-through' : null)}>
+										{game.opponent}
+									</td>
+									<td className={cn(game.cancelledAt ? 'line-through' : null)}>
+										{game.location}
+									</td>
 									<td className={`bg-${team.color}-50 sticky right-0`}>
 										<MoreButton {...{ team, game }} />
 									</td>

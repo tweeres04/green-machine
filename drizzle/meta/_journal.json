@@ -22,6 +22,13 @@
       "when": 1729973507699,
       "tag": "0002_left_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1729983469619,
+      "tag": "0003_deep_penance",
+      "breakpoints": true
     }
   ]
 }

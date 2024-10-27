@@ -51,11 +51,14 @@ export const games = sqliteTable(
 		opponent: text('opponent').notNull(),
 		timestamp: text('timestamp'),
 		location: text('location'),
+		cancelledAt: text('cancelled_at'),
 	},
 	(table) => ({
 		teamIdIdx: index('games_team_id_idx').on(table.teamId),
 	})
 )
+
+export type Game = typeof games.$inferSelect
 
 export const gamesRelations = relations(games, ({ one }) => ({
 	team: one(teams, {
