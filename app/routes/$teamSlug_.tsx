@@ -330,13 +330,15 @@ export default function Team() {
 																			{capitalize(type)} by {p.name} on{' '}
 																			{format(localTimestamp, dateFormat)}
 																		</div>
-																		<div className="text-center">
-																			<DialogTrigger asChild>
-																				<Button variant="link" size="sm">
-																					Edit
-																				</Button>
-																			</DialogTrigger>
-																		</div>
+																		{userHasAccessToTeam ? (
+																			<div className="text-center">
+																				<DialogTrigger asChild>
+																					<Button variant="link" size="sm">
+																						Edit
+																					</Button>
+																				</DialogTrigger>
+																			</div>
+																		) : null}
 																	</PopoverContent>
 																</Popover>
 																<DialogContent>
