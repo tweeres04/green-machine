@@ -19,21 +19,21 @@ export async function loader({
 }: LoaderFunctionArgs) {
 	const db = getDb()
 
+	const user = await authenticator.isAuthenticated(request)
+
 	if (!teamSlug) {
-		return null
+		return json({ color: 'gray', user })
 	}
 
 	const team = await db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
 	})
 
-	const user = await authenticator.isAuthenticated(request)
-
 	return json({ color: team?.color, user })
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { color = 'gray', user = null } = useLoaderData<typeof loader>() ?? {}
+	const { color, user } = useLoaderData<typeof loader>()
 
 	return (
 		<html lang="en">

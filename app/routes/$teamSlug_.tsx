@@ -41,6 +41,7 @@ import {
 import { capitalize } from 'lodash-es'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -114,12 +115,11 @@ export async function loader({
 	params: { teamSlug },
 	request,
 }: LoaderFunctionArgs) {
-	const db = getDb()
-
 	invariant(teamSlug, 'Missing teamSlug parameter')
 
-	const searchParams = new URL(request.url).searchParams
-	const editMode = searchParams.has('edit')
+	const user = await authenticator.isAuthenticated(request)
+
+	const db = getDb()
 
 	const team = await db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
@@ -136,6 +136,10 @@ export async function loader({
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
 	}
+
+	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
+	const searchParams = new URL(request.url).searchParams
+	const editMode = userHasAccessToTeam && searchParams.has('edit')
 
 	if (!editMode) {
 		// todo: move this sorting to the db at some point
@@ -154,7 +158,7 @@ export async function loader({
 			return bAssists - aAssists
 		})
 	}
-	return { team }
+	return { team, userHasAccessToTeam }
 }
 
 const dateFormat = 'MMM d'
@@ -173,13 +177,13 @@ type OptimisticState =
 	| null
 
 export default function Team() {
-	const { team } = useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam } = useLoaderData<typeof loader>()
 	const { slug, players } = team
 	const navigation = useNavigation()
 	const [searchParams] = useSearchParams()
 	const fetcher = useFetcher()
 
-	const editMode = searchParams.has('edit')
+	const editMode = userHasAccessToTeam && searchParams.has('edit')
 
 	const isUpdating =
 		navigation.state === 'submitting' &&
@@ -206,9 +210,13 @@ export default function Team() {
 			<Nav team={team} />
 			<div className="flex gap-1 mb-3 items-center">
 				<h2 className="grow text-2xl">Stats</h2>
-				<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
-					<Button variant="secondary">{editMode ? <Eye /> : <Pencil />}</Button>
-				</Link>
+				{userHasAccessToTeam ? (
+					<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
+						<Button variant="secondary">
+							{editMode ? <Eye /> : <Pencil />}
+						</Button>
+					</Link>
+				) : null}
 				<CopyStandingsButton players={players} />
 			</div>
 			<div className="overflow-x-auto w-full">

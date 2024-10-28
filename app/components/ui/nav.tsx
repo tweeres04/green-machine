@@ -16,19 +16,21 @@ import { UserContext } from '~/lib/userContext'
 
 type Props = {
 	title?: string
-	team: Team
+	team?: Team
 }
 
-export default function Nav({ title, team: { name, slug } }: Props) {
+export default function Nav({ title, team }: Props) {
 	const { pathname } = useLocation()
 	const user = useContext(UserContext)
 
 	return (
 		<div className="flex items-center gap-2">
-			<Avatar>
-				<AvatarFallback>{name[0]}</AvatarFallback>
-			</Avatar>
-			<h1 className="grow text-3xl">{title ?? name}</h1>
+			{team ? (
+				<Avatar>
+					<AvatarFallback>{team.name[0]}</AvatarFallback>
+				</Avatar>
+			) : null}
+			<h1 className="grow text-3xl">{title ?? team?.name}</h1>
 
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
@@ -38,26 +40,38 @@ export default function Nav({ title, team: { name, slug } }: Props) {
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
 					{user ? (
-						<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+						<>
+							<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+							{pathname !== '/' ? (
+								<DropdownMenuItem asChild>
+									<a href="/">Teams</a>
+								</DropdownMenuItem>
+							) : null}
+						</>
 					) : (
 						<DropdownMenuItem asChild>
 							<Link to="/login">Login</Link>
 						</DropdownMenuItem>
 					)}
-					{pathname !== `/${slug}` ? (
-						<DropdownMenuItem asChild>
-							<Link to={`/${slug}`}>Home</Link>
-						</DropdownMenuItem>
-					) : null}
-					{pathname !== `/${slug}/games` ? (
-						<DropdownMenuItem asChild>
-							<Link to={`/${slug}/games`}>Games</Link>
-						</DropdownMenuItem>
-					) : null}
-					{pathname !== `/${slug}/settings` ? (
-						<DropdownMenuItem asChild>
-							<Link to={`/${slug}/settings`}>Settings</Link>
-						</DropdownMenuItem>
+					{team ? (
+						<>
+							<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
+							{pathname !== `/${team.slug}` ? (
+								<DropdownMenuItem asChild>
+									<Link to={`/${team.slug}`}>Stats</Link>
+								</DropdownMenuItem>
+							) : null}
+							{pathname !== `/${team.slug}/games` ? (
+								<DropdownMenuItem asChild>
+									<Link to={`/${team.slug}/games`}>Games</Link>
+								</DropdownMenuItem>
+							) : null}
+							{pathname !== `/${team.slug}/settings` ? (
+								<DropdownMenuItem asChild>
+									<Link to={`/${team.slug}/settings`}>Settings</Link>
+								</DropdownMenuItem>
+							) : null}
+						</>
 					) : null}
 					<DropdownMenuItem asChild>
 						{user ? <Link to="/logout">Logout</Link> : null}

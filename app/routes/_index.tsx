@@ -6,6 +6,7 @@ import { kebabCase } from 'lodash-es'
 import React from 'react'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
+import Nav from '~/components/ui/nav'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -91,7 +92,7 @@ export default function Index() {
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
-			<h2 className="text-3xl">My teams</h2>
+			<Nav title="My Teams" />
 			{teams.length > 0 ? (
 				<ul className="space-y-3">
 					{teams.map((t) => {

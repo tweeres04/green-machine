@@ -6,6 +6,21 @@ import { getDb } from './getDb'
 import { User, users } from '~/schema'
 import invariant from 'tiny-invariant'
 
+export async function hasAccessToTeam(user: User | null, teamId: number) {
+	if (!user) {
+		return false
+	}
+
+	const db = getDb()
+
+	const teamUser = await db.query.teamsUsers.findFirst({
+		where: (teamsUsers, { and, eq }) =>
+			and(eq(teamsUsers.teamId, teamId), eq(teamsUsers.userId, user.id)),
+	})
+
+	return Boolean(teamUser)
+}
+
 async function signUp(
 	name: FormDataEntryValue | null,
 	email: string,
