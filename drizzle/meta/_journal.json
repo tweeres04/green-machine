@@ -36,6 +36,13 @@
       "when": 1730060351174,
       "tag": "0004_fresh_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1730120048326,
+      "tag": "0005_broken_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

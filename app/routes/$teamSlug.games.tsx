@@ -237,7 +237,7 @@ export default function Games() {
 			)}
 			<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
 				<DialogTrigger asChild>
-					<Button className="w-full">Add game</Button>
+					<Button className="w-full sm:w-auto">Add game</Button>
 				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>

@@ -19,6 +19,7 @@ export type Team = typeof teams.$inferSelect
 export const teamRelations = relations(teams, ({ many }) => ({
 	players: many(players),
 	games: many(games),
+	teamsUsers: many(teamsUsers),
 }))
 
 export const players = sqliteTable(
@@ -104,4 +105,32 @@ export const users = sqliteTable(
 	})
 )
 
+export const userRelations = relations(users, ({ many }) => ({
+	teamsUsers: many(teamsUsers),
+}))
+
 export type User = Omit<typeof users.$inferSelect, 'password'>
+
+export const teamsUsers = sqliteTable(
+	'users_teams',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: integer('user_id').notNull(),
+		teamId: integer('team_id').notNull(),
+	},
+	(table) => ({
+		userIdIdx: index('users_teams_user_id_idx').on(table.userId),
+		teamIdIdx: index('users_teams_team_id_idx').on(table.teamId),
+	})
+)
+
+export const usersTeamsRelations = relations(teamsUsers, ({ one }) => ({
+	user: one(users, {
+		fields: [teamsUsers.userId],
+		references: [users.id],
+	}),
+	team: one(teams, {
+		fields: [teamsUsers.teamId],
+		references: [teams.id],
+	}),
+}))

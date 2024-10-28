@@ -43,17 +43,17 @@ export async function action({ request }: ActionFunctionArgs) {
 	// request object, optionally we pass an object with the URLs we want the user
 	// to be redirected to after a success or a failure
 	return await authenticator.authenticate('user-pass', request, {
-		successRedirect: '/green-machine',
+		successRedirect: '/',
 		failureRedirect: '/login',
 	})
 }
 
 // Finally, we can export a loader function where we check if the user is
-// authenticated with `authenticator.isAuthenticated` and redirect to the
-// home if it is or return null if it's not
+// authenticated with `authenticator.isAuthenticated` and redirect to /
+// if it is or return null if it's not
 export async function loader({ request }: LoaderFunctionArgs) {
-	// If the user is already authenticated redirect to /home directly
+	// If the user is already authenticated redirect to / directly
 	return await authenticator.isAuthenticated(request, {
-		successRedirect: '/green-machine',
+		successRedirect: '/',
 	})
 }
