@@ -5,11 +5,14 @@ import { Team } from '~/schema'
 
 import {
 	DropdownMenu,
+	DropdownMenuLabel,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
+import { useContext } from 'react'
+import { UserContext } from '~/lib/userContext'
 
 type Props = {
 	title?: string
@@ -18,6 +21,7 @@ type Props = {
 
 export default function Nav({ title, team: { name, slug } }: Props) {
 	const { pathname } = useLocation()
+	const user = useContext(UserContext)
 
 	return (
 		<div className="flex items-center gap-2">
@@ -33,6 +37,13 @@ export default function Nav({ title, team: { name, slug } }: Props) {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
+					{user ? (
+						<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+					) : (
+						<DropdownMenuItem asChild>
+							<Link to="/login">Login</Link>
+						</DropdownMenuItem>
+					)}
 					{pathname !== `/${slug}` ? (
 						<DropdownMenuItem asChild>
 							<Link to={`/${slug}`}>Home</Link>
@@ -48,6 +59,9 @@ export default function Nav({ title, team: { name, slug } }: Props) {
 							<Link to={`/${slug}/settings`}>Settings</Link>
 						</DropdownMenuItem>
 					) : null}
+					<DropdownMenuItem asChild>
+						{user ? <Link to="/logout">Logout</Link> : null}
+					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>

@@ -7,7 +7,8 @@ services:
     volumes:
       - ./database.db:/app/database.db
     environment:
-      - TZ=America/Vancouver
+      TZ: America/Vancouver
+      AUTH_SECRET: ${AUTH_SECRET}
 
 networks:
   default:
