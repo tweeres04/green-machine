@@ -90,3 +90,18 @@ export const statEntriesRelations = relations(statEntries, ({ one }) => ({
 }))
 
 export type StatEntry = typeof statEntries.$inferSelect
+
+export const users = sqliteTable(
+	'users',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		email: text('email').notNull(),
+		password: text('password').notNull(),
+		name: text('name').notNull(),
+	},
+	(table) => ({
+		emailIdx: index('email_idx').on(table.email),
+	})
+)
+
+export type User = Omit<typeof users.$inferSelect, 'password'>
