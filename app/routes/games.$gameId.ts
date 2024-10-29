@@ -1,6 +1,7 @@
 import { ActionFunctionArgs } from '@remix-run/node'
 import { eq } from 'drizzle-orm'
 import invariant from 'tiny-invariant'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { games } from '~/schema'
 
@@ -41,6 +42,26 @@ export async function action({ params, request }: ActionFunctionArgs) {
 	const { gameId } = params
 
 	invariant(gameId, 'No gameId')
+
+	const user = await authenticator.isAuthenticated(request)
+
+	if (!user) {
+		throw new Response(null, { status: 401 })
+	}
+
+	const db = getDb()
+
+	const game = await db.query.games.findFirst({
+		where: (games, { eq }) => eq(games.id, Number(gameId)),
+	})
+
+	invariant(game, 'Game not found')
+
+	const userHasAccessToTeam = await hasAccessToTeam(user, game.teamId)
+
+	if (!userHasAccessToTeam) {
+		throw new Response(null, { status: 403 })
+	}
 
 	if (request.method.toLowerCase() === 'put') {
 		const formData = await request.formData()

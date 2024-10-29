@@ -25,6 +25,7 @@ import More from '~/components/ui/icons/more'
 import { Game, Team } from '~/schema'
 import { useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 
 function GameForm({
 	closeModal,
@@ -157,13 +158,15 @@ function MoreButton({ team, game }: { team: Team; game: Game }) {
 	)
 }
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
 	const { teamSlug } = params
 	invariant(teamSlug, 'Missing teamSlug parameter')
 
+	const userPromise = authenticator.isAuthenticated(request)
+
 	const db = getDb()
 
-	const team = await db.query.teams.findFirst({
+	const teamPromise = db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
 		with: {
 			games: {
@@ -172,15 +175,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
 		},
 	})
 
+	const [user, team] = await Promise.all([userPromise, teamPromise])
+
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
 	}
 
-	return json({ team })
+	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
+
+	return json({ team, userHasAccessToTeam })
 }
 
 export default function Games() {
-	const { team } = useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam } = useLoaderData<typeof loader>()
 	const fetcher = useFetcher()
 	const [newGameModal, setNewGameModal] = useState(false)
 
@@ -203,7 +210,7 @@ export default function Games() {
 								<th className="text-left px-1">Date/time</th>
 								<th className="text-left px-1">Opponent</th>
 								<th className="text-left px-1">Location</th>
-								<th></th>
+								{userHasAccessToTeam ? <th></th> : null}
 							</tr>
 						</thead>
 						<tbody>
@@ -224,9 +231,11 @@ export default function Games() {
 									<td className={cn(game.cancelledAt ? 'line-through' : null)}>
 										{game.location}
 									</td>
-									<td className={`bg-${team.color}-50 sticky right-0`}>
-										<MoreButton {...{ team, game }} />
-									</td>
+									{userHasAccessToTeam ? (
+										<td className={`bg-${team.color}-50 sticky right-0`}>
+											<MoreButton {...{ team, game }} />
+										</td>
+									) : null}
 								</tr>
 							))}
 						</tbody>
@@ -235,17 +244,19 @@ export default function Games() {
 			) : (
 				<p>No games yet</p>
 			)}
-			<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
-				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto">Add game</Button>
-				</DialogTrigger>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Add game</DialogTitle>
-					</DialogHeader>
-					<GameForm team={team} closeModal={() => setNewGameModal(false)} />
-				</DialogContent>
-			</Dialog>
+			{userHasAccessToTeam ? (
+				<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
+					<DialogTrigger asChild>
+						<Button className="w-full sm:w-auto">Add game</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Add game</DialogTitle>
+						</DialogHeader>
+						<GameForm team={team} closeModal={() => setNewGameModal(false)} />
+					</DialogContent>
+				</Dialog>
+			) : null}
 		</>
 	)
 }
