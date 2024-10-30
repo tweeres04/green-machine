@@ -43,6 +43,13 @@
       "when": 1730120048326,
       "tag": "0005_broken_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1730295883949,
+      "tag": "0006_productive_mercury",
+      "breakpoints": true
     }
   ]
 }

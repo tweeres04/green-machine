@@ -9,6 +9,9 @@ services:
     environment:
       TZ: America/Vancouver
       AUTH_SECRET: ${AUTH_SECRET}
+      MAILGUN_API_KEY: ${MAILGUN_API_KEY}
+      MAILGUN_DOMAIN: ${MAILGUN_DOMAIN}
+      BASE_URL: ${BASE_URL}
 
 networks:
   default:
