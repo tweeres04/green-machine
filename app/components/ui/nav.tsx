@@ -38,7 +38,7 @@ export default function Nav({ title, team }: Props) {
 						<More />
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent>
+				<DropdownMenuContent className="[&_a[role=menuitem]]:cursor-pointer">
 					{team ? (
 						<>
 							<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
