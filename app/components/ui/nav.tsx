@@ -39,20 +39,6 @@ export default function Nav({ title, team }: Props) {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
-					{user ? (
-						<>
-							<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
-							{pathname !== '/' ? (
-								<DropdownMenuItem asChild>
-									<a href="/">Teams</a>
-								</DropdownMenuItem>
-							) : null}
-						</>
-					) : (
-						<DropdownMenuItem asChild>
-							<Link to="/login">Login</Link>
-						</DropdownMenuItem>
-					)}
 					{team ? (
 						<>
 							<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
@@ -66,6 +52,11 @@ export default function Nav({ title, team }: Props) {
 									<Link to={`/${team.slug}/games`}>Games</Link>
 								</DropdownMenuItem>
 							) : null}
+							{pathname !== `/${team.slug}/players` ? (
+								<DropdownMenuItem asChild>
+									<Link to={`/${team.slug}/players`}>Players</Link>
+								</DropdownMenuItem>
+							) : null}
 							{pathname !== `/${team.slug}/settings` ? (
 								<DropdownMenuItem asChild>
 									<Link to={`/${team.slug}/settings`}>Settings</Link>
@@ -73,9 +64,23 @@ export default function Nav({ title, team }: Props) {
 							) : null}
 						</>
 					) : null}
-					<DropdownMenuItem asChild>
-						{user ? <Link to="/logout">Logout</Link> : null}
-					</DropdownMenuItem>
+					{user ? (
+						<>
+							<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+							{pathname !== '/' ? (
+								<DropdownMenuItem asChild>
+									<a href="/">Teams</a>
+								</DropdownMenuItem>
+							) : null}
+							<DropdownMenuItem asChild>
+								{user ? <Link to="/logout">Logout</Link> : null}
+							</DropdownMenuItem>
+						</>
+					) : (
+						<DropdownMenuItem asChild>
+							<Link to="/login">Login</Link>
+						</DropdownMenuItem>
+					)}
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>

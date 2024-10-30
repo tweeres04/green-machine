@@ -4,6 +4,36 @@ import { Form, Link } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
+import { getSession } from '~/lib/session.server'
+
+// Second, we need to export an action function, here we will use the
+// `authenticator.authenticate method`
+export async function action({ request }: ActionFunctionArgs) {
+	const session = await getSession(request.headers.get('Cookie'))
+
+	const inviteId = session.get('inviteId')
+	const inviteToken = session.get('inviteToken')
+	// we call the method with the name of the strategy we want to use and the
+	// request object, optionally we pass an object with the URLs we want the user
+	// to be redirected to after a success or a failure
+	return await authenticator.authenticate('user-pass', request, {
+		successRedirect:
+			inviteId && inviteToken
+				? `/invites/${inviteId}?token=${inviteToken}`
+				: '/',
+		failureRedirect: '/login',
+	})
+}
+
+// Finally, we can export a loader function where we check if the user is
+// authenticated with `authenticator.isAuthenticated` and redirect to /
+// if it is or return null if it's not
+export async function loader({ request }: LoaderFunctionArgs) {
+	// If the user is already authenticated redirect to / directly
+	return await authenticator.isAuthenticated(request, {
+		successRedirect: '/',
+	})
+}
 
 // First we create our UI with the form doing a POST and the inputs with the
 // names we are going to use in the strategy
@@ -34,26 +64,4 @@ export default function Login() {
 			<Button>Sign In</Button>
 		</Form>
 	)
-}
-
-// Second, we need to export an action function, here we will use the
-// `authenticator.authenticate method`
-export async function action({ request }: ActionFunctionArgs) {
-	// we call the method with the name of the strategy we want to use and the
-	// request object, optionally we pass an object with the URLs we want the user
-	// to be redirected to after a success or a failure
-	return await authenticator.authenticate('user-pass', request, {
-		successRedirect: '/',
-		failureRedirect: '/login',
-	})
-}
-
-// Finally, we can export a loader function where we check if the user is
-// authenticated with `authenticator.isAuthenticated` and redirect to /
-// if it is or return null if it's not
-export async function loader({ request }: LoaderFunctionArgs) {
-	// If the user is already authenticated redirect to / directly
-	return await authenticator.isAuthenticated(request, {
-		successRedirect: '/',
-	})
 }

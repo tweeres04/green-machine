@@ -52,14 +52,6 @@ export async function loader({ params: { teamSlug } }: LoaderFunctionArgs) {
 
 	const team = await db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
-		with: {
-			players: {
-				with: {
-					statEntries: true,
-				},
-				orderBy: (players, { asc }) => [asc(players.name)],
-			},
-		},
 	})
 
 	if (!team) {
@@ -89,7 +81,7 @@ function useClearNewPlayerForm(
 
 export default function EditTeam() {
 	const { team } = useLoaderData<typeof loader>()
-	const { id, slug, players, color } = team
+	const { id, slug, color } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
 
@@ -123,52 +115,6 @@ export default function EditTeam() {
 						<option value="purple">Purple</option>
 						<option value="pink">Pink</option>
 					</select>
-				</fetcher.Form>
-			</div>
-			<h2 className="mb-3 text-2xl">Players</h2>
-			<ul className="space-y-2">
-				{players.map((p) => {
-					const goalCount = p.statEntries.filter(
-						(s) => s.type === 'goal'
-					).length
-					const assistCount = p.statEntries.filter(
-						(s) => s.type === 'assist'
-					).length
-					return (
-						<li className="flex items-center gap-3" key={p.id}>
-							<Avatar>
-								<AvatarFallback>{p.name[0]}</AvatarFallback>
-							</Avatar>
-							<span className="grow">{p.name}</span>
-							<span className="text-2xl">
-								{p.statEntries.length === 0
-									? '-'
-									: `${goalCount}G ${assistCount}A`}
-							</span>
-							<fetcher.Form method="post" action={`/players/${p.id}/destroy`}>
-								<Button
-									variant="destructive-outline"
-									size="sm"
-									aria-label="Remove player"
-								>
-									<RemoveUser />
-								</Button>
-							</fetcher.Form>
-						</li>
-					)
-				})}
-			</ul>
-			<div className="space-y-3">
-				<h3 className="text-xl mb-3">Add player</h3>
-				<fetcher.Form
-					method="post"
-					action={`/teams/${id}/players`}
-					className="space-y-3"
-					ref={formRef}
-				>
-					<input type="hidden" name="slug" value={slug} />
-					<Input name="name" />
-					<Button className="w-full sm:w-auto">Add player</Button>
 				</fetcher.Form>
 			</div>
 		</>

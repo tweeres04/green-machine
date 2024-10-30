@@ -33,7 +33,7 @@ export async function loader({
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { color, user } = useLoaderData<typeof loader>()
+	const { color, user } = useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
 
 	return (
 		<html lang="en">

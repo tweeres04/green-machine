@@ -42,6 +42,47 @@ export const playersRelations = relations(players, ({ many, one }) => ({
 		fields: [players.teamId],
 		references: [teams.id],
 	}),
+	userInvites: one(userInvites, {
+		fields: [players.id],
+		references: [userInvites.playerId],
+	}),
+}))
+
+export const userInvites = sqliteTable(
+	'user_invites',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: integer('user_id'),
+		email: text('email').notNull(),
+		playerId: integer('player_id').notNull(),
+		createdAt: text('created_at').notNull(),
+		acceptedAt: text('accepted_at'),
+		token: text('token').notNull(),
+		inviterId: integer('inviter_id').notNull(),
+	},
+	(table) => ({
+		idIdx: index('user_invites_id_idx').on(table.id),
+		userIdIdx: index('user_invites_user_id_idx').on(table.userId),
+		playerIdIdx: index('user_invites_player_id_idx').on(table.playerId),
+		inviterIdIdx: index('user_invites_inviter_id_idx').on(table.inviterId),
+	})
+)
+
+export const userInvitesRelations = relations(userInvites, ({ one }) => ({
+	player: one(players, {
+		fields: [userInvites.playerId],
+		references: [players.id],
+	}),
+	inviter: one(users, {
+		fields: [userInvites.inviterId],
+		references: [users.id],
+		relationName: 'sent_invites',
+	}),
+	user: one(users, {
+		fields: [userInvites.userId],
+		references: [users.id],
+		relationName: 'received_invites',
+	}),
 }))
 
 export const games = sqliteTable(
@@ -107,6 +148,8 @@ export const users = sqliteTable(
 
 export const userRelations = relations(users, ({ many }) => ({
 	teamsUsers: many(teamsUsers),
+	sentInvites: many(userInvites, { relationName: 'sent_invites' }),
+	receivedInvites: many(userInvites, { relationName: 'received_invites' }),
 }))
 
 export type User = Omit<typeof users.$inferSelect, 'password'>
