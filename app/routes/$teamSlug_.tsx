@@ -292,115 +292,133 @@ export default function Team() {
 									)}
 									{editMode
 										? null
-										: statEntriesByDay.map(([date, entries], i) => (
-												<td
-													key={date}
-													className={cn(
-														'text-center text-nowrap',
-														i !== statEntriesByDay.length - 1
-															? 'border-r border-green-900/25 border-dashed'
-															: null
-													)}
-												>
-													{entries.map(({ id, type, timestamp }, i) => {
-														const localTimestamp = parseISO(timestamp)
-														const datepickerTimestampString = formatISO(
-															localTimestamp
-														).slice(0, 19) // Chop off offset
+										: statEntriesByDay.map(
+												([date, entries], entryDateIndex) => (
+													<td
+														key={date}
+														className={cn(
+															'text-center text-nowrap',
+															entryDateIndex !== statEntriesByDay.length - 1
+																? 'border-r border-green-900/25 border-dashed'
+																: null
+														)}
+													>
+														{entries.map(({ id, type, timestamp }, i) => {
+															const localTimestamp = parseISO(timestamp)
+															const datepickerTimestampString = formatISO(
+																localTimestamp
+															).slice(0, 19) // Chop off offset
 
-														const isSubmitting =
-															fetcher.state === 'submitting' &&
-															fetcher.formAction === `/stats/${id}`
+															const isSubmitting =
+																fetcher.state === 'submitting' &&
+																fetcher.formAction === `/stats/${id}`
 
-														return (
-															<Dialog key={`${type}${timestamp}`}>
-																<Popover>
-																	<PopoverTrigger>
-																		<span
-																			className={cn(
-																				'inline-block text-xs',
-																				i !== 0 ? '-ml-2' : null
-																			)}
-																		>
-																			{type === 'goal' ? '⚽️' : '🍎'}
-																		</span>
-																	</PopoverTrigger>
-																	<PopoverContent>
-																		<div>
-																			{capitalize(type)} by {p.name} on{' '}
-																			{format(localTimestamp, dateFormat)}
-																		</div>
-																		{userHasAccessToTeam ? (
-																			<div className="text-center">
-																				<DialogTrigger asChild>
-																					<Button variant="link" size="sm">
-																						Edit
-																					</Button>
-																				</DialogTrigger>
-																			</div>
-																		) : null}
-																	</PopoverContent>
-																</Popover>
-																<DialogContent>
-																	<DialogHeader>
-																		<DialogTitle>Edit {type}</DialogTitle>
-																	</DialogHeader>
-																	<fetcher.Form
-																		action={`/stats/${id}`}
-																		method="PATCH"
-																	>
-																		<div className="pb-4">
-																			<Input
-																				className="w-auto"
-																				type="datetime-local"
-																				defaultValue={datepickerTimestampString}
-																				step="1"
-																				onChange={(e) => {
-																					const timestampInput =
-																						e.target.parentElement?.querySelector<HTMLInputElement>(
-																							'#timestamp_input' // I should use a ref at some point
-																						)
-																					invariant(
-																						timestampInput,
-																						'timestampInput not found'
-																					)
-																					timestampInput.value = new Date(
-																						e.target.value
-																					).toISOString()
-																				}}
-																			/>
-																			<input
-																				type="hidden"
-																				name="timestamp"
-																				id="timestamp_input"
-																				defaultValue={new Date(
-																					datepickerTimestampString
-																				).toISOString()}
-																			/>
-																		</div>
-																		<DialogFooter>
-																			<DialogClose asChild>
-																				<Button
-																					variant="secondary"
-																					type="button"
-																				>
-																					Cancel
-																				</Button>
-																			</DialogClose>
-																			<Button
-																				type="submit"
-																				disabled={isSubmitting}
+															const isStreak =
+																(entryDateIndex !== 0 &&
+																	statEntriesByDay[entryDateIndex - 1][1].some(
+																		(se) => se.type === type
+																	)) ||
+																(entryDateIndex !==
+																	statEntriesByDay.length - 1 &&
+																	statEntriesByDay[entryDateIndex + 1][1].some(
+																		(se) => se.type === type
+																	))
+
+															return (
+																<Dialog key={`${type}${timestamp}`}>
+																	<Popover>
+																		<PopoverTrigger>
+																			<span
+																				className={cn(
+																					'inline-block relative text-xs',
+																					isStreak
+																						? "before:content-['🔥'] before:absolute before:-z-10 before:text-3xl before:opacity-20 before:left-1/2 before:-translate-x-1/2 before:top-1/2 before:-translate-y-[60%]"
+																						: null,
+																					i !== 0 ? '-ml-2' : null
+																				)}
 																			>
-																				Save
-																			</Button>
-																		</DialogFooter>
-																	</fetcher.Form>
-																</DialogContent>
-															</Dialog>
-														)
-													})}
-												</td>
-										  ))}
+																				{type === 'goal' ? '⚽️' : '🍎'}
+																			</span>
+																		</PopoverTrigger>
+																		<PopoverContent>
+																			<div>
+																				{capitalize(type)} by {p.name} on{' '}
+																				{format(localTimestamp, dateFormat)}
+																			</div>
+																			{userHasAccessToTeam ? (
+																				<div className="text-center">
+																					<DialogTrigger asChild>
+																						<Button variant="link" size="sm">
+																							Edit
+																						</Button>
+																					</DialogTrigger>
+																				</div>
+																			) : null}
+																		</PopoverContent>
+																	</Popover>
+																	<DialogContent>
+																		<DialogHeader>
+																			<DialogTitle>Edit {type}</DialogTitle>
+																		</DialogHeader>
+																		<fetcher.Form
+																			action={`/stats/${id}`}
+																			method="PATCH"
+																		>
+																			<div className="pb-4">
+																				<Input
+																					className="w-auto"
+																					type="datetime-local"
+																					defaultValue={
+																						datepickerTimestampString
+																					}
+																					step="1"
+																					onChange={(e) => {
+																						const timestampInput =
+																							e.target.parentElement?.querySelector<HTMLInputElement>(
+																								'#timestamp_input' // I should use a ref at some point
+																							)
+																						invariant(
+																							timestampInput,
+																							'timestampInput not found'
+																						)
+																						timestampInput.value = new Date(
+																							e.target.value
+																						).toISOString()
+																					}}
+																				/>
+																				<input
+																					type="hidden"
+																					name="timestamp"
+																					id="timestamp_input"
+																					defaultValue={new Date(
+																						datepickerTimestampString
+																					).toISOString()}
+																				/>
+																			</div>
+																			<DialogFooter>
+																				<DialogClose asChild>
+																					<Button
+																						variant="secondary"
+																						type="button"
+																					>
+																						Cancel
+																					</Button>
+																				</DialogClose>
+																				<Button
+																					type="submit"
+																					disabled={isSubmitting}
+																				>
+																					Save
+																				</Button>
+																			</DialogFooter>
+																		</fetcher.Form>
+																	</DialogContent>
+																</Dialog>
+															)
+														})}
+													</td>
+												)
+										  )}
 									<td
 										className={`text-lg text-right text-nowrap sticky right-0 bg-${team.color}-50`}
 									>
