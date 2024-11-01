@@ -8,21 +8,29 @@ import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
-import { useEffect, useRef } from 'react'
+import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
-import RemoveUser from '~/components/ui/icons/remove-user'
 import invariant from 'tiny-invariant'
 import { type Team } from '~/schema'
 import Nav from '~/components/ui/nav'
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
 } from '~/components/ui/dialog'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu'
+import More from '~/components/ui/icons/more'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -69,6 +77,7 @@ export async function loader({
 				players: {
 					with: {
 						statEntries: true,
+						userInvite: true,
 					},
 					orderBy: (players, { asc }) => [asc(players.name)],
 				},
@@ -118,6 +127,30 @@ export default function EditTeam() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
 
+	const [{ title, description, body }, setMenuDialogState] = useState<{
+		title: string | null
+		description: string | null
+		body: ReactNode | null
+	}>({
+		title: null,
+		description: null,
+		body: null,
+	})
+
+	const saving = fetcher.state !== 'idle'
+
+	useEffect(() => {
+		if (fetcher.state === 'loading') {
+			setMenuDialogState({
+				title: null,
+				description: null,
+				body: null,
+			})
+		}
+	}, [fetcher.state])
+
+	const menuDialogIsOpen = Boolean(title && body)
+
 	useClearNewPlayerForm(formRef)
 
 	return (
@@ -142,19 +175,108 @@ export default function EditTeam() {
 									? '-'
 									: `${goalCount}G ${assistCount}A`}
 							</span>
-							<fetcher.Form method="post" action={`/players/${p.id}/destroy`}>
-								<Button
-									variant="destructive-outline"
-									size="sm"
-									aria-label="Remove player"
-								>
-									<RemoveUser />
-								</Button>
-							</fetcher.Form>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button size="icon" variant="secondary">
+										<More />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent>
+									{p.userInvite ? null : (
+										<DropdownMenuItem
+											onClick={() => {
+												setMenuDialogState(() => ({
+													title: `Send invite to ${p.name}`,
+													description: null,
+													body: (
+														<fetcher.Form
+															method="post"
+															action={`/players/${p.id}/invite`}
+														>
+															<fieldset disabled={saving} className="space-y-3">
+																<div>
+																	<label htmlFor="email_input">Email</label>
+																	<Input
+																		id="email_input"
+																		required
+																		name="email"
+																	/>
+																</div>
+																<DialogFooter>
+																	<DialogClose asChild>
+																		<Button variant="secondary" type="button">
+																			Cancel
+																		</Button>
+																	</DialogClose>
+																	<Button type="submit">Send</Button>
+																</DialogFooter>
+															</fieldset>
+														</fetcher.Form>
+													),
+												}))
+											}}
+										>
+											Send invite
+										</DropdownMenuItem>
+									)}
+									<DropdownMenuItem
+										onClick={() => {
+											setMenuDialogState(() => ({
+												title: 'Are you sure?',
+												description: 'This action cannot be undone.',
+												body: (
+													<DialogFooter>
+														<DialogClose asChild>
+															<Button variant="secondary" type="button">
+																Cancel
+															</Button>
+														</DialogClose>
+														<fetcher.Form
+															method="delete"
+															action={`/players/${p.id}/destroy`}
+														>
+															<Button
+																variant="destructive"
+																className="w-full sm:w-auto"
+															>
+																Remove
+															</Button>
+														</fetcher.Form>
+													</DialogFooter>
+												),
+											}))
+										}}
+									>
+										Remove player
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</li>
 					)
 				})}
 			</ul>
+			<Dialog
+				open={menuDialogIsOpen}
+				onOpenChange={(value) => {
+					if (!value) {
+						setMenuDialogState({
+							title: null,
+							description: null,
+							body: null,
+						})
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{title}</DialogTitle>
+						{description ? (
+							<DialogDescription>{description}</DialogDescription>
+						) : null}
+					</DialogHeader>
+					{body}
+				</DialogContent>
+			</Dialog>
 			<Dialog>
 				<DialogTrigger asChild>
 					<Button className="w-full sm:w-auto">Add player</Button>
@@ -180,7 +302,11 @@ export default function EditTeam() {
 							</div>
 						</div>
 						<DialogFooter className="flex-col sm:flex-row">
-							<Button variant="secondary">Cancel</Button>
+							<DialogClose>
+								<Button variant="secondary" type="button">
+									Cancel
+								</Button>
+							</DialogClose>
 							<Button type="submit">Save</Button>
 						</DialogFooter>
 					</fetcher.Form>
