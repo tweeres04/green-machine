@@ -42,10 +42,11 @@ export const playersRelations = relations(players, ({ many, one }) => ({
 		fields: [players.teamId],
 		references: [teams.id],
 	}),
-	userInvites: one(userInvites, {
+	userInvite: one(userInvites, {
 		fields: [players.id],
 		references: [userInvites.playerId],
 	}),
+	rsvps: many(rsvps),
 }))
 
 export const userInvites = sqliteTable(
@@ -102,11 +103,12 @@ export const games = sqliteTable(
 
 export type Game = typeof games.$inferSelect
 
-export const gamesRelations = relations(games, ({ one }) => ({
+export const gamesRelations = relations(games, ({ one, many }) => ({
 	team: one(teams, {
 		fields: [games.teamId],
 		references: [teams.id],
 	}),
+	rsvps: many(rsvps),
 }))
 
 type Stat = 'goal' | 'assist'
@@ -175,5 +177,33 @@ export const usersTeamsRelations = relations(teamsUsers, ({ one }) => ({
 	team: one(teams, {
 		fields: [teamsUsers.teamId],
 		references: [teams.id],
+	}),
+}))
+
+type Rsvp = 'yes' | 'no'
+
+export const rsvps = sqliteTable(
+	'rsvps',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		playerId: integer('player_id').notNull(),
+		gameId: integer('game_id').notNull(),
+		rsvp: text('rsvp').$type<Rsvp>().notNull(),
+	},
+	(table) => ({
+		idIdx: index('rsvps_id_idx').on(table.id),
+		playerIdIdx: index('rsvps_player_id_idx').on(table.playerId),
+		gameIdIdx: index('rsvps_game_id_idx').on(table.gameId),
+	})
+)
+
+export const rsvpsRelations = relations(rsvps, ({ one }) => ({
+	player: one(players, {
+		fields: [rsvps.playerId],
+		references: [players.id],
+	}),
+	game: one(games, {
+		fields: [rsvps.gameId],
+		references: [games.id],
 	}),
 }))

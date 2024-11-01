@@ -10,6 +10,7 @@ import { getDb } from '~/lib/getDb'
 import {
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -22,18 +23,72 @@ import {
 } from '~/components/ui/dropdown-menu'
 
 import More from '~/components/ui/icons/more'
-import { Game, Team } from '~/schema'
-import { useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { DialogDescription } from '@radix-ui/react-dialog'
+
+type Game = Awaited<
+	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
+>['team']['games'][0]
+
+type Player = Awaited<
+	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
+>['team']['players'][0]
+
+function RsvpForm({
+	player,
+	closeModal,
+	game,
+}: {
+	player: Player
+	closeModal?: () => void
+	game: Game
+}) {
+	const fetcher = useFetcher()
+	const saving = fetcher.state !== 'idle'
+
+	const rsvp = player.rsvps.find((rsvp) => rsvp.gameId === game.id)
+
+	useEffect(() => {
+		if (closeModal && fetcher.state === 'loading') {
+			closeModal()
+		}
+	}, [closeModal, fetcher.state])
+
+	const action = rsvp
+		? `/games/${game.id}/rsvps/${rsvp.id}`
+		: `/games/${game.id}/rsvps`
+
+	const method = rsvp ? 'patch' : 'post'
+
+	return (
+		<fieldset className="space-y-3" disabled={saving}>
+			<label htmlFor="timestamp_input" className="block">
+				Are you going?
+			</label>
+			<DialogFooter>
+				<Button variant="secondary" onClick={closeModal}>
+					Cancel
+				</Button>{' '}
+				<fetcher.Form action={action} method={method}>
+					<input type="hidden" name="value" value="no" />
+					<Button variant="destructive">No</Button>
+				</fetcher.Form>{' '}
+				<fetcher.Form action={action} method={method}>
+					<input type="hidden" name="value" value="yes" />
+					<Button>Yes</Button>
+				</fetcher.Form>
+			</DialogFooter>
+		</fieldset>
+	)
+}
 
 function GameForm({
 	closeModal,
-	team,
 	game,
 }: {
-	team: Team
-	closeModal?: () => void
+	closeModal: () => void
 	game?: Game
 }) {
 	const fetcher = useFetcher()
@@ -43,7 +98,7 @@ function GameForm({
 	const saving = fetcher.state !== 'idle'
 
 	useEffect(() => {
-		if (closeModal && fetcher.state === 'loading') {
+		if (fetcher.state === 'loading') {
 			closeModal()
 		}
 	}, [closeModal, fetcher.state])
@@ -54,8 +109,6 @@ function GameForm({
 			method={game ? 'put' : 'post'}
 		>
 			<fieldset className="space-y-3" disabled={saving}>
-				<input type="hidden" name="team_slug" value={team.slug} />
-				<input type="hidden" name="team_id" value={team.id} />
 				<div>
 					<label htmlFor="timestamp_input">Date and time</label>
 					<Input
@@ -93,23 +146,43 @@ function GameForm({
 					<Input
 						id="location_input"
 						name="location"
-						defaultValue={game?.location}
+						defaultValue={game?.location ?? undefined}
 					/>
 				</div>
-				<Button type="submit" className="w-full">
-					{game ? 'Update' : 'Add'}
-				</Button>
+				<DialogFooter>
+					<Button type="submit" className="w-full">
+						{game ? 'Update' : 'Add'}
+					</Button>
+				</DialogFooter>
 			</fieldset>
 		</fetcher.Form>
 	)
 }
 
-function MoreButton({ team, game }: { team: Team; game: Game }) {
-	const [dialogOpen, setDialogOpen] = useState(false)
+function MoreButton({ game, player }: { game: Game; player?: Player }) {
 	const fetcher = useFetcher()
+	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
+	const [dialogDescription, setDialogDescription] = useState<string | null>(
+		null
+	)
+	const [dialogContent, setDialogContent] = useState<ReactNode | null>(null)
+
+	const dialogOpen = Boolean(dialogTitle && dialogContent)
+
+	function closeModal() {
+		setDialogTitle(null)
+		setDialogContent(null)
+	}
 
 	return (
-		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+		<Dialog
+			open={dialogOpen}
+			onOpenChange={(value) => {
+				if (!value) {
+					closeModal()
+				}
+			}}
+		>
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<Button size="icon" variant="secondary">
@@ -117,9 +190,37 @@ function MoreButton({ team, game }: { team: Team; game: Game }) {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
-					<DialogTrigger asChild>
-						<DropdownMenuItem>Edit</DropdownMenuItem>
-					</DialogTrigger>
+					{player ? (
+						<DropdownMenuItem
+							onClick={() => {
+								setDialogTitle(`RSVP to game against ${game.opponent}`)
+								setDialogDescription(
+									`${game.location ?? 'Location TBD'}, ${
+										game.timestamp
+											? format(game.timestamp, "E MMM d 'at' h:mma")
+											: 'date and time TBD'
+									}`
+								)
+								setDialogContent(
+									<RsvpForm
+										player={player}
+										game={game}
+										closeModal={closeModal}
+									/>
+								)
+							}}
+						>
+							RSVP
+						</DropdownMenuItem>
+					) : null}
+					<DropdownMenuItem
+						onClick={() => {
+							setDialogTitle(`Edit game against ${game.opponent}`)
+							setDialogContent(<GameForm game={game} closeModal={closeModal} />)
+						}}
+					>
+						Edit
+					</DropdownMenuItem>
 					<fetcher.Form>
 						<DropdownMenuItem
 							onClick={() => {
@@ -144,15 +245,12 @@ function MoreButton({ team, game }: { team: Team; game: Game }) {
 
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Edit game</DialogTitle>
+					<DialogTitle>{dialogTitle}</DialogTitle>
+					{dialogDescription ? (
+						<DialogDescription>{dialogDescription}</DialogDescription>
+					) : null}
 				</DialogHeader>
-				<GameForm
-					team={team}
-					game={game}
-					closeModal={() => {
-						setDialogOpen(false)
-					}}
-				/>
+				{dialogContent}
 			</DialogContent>
 		</Dialog>
 	)
@@ -171,6 +269,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		with: {
 			games: {
 				orderBy: (games, { asc }) => asc(games.timestamp),
+				with: {
+					rsvps: true,
+				},
+			},
+			players: {
+				with: {
+					rsvps: true,
+					userInvite: true,
+				},
 			},
 		},
 	})
@@ -183,11 +290,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
 
-	return json({ team, userHasAccessToTeam })
+	const player = team.players.find(
+		(player) => player.userInvite?.userId === user?.id
+	)
+
+	return json({ team, userHasAccessToTeam, player })
 }
 
 export default function Games() {
-	const { team, userHasAccessToTeam } = useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam, player } = useLoaderData<typeof loader>()
 	const fetcher = useFetcher()
 	const [newGameModal, setNewGameModal] = useState(false)
 
@@ -233,7 +344,7 @@ export default function Games() {
 									</td>
 									{userHasAccessToTeam ? (
 										<td className={`bg-${team.color}-50 sticky right-0`}>
-											<MoreButton {...{ team, game }} />
+											<MoreButton game={game} player={player} />
 										</td>
 									) : null}
 								</tr>
@@ -253,7 +364,7 @@ export default function Games() {
 						<DialogHeader>
 							<DialogTitle>Add game</DialogTitle>
 						</DialogHeader>
-						<GameForm team={team} closeModal={() => setNewGameModal(false)} />
+						<GameForm closeModal={() => setNewGameModal(false)} />
 					</DialogContent>
 				</Dialog>
 			) : null}

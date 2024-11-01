@@ -50,6 +50,13 @@
       "when": 1730295883949,
       "tag": "0006_productive_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1730465449083,
+      "tag": "0007_parched_magus",
+      "breakpoints": true
     }
   ]
 }
