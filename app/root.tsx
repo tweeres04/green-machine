@@ -19,17 +19,21 @@ export async function loader({
 }: LoaderFunctionArgs) {
 	const db = getDb()
 
-	const user = await authenticator.isAuthenticated(request)
+	const [user, team] = await Promise.all([
+		authenticator.isAuthenticated(request),
+		teamSlug
+			? db.query.teams.findFirst({
+					where: (teams, { eq }) => eq(teams.slug, teamSlug),
+					columns: { color: true },
+			  })
+			: Promise.resolve(null),
+	])
 
-	if (!teamSlug) {
+	if (!team) {
 		return json({ color: 'gray', user })
 	}
 
-	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
-	})
-
-	return json({ color: team?.color, user })
+	return json({ color: team.color, user })
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
