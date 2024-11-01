@@ -55,7 +55,9 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		where: (games, { eq }) => eq(games.id, Number(gameId)),
 	})
 
-	invariant(game, 'Game not found')
+	if (!game) {
+		throw new Response(null, { status: 404 })
+	}
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, game.teamId)
 
