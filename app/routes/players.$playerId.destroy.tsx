@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { getDb } from '~/lib/getDb'
 import { players } from '~/schema'
 
+// todo: protect this
 export async function action({ params }: ActionFunctionArgs) {
 	const db = getDb()
 
