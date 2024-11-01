@@ -73,11 +73,13 @@ function RsvpForm({
 				</Button>{' '}
 				<fetcher.Form action={action} method={method}>
 					<input type="hidden" name="value" value="no" />
-					<Button variant="destructive">No</Button>
+					<Button variant="destructive" className="w-full sm:w-auto">
+						No
+					</Button>
 				</fetcher.Form>{' '}
 				<fetcher.Form action={action} method={method}>
 					<input type="hidden" name="value" value="yes" />
-					<Button>Yes</Button>
+					<Button className="w-full sm:w-auto">Yes</Button>
 				</fetcher.Form>
 			</DialogFooter>
 		</fieldset>
