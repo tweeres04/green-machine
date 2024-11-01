@@ -323,34 +323,52 @@ export default function Games() {
 								<th className="text-left px-1">Date/time</th>
 								<th className="text-left px-1">Opponent</th>
 								<th className="text-left px-1">Location</th>
-								{userHasAccessToTeam ? <th></th> : null}
+								<th>RSVPs</th>
+								{userHasAccessToTeam ? (
+									<th className={`bg-${team.color}-50 sticky right-0`}></th>
+								) : null}
 							</tr>
 						</thead>
 						<tbody>
-							{team.games.map((game) => (
-								<tr key={game.id}>
-									<td className="relative">
-										<div
+							{team.games.map((game) => {
+								const yeses = game.rsvps.filter((r) => r.rsvp === 'yes').length
+								const nos = game.rsvps.filter((r) => r.rsvp === 'no').length
+								return (
+									<tr key={game.id}>
+										<td className="relative">
+											<div
+												className={cn(game.cancelledAt ? 'line-through' : null)}
+											>
+												{game.timestamp
+													? format(game.timestamp, "E MMM d 'at' h:mma")
+													: 'TBD'}
+											</div>
+										</td>
+										<td
 											className={cn(game.cancelledAt ? 'line-through' : null)}
 										>
-											{game.timestamp
-												? format(game.timestamp, "E MMM d 'at' h:mma")
-												: 'TBD'}
-										</div>
-									</td>
-									<td className={cn(game.cancelledAt ? 'line-through' : null)}>
-										{game.opponent}
-									</td>
-									<td className={cn(game.cancelledAt ? 'line-through' : null)}>
-										{game.location}
-									</td>
-									{userHasAccessToTeam ? (
-										<td className={`bg-${team.color}-50 sticky right-0`}>
-											<MoreButton game={game} player={player} />
+											{game.opponent}
 										</td>
-									) : null}
-								</tr>
-							))}
+										<td
+											className={cn(game.cancelledAt ? 'line-through' : null)}
+										>
+											{game.location}
+										</td>
+										<td className="text-xs">
+											{yeses > 0 ? (
+												<div className="font-bold">{yeses} yes</div>
+											) : null}
+											{nos > 0 ? <div>{nos} no</div> : null}
+											<div>{team.players.length - game.rsvps.length} TBD</div>
+										</td>
+										{userHasAccessToTeam ? (
+											<td className={`bg-${team.color}-50 sticky right-0`}>
+												<MoreButton game={game} player={player} />
+											</td>
+										) : null}
+									</tr>
+								)
+							})}
 						</tbody>
 					</table>
 				</div>
