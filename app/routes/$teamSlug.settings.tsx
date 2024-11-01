@@ -4,16 +4,13 @@ import type {
 	MetaFunction,
 } from '@remix-run/node'
 import { useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
-import { Input } from '~/components/ui/input'
-import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
 import { useEffect, useRef } from 'react'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
-import RemoveUser from '~/components/ui/icons/remove-user'
 import invariant from 'tiny-invariant'
 import { type Team } from '~/schema'
 import Nav from '~/components/ui/nav'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -45,17 +42,33 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	]
 }
 
-export async function loader({ params: { teamSlug } }: LoaderFunctionArgs) {
+export async function loader({
+	params: { teamSlug },
+	request,
+}: LoaderFunctionArgs) {
 	const db = getDb()
 
 	invariant(teamSlug, 'Missing teamSlug parameter')
 
-	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
-	})
+	const [team, user] = await Promise.all([
+		db.query.teams.findFirst({
+			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		}),
+		authenticator.isAuthenticated(request),
+	])
 
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
+	}
+
+	if (!user) {
+		throw new Response(null, { status: 401 })
+	}
+
+	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
+
+	if (!userHasAccessToTeam) {
+		throw new Response(null, { status: 401 })
 	}
 
 	return { team }

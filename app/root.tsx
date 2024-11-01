@@ -10,7 +10,7 @@ import '~/tailwind.css'
 import { json, LoaderFunctionArgs } from '@remix-run/node'
 import { getDb } from '~/lib/getDb'
 import { TeamColorContext } from '~/lib/teamColorContext'
-import { authenticator } from '~/lib/auth.server'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { UserContext } from '~/lib/userContext'
 
 export async function loader({
@@ -24,20 +24,21 @@ export async function loader({
 		teamSlug
 			? db.query.teams.findFirst({
 					where: (teams, { eq }) => eq(teams.slug, teamSlug),
-					columns: { color: true },
+					columns: { id: true, color: true },
 			  })
 			: Promise.resolve(null),
 	])
 
-	if (!team) {
-		return json({ color: 'gray', user })
-	}
+	const userHasAccessToTeam = team
+		? await hasAccessToTeam(user, Number(team.id))
+		: false
 
-	return json({ color: team.color, user })
+	return json({ color: team?.color ?? 'gray', user, userHasAccessToTeam })
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { color, user } = useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
+	const { color, user, userHasAccessToTeam } =
+		useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
 
 	return (
 		<html lang="en">
@@ -59,7 +60,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className={`bg-${color}-50`}>
 				<TeamColorContext.Provider value={color}>
-					<UserContext.Provider value={user}>
+					<UserContext.Provider
+						value={user ? { user, userHasAccessToTeam } : null}
+					>
 						<div className={`max-w-[700px] mx-auto space-y-8 p-2`}>
 							{children}
 						</div>

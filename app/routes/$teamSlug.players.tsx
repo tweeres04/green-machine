@@ -22,6 +22,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '~/components/ui/dialog'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -53,25 +54,41 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	]
 }
 
-export async function loader({ params: { teamSlug } }: LoaderFunctionArgs) {
+export async function loader({
+	params: { teamSlug },
+	request,
+}: LoaderFunctionArgs) {
 	const db = getDb()
 
 	invariant(teamSlug, 'Missing teamSlug parameter')
 
-	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
-		with: {
-			players: {
-				with: {
-					statEntries: true,
+	const [team, user] = await Promise.all([
+		db.query.teams.findFirst({
+			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+			with: {
+				players: {
+					with: {
+						statEntries: true,
+					},
+					orderBy: (players, { asc }) => [asc(players.name)],
 				},
-				orderBy: (players, { asc }) => [asc(players.name)],
 			},
-		},
-	})
+		}),
+		authenticator.isAuthenticated(request),
+	])
 
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
+	}
+
+	if (!user) {
+		throw new Response(null, { status: 401 })
+	}
+
+	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
+
+	if (!userHasAccessToTeam) {
+		throw new Response(null, { status: 401 })
 	}
 
 	return { team }

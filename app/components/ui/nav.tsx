@@ -21,7 +21,7 @@ type Props = {
 
 export default function Nav({ title, team }: Props) {
 	const { pathname } = useLocation()
-	const user = useContext(UserContext)
+	const { user, userHasAccessToTeam } = useContext(UserContext) ?? {}
 
 	return (
 		<div className="flex items-center gap-2">
@@ -52,12 +52,12 @@ export default function Nav({ title, team }: Props) {
 									<Link to={`/${team.slug}/games`}>Games</Link>
 								</DropdownMenuItem>
 							) : null}
-							{pathname !== `/${team.slug}/players` ? (
+							{userHasAccessToTeam && pathname !== `/${team.slug}/players` ? (
 								<DropdownMenuItem asChild>
 									<Link to={`/${team.slug}/players`}>Players</Link>
 								</DropdownMenuItem>
 							) : null}
-							{pathname !== `/${team.slug}/settings` ? (
+							{userHasAccessToTeam && pathname !== `/${team.slug}/settings` ? (
 								<DropdownMenuItem asChild>
 									<Link to={`/${team.slug}/settings`}>Settings</Link>
 								</DropdownMenuItem>
