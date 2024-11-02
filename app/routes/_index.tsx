@@ -8,6 +8,13 @@ import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
 import { sql } from 'drizzle-orm'
+import {
+	Dialog,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+	DialogContent,
+} from '~/components/ui/dialog'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -19,6 +26,38 @@ export const meta: MetaFunction = () => {
 		{ name: 'robots', context: 'noindex' },
 		{ taname: 'link', rel: 'canonical', href: 'https://teamstats.tweeres.com' },
 	]
+}
+
+function NewTeamForm() {
+	const nameRef = React.useRef<HTMLInputElement>(null)
+	const slugRef = React.useRef<HTMLInputElement>(null)
+	useAutoSlug(nameRef, slugRef)
+
+	return (
+		<Form method="post" action="/teams">
+			<div className="space-y-4">
+				<div>
+					<label htmlFor="name">Team Name</label>
+					<Input type="text" name="name" id="name" required ref={nameRef} />
+				</div>
+
+				<div>
+					<label htmlFor="slug">Slug</label>
+					<Input type="text" name="slug" id="slug" required ref={slugRef} />
+					<p className="text-sm">
+						ex: teamstats.tweeres.com/<strong>my-slug</strong>
+					</p>
+				</div>
+
+				<div className="space-x-2">
+					<Button type="button" variant="secondary">
+						Cancel
+					</Button>
+					<Button type="submit">Create Team</Button>
+				</div>
+			</div>
+		</Form>
+	)
 }
 
 function useAutoSlug(
@@ -96,9 +135,6 @@ type Team = {
 
 export default function Index() {
 	const { teams } = useLoaderData<{ teams: Team[] }>()
-	const nameRef = React.useRef<HTMLInputElement>(null)
-	const slugRef = React.useRef<HTMLInputElement>(null)
-	useAutoSlug(nameRef, slugRef)
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
@@ -125,31 +161,17 @@ export default function Index() {
 				<p>No teams yet. Create one to get started.</p>
 			)}
 
-			<h2 className="text-3xl">New team</h2>
-
-			<Form method="post" action="/teams">
-				<div className="space-y-4">
-					<div>
-						<label htmlFor="name">Team Name</label>
-						<Input type="text" name="name" id="name" required ref={nameRef} />
-					</div>
-
-					<div>
-						<label htmlFor="slug">Slug</label>
-						<Input type="text" name="slug" id="slug" required ref={slugRef} />
-						<p className="text-sm">
-							ex: teamstats.tweeres.com/<strong>my-slug</strong>
-						</p>
-					</div>
-
-					<div className="space-x-2">
-						<Button type="button" variant="secondary">
-							Cancel
-						</Button>
-						<Button type="submit">Create Team</Button>
-					</div>
-				</div>
-			</Form>
+			<Dialog>
+				<DialogTrigger asChild>
+					<Button className="w-full sm:w-auto">Create team</Button>
+				</DialogTrigger>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>New team</DialogTitle>
+					</DialogHeader>
+					<NewTeamForm />
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }
