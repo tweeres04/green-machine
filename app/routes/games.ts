@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, redirect } from '@remix-run/node'
+import { ActionFunctionArgs } from '@remix-run/node'
 import invariant from 'tiny-invariant'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
@@ -19,11 +19,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const formData = await request.formData()
 
-	const teamSlug = formData.get('team_slug')
 	const teamId = formData.get('team_id')
 
 	invariant(typeof teamId === 'string', 'No teamId')
-	invariant(typeof teamSlug === 'string', 'No teamSlug')
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, Number(teamId))
 
@@ -39,12 +37,10 @@ export async function action({ request }: ActionFunctionArgs) {
 		throw new Response('Opponent is required', { status: 400 })
 	}
 
-	await db.insert(games).values({
+	return db.insert(games).values({
 		teamId,
 		timestamp,
 		opponent,
 		location,
 	})
-
-	return redirect(`/${teamSlug}/games`)
 }

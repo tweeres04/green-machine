@@ -89,10 +89,14 @@ function RsvpForm({
 function GameForm({
 	closeModal,
 	game,
+	teamId,
 }: {
 	closeModal: () => void
 	game?: Game
+	teamId?: number
 }) {
+	invariant(game || teamId, 'game or teamId is required')
+
 	const fetcher = useFetcher()
 	const datepickerTimestampString = (
 		game?.timestamp ?? formatISO(new Date())
@@ -110,6 +114,7 @@ function GameForm({
 			action={game ? `/games/${game.id}` : '/games'}
 			method={game ? 'put' : 'post'}
 		>
+			{game ? null : <input type="hidden" name="team_id" value={teamId} />}
 			<fieldset className="space-y-3" disabled={saving}>
 				<div>
 					<label htmlFor="timestamp_input">Date and time</label>
@@ -359,10 +364,10 @@ export default function Games() {
 				<div className="w-full overflow-x-auto">
 					<table className="w-full [&_td]:pt-2">
 						<thead>
-							<tr>
-								<th className="text-left px-1">Date/time</th>
-								<th className="text-left px-1">Opponent</th>
-								<th className="text-left px-1">Location</th>
+							<tr className="[&_th]:text-left">
+								<th>Date/time</th>
+								<th>Opponent</th>
+								<th>Location</th>
 								<th>RSVPs</th>
 								{userHasAccessToTeam ? (
 									<th className={`bg-${team.color}-50 sticky right-0`}></th>
@@ -429,7 +434,10 @@ export default function Games() {
 						<DialogHeader>
 							<DialogTitle>Add game</DialogTitle>
 						</DialogHeader>
-						<GameForm closeModal={() => setNewGameModal(false)} />
+						<GameForm
+							closeModal={() => setNewGameModal(false)}
+							teamId={team.id}
+						/>
 					</DialogContent>
 				</Dialog>
 			) : null}
