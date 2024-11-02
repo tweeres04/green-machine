@@ -366,7 +366,6 @@ export default function Team() {
 																		>
 																			<div className="pb-4">
 																				<Input
-																					className="w-auto"
 																					type="datetime-local"
 																					defaultValue={
 																						datepickerTimestampString
