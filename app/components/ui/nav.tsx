@@ -10,9 +10,10 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
-import More from '~/components/ui/icons/more'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { UserContext } from '~/lib/userContext'
+import Burger from './icons/burger'
+import X from './icons/x'
 
 type Props = {
 	title?: string
@@ -23,6 +24,8 @@ export default function Nav({ title, team }: Props) {
 	const { pathname } = useLocation()
 	const { user, userHasAccessToTeam } = useContext(UserContext) ?? {}
 
+	const [menuIsOpen, setMenuIsOpen] = useState(false)
+
 	return (
 		<div className="flex items-center gap-2">
 			{team ? (
@@ -32,10 +35,10 @@ export default function Nav({ title, team }: Props) {
 			) : null}
 			<h1 className="grow text-3xl">{title ?? team?.name}</h1>
 
-			<DropdownMenu>
+			<DropdownMenu open={menuIsOpen} onOpenChange={setMenuIsOpen}>
 				<DropdownMenuTrigger asChild>
 					<Button variant="secondary" size="icon">
-						<More />
+						{menuIsOpen ? <X /> : <Burger />}
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="[&_a[role=menuitem]]:cursor-pointer">
