@@ -27,6 +27,11 @@ import { ReactNode, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { DialogDescription } from '@radix-ui/react-dialog'
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '~/components/ui/popover'
 
 type Game = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -312,6 +317,60 @@ function MoreButton({ game, player }: { game: Game; player?: Player }) {
 	)
 }
 
+function RsvpPopover({
+	children,
+	rsvps,
+	players,
+}: {
+	children: ReactNode
+	rsvps: Game['rsvps']
+	players: Player[]
+}) {
+	const rsvpInfo = [
+		{
+			rsvp: 'Yes',
+			players: players.filter((p) =>
+				rsvps.some((r) => (r.playerId === p.id && r.rsvp) === 'yes')
+			),
+		},
+		{
+			rsvp: 'No',
+			players: players.filter((p) =>
+				rsvps.some((r) => (r.playerId === p.id && r.rsvp) === 'no')
+			),
+		},
+		{
+			rsvp: 'TBD',
+			players: players.filter((p) => !rsvps.some((r) => r.playerId === p.id)),
+		},
+	]
+
+	return (
+		<Popover>
+			<PopoverTrigger>{children}</PopoverTrigger>
+			<PopoverContent className="space-y-3">
+				{rsvpInfo.map(({ rsvp, players }) => {
+					if (players.length === 0) {
+						return null
+					}
+					return (
+						<div key={rsvp}>
+							<div className="font-bold">
+								{rsvp} ({players.length})
+							</div>
+							<ul>
+								{players.map((player) => (
+									<li key={player.id}>{player.name}</li>
+								))}
+							</ul>
+						</div>
+					)
+				})}
+			</PopoverContent>
+		</Popover>
+	)
+}
+
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	const { teamSlug } = params
 	invariant(teamSlug, 'Missing teamSlug parameter')
@@ -362,13 +421,13 @@ export default function Games() {
 			<Nav title="Games" team={team} />
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">
-					<table className="w-full [&_td]:pt-2">
+					<table className="w-full [&_td]:pt-2 [&_th:not(:last-child)]:pr-3 [&_td:not(:last-child)]:pr-3">
 						<thead>
 							<tr className="[&_th]:text-left">
 								<th>Date/time</th>
 								<th>Opponent</th>
-								<th>Location</th>
 								<th>RSVPs</th>
+								<th>Location</th>
 								{userHasAccessToTeam ? (
 									<th className={`bg-${team.color}-50 sticky right-0`}></th>
 								) : null}
@@ -395,21 +454,27 @@ export default function Games() {
 											{game.opponent}
 										</td>
 										<td
-											className={cn(game.cancelledAt ? 'line-through' : null)}
-										>
-											{game.location}
-										</td>
-										<td
 											className={cn(
 												'text-xs',
 												game.cancelledAt ? 'line-through' : null
 											)}
 										>
-											{yeses > 0 ? (
-												<div className="font-bold">{yeses} yes</div>
-											) : null}
-											{nos > 0 ? <div>{nos} no</div> : null}
-											<div>{team.players.length - game.rsvps.length} TBD</div>
+											<Popover>
+												<RsvpPopover rsvps={game.rsvps} players={team.players}>
+													{yeses > 0 ? (
+														<div className="font-bold">{yeses} yes</div>
+													) : null}
+													{nos > 0 ? <div>{nos} no</div> : null}
+													<div>
+														{team.players.length - game.rsvps.length} TBD
+													</div>
+												</RsvpPopover>
+											</Popover>
+										</td>
+										<td
+											className={cn(game.cancelledAt ? 'line-through' : null)}
+										>
+											{game.location}
 										</td>
 										{userHasAccessToTeam ? (
 											<td className={`bg-${team.color}-50 sticky right-0`}>
