@@ -161,6 +161,58 @@ function GameForm({
 	)
 }
 
+function CancelForm({
+	closeModal,
+	game,
+}: {
+	closeModal: () => void
+	game: Game
+}) {
+	const fetcher = useFetcher()
+
+	const saving = fetcher.state !== 'idle'
+
+	useEffect(() => {
+		if (fetcher.data?.changes === 1 && fetcher.state !== 'submitting') {
+			closeModal()
+		}
+	}, [closeModal, fetcher.data?.changes, fetcher.state])
+
+	return (
+		<fieldset disabled={saving}>
+			<DialogFooter>
+				<Button variant="secondary" onClick={closeModal}>
+					Close
+				</Button>
+				<fetcher.Form action={`/games/${game.id}`} method="patch">
+					<input
+						type="hidden"
+						name="cancelledAt"
+						defaultValue={game.cancelledAt ?? undefined}
+						id="hidden_cancelledAt_input"
+					/>
+					<Button
+						variant={game.cancelledAt ? 'default' : 'destructive'}
+						type="submit"
+						className="w-full sm:w-auto"
+						onClick={() => {
+							const cancelledAtInput = document.getElementById(
+								'hidden_cancelledAt_input'
+							) as HTMLInputElement
+							invariant(cancelledAtInput, 'cancelledAtInput not found')
+							cancelledAtInput.value = game.cancelledAt
+								? ''
+								: new Date().toISOString()
+						}}
+					>
+						{game.cancelledAt ? 'Uncancel' : 'Cancel'} game
+					</Button>
+				</fetcher.Form>
+			</DialogFooter>
+		</fieldset>
+	)
+}
+
 function MoreButton({ game, player }: { game: Game; player?: Player }) {
 	const fetcher = useFetcher()
 	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
@@ -226,16 +278,13 @@ function MoreButton({ game, player }: { game: Game; player?: Player }) {
 					<fetcher.Form>
 						<DropdownMenuItem
 							onClick={() => {
-								fetcher.submit(
-									{
-										cancelledAt: game?.cancelledAt
-											? null
-											: new Date().toISOString(),
-									},
-									{
-										action: `/games/${game.id}`,
-										method: 'patch',
-									}
+								setDialogTitle(
+									`${game.cancelledAt ? 'Uncancel' : 'Cancel'} game against ${
+										game.opponent
+									}?`
+								)
+								setDialogContent(
+									<CancelForm closeModal={closeModal} game={game} />
 								)
 							}}
 						>
@@ -301,20 +350,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function Games() {
 	const { team, userHasAccessToTeam, player } = useLoaderData<typeof loader>()
-	const fetcher = useFetcher()
 	const [newGameModal, setNewGameModal] = useState(false)
 
 	return (
 		<>
 			<Nav title="Games" team={team} />
-			{team.games.map((game) => (
-				<fetcher.Form
-					key={game.id}
-					id={`game_form_${game.id}`}
-					action={`/games/${game.id}`}
-					method="put"
-				/>
-			))}
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">
 					<table className="w-full [&_td]:pt-2">
@@ -354,7 +394,12 @@ export default function Games() {
 										>
 											{game.location}
 										</td>
-										<td className="text-xs">
+										<td
+											className={cn(
+												'text-xs',
+												game.cancelledAt ? 'line-through' : null
+											)}
+										>
 											{yeses > 0 ? (
 												<div className="font-bold">{yeses} yes</div>
 											) : null}
