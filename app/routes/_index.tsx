@@ -7,6 +7,7 @@ import React from 'react'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
+import { sql } from 'drizzle-orm'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -62,30 +63,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	const db = getDb()
 
-	const teamsUsers = await db.query.teamsUsers.findMany({
-		where: (teamsUsers, { eq }) => eq(teamsUsers.userId, user.id),
-		with: {
-			team: {
-				with: {
-					players: {
-						with: {
-							statEntries: true,
-						},
-					},
-				},
-			},
-		},
-	})
+	const sql_ = sql`
+		select
+			teams.id,
+			teams.name,
+			teams.slug,
+			count(players.id) playerCount,
+			count(stat_entries.id) statCount
+		from teams
+			inner join users_teams on teams.id = users_teams.team_id
+			inner join players players_for_users on teams.id = players.team_id
+			inner join user_invites on user_invites.player_id = players_for_users.id
+			left join players on teams.id = players.team_id
+			left join stat_entries on players.id = stat_entries.player_id
+		where
+			users_teams.user_id = ${user.id} or user_invites.user_id = ${user.id}
+		group by teams.id
+	`
 
-	const teams = teamsUsers
-		.map((tu) => tu.team)
-		.toSorted((a, b) => a.name.localeCompare(b.name))
+	const teams_ = await db.all(sql_)
 
-	return json({ teams })
+	return json({ teams: teams_ })
+}
+
+type Team = {
+	id: number
+	name: string
+	slug: string
+	playerCount: number
+	statCount: number
 }
 
 export default function Index() {
-	const { teams } = useLoaderData<typeof loader>()
+	const { teams } = useLoaderData<{ teams: Team[] }>()
 	const nameRef = React.useRef<HTMLInputElement>(null)
 	const slugRef = React.useRef<HTMLInputElement>(null)
 	useAutoSlug(nameRef, slugRef)
@@ -96,11 +106,6 @@ export default function Index() {
 			{teams.length > 0 ? (
 				<ul className="space-y-3">
 					{teams.map((t) => {
-						const playerCount = t.players.length
-						const statCount = t.players.reduce(
-							(acc, p) => acc + p.statEntries.length,
-							0
-						)
 						return (
 							<li key={t.id}>
 								<Button asChild variant="link" className="pl-0">
@@ -109,8 +114,8 @@ export default function Index() {
 									</a>
 								</Button>
 								<p>
-									{playerCount} player{playerCount !== 1 && 's'}, {statCount}{' '}
-									stat{statCount !== 1 && 's'} recorded
+									{t.playerCount} player{t.playerCount !== 1 && 's'},{' '}
+									{t.statCount} stat{t.statCount !== 1 && 's'} recorded
 								</p>
 							</li>
 						)
