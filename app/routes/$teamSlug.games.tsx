@@ -454,10 +454,7 @@ export default function Games() {
 											{game.opponent}
 										</td>
 										<td
-											className={cn(
-												'text-xs',
-												game.cancelledAt ? 'line-through' : null
-											)}
+											className={cn(game.cancelledAt ? 'line-through' : null)}
 										>
 											<Popover>
 												<RsvpPopover rsvps={game.rsvps} players={team.players}>
