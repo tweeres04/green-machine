@@ -27,7 +27,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 						outline: `border border-${teamColor}-200 bg-transparent hover:bg-${teamColor}-100 hover:text-${teamColor}-900 dark:border-${teamColor}-800 dark:bg-${teamColor}-950 dark:hover:bg-${teamColor}-800 dark:hover:text-${teamColor}-50`,
 						secondary: `bg-${teamColor}-100 text-${teamColor}-900 hover:bg-${teamColor}-100/80 dark:bg-${teamColor}-800 dark:text-${teamColor}-50 dark:hover:bg-${teamColor}-800/80`,
 						ghost: `hover:bg-${teamColor}-100 hover:text-${teamColor}-900 dark:hover:bg-${teamColor}-800 dark:hover:text-${teamColor}-50`,
-						link: `text-${teamColor}-900 underline-offset-4 hover:underline dark:text-${teamColor}-50`,
+						link: `w-auto text-${teamColor}-900 underline-offset-4 hover:underline dark:text-${teamColor}-50`,
 					},
 					size: {
 						default: 'h-10 px-4 py-2',
