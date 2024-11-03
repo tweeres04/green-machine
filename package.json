@@ -17,7 +17,8 @@
 		"db:migrate:bears": "drizzle-kit migrate --config=drizzle.config.bears.ts",
 		"db:studio": "drizzle-kit studio",
 		"db:dev:reset": "rm database.db; npm run db:migrate",
-		"db:download": "scp server:~/green-machine/database.db ./database.db"
+		"db:download": "scp server:~/green-machine/database.db ./database.db",
+		"hash_password": "npx tsx tasks/makePasswordHash.ts"
 	},
 	"dependencies": {
 		"@radix-ui/react-avatar": "^1.1.1",
