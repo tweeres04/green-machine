@@ -14,6 +14,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
+	DialogClose,
+	DialogDescription,
 } from '~/components/ui/dialog'
 import {
 	DropdownMenu,
@@ -26,12 +28,6 @@ import More from '~/components/ui/icons/more'
 import { ReactNode, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
-import { DialogDescription } from '@radix-ui/react-dialog'
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '~/components/ui/popover'
 
 type Game = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -331,7 +327,7 @@ function MoreButton({
 	)
 }
 
-function RsvpPopover({
+function RsvpDialog({
 	children,
 	rsvps,
 	players,
@@ -360,28 +356,38 @@ function RsvpPopover({
 	]
 
 	return (
-		<Popover>
-			<PopoverTrigger>{children}</PopoverTrigger>
-			<PopoverContent className="space-y-3">
-				{rsvpInfo.map(({ rsvp, players }) => {
-					if (players.length === 0) {
-						return null
-					}
-					return (
-						<div key={rsvp}>
-							<div className="font-bold">
-								{rsvp} ({players.length})
+		<Dialog>
+			<DialogTrigger>{children}</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>RSVPs</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-1">
+					{rsvpInfo.map(({ rsvp, players }) => {
+						if (players.length === 0) {
+							return null
+						}
+						return (
+							<div key={rsvp}>
+								<div className="font-bold">
+									{rsvp} ({players.length})
+								</div>
+								<ul>
+									{players.map((player) => (
+										<li key={player.id}>{player.name}</li>
+									))}
+								</ul>
 							</div>
-							<ul>
-								{players.map((player) => (
-									<li key={player.id}>{player.name}</li>
-								))}
-							</ul>
-						</div>
-					)
-				})}
-			</PopoverContent>
-		</Popover>
+						)
+					})}
+				</div>
+				<DialogFooter>
+					<DialogClose>
+						<Button>Done</Button>
+					</DialogClose>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	)
 }
 
@@ -470,17 +476,13 @@ export default function Games() {
 										<td
 											className={cn(game.cancelledAt ? 'line-through' : null)}
 										>
-											<Popover>
-												<RsvpPopover rsvps={game.rsvps} players={team.players}>
-													{yeses > 0 ? (
-														<div className="font-bold">{yeses} yes</div>
-													) : null}
-													{nos > 0 ? <div>{nos} no</div> : null}
-													<div>
-														{team.players.length - game.rsvps.length} TBD
-													</div>
-												</RsvpPopover>
-											</Popover>
+											<RsvpDialog rsvps={game.rsvps} players={team.players}>
+												{yeses > 0 ? (
+													<div className="font-bold">{yeses} yes</div>
+												) : null}
+												{nos > 0 ? <div>{nos} no</div> : null}
+												<div>{team.players.length - game.rsvps.length} TBD</div>
+											</RsvpDialog>
 										</td>
 										<td
 											className={cn(game.cancelledAt ? 'line-through' : null)}
