@@ -223,7 +223,15 @@ function CancelForm({
 	)
 }
 
-function MoreButton({ game, player }: { game: Game; player?: Player }) {
+function MoreButton({
+	userHasAccessToTeam,
+	game,
+	player,
+}: {
+	userHasAccessToTeam: boolean
+	game: Game
+	player?: Player
+}) {
 	const fetcher = useFetcher()
 	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
 	const [dialogDescription, setDialogDescription] = useState<string | null>(
@@ -277,30 +285,36 @@ function MoreButton({ game, player }: { game: Game; player?: Player }) {
 							RSVP
 						</DropdownMenuItem>
 					) : null}
-					<DropdownMenuItem
-						onClick={() => {
-							setDialogTitle(`Edit game against ${game.opponent}`)
-							setDialogContent(<GameForm game={game} closeModal={closeModal} />)
-						}}
-					>
-						Edit
-					</DropdownMenuItem>
-					<fetcher.Form>
+					{userHasAccessToTeam ? (
 						<DropdownMenuItem
 							onClick={() => {
-								setDialogTitle(
-									`${game.cancelledAt ? 'Uncancel' : 'Cancel'} game against ${
-										game.opponent
-									}?`
-								)
+								setDialogTitle(`Edit game against ${game.opponent}`)
 								setDialogContent(
-									<CancelForm closeModal={closeModal} game={game} />
+									<GameForm game={game} closeModal={closeModal} />
 								)
 							}}
 						>
-							{game.cancelledAt ? 'Uncancel' : 'Cancel'}
+							Edit
 						</DropdownMenuItem>
-					</fetcher.Form>
+					) : null}
+					{userHasAccessToTeam ? (
+						<fetcher.Form>
+							<DropdownMenuItem
+								onClick={() => {
+									setDialogTitle(
+										`${game.cancelledAt ? 'Uncancel' : 'Cancel'} game against ${
+											game.opponent
+										}?`
+									)
+									setDialogContent(
+										<CancelForm closeModal={closeModal} game={game} />
+									)
+								}}
+							>
+								{game.cancelledAt ? 'Uncancel' : 'Cancel'}
+							</DropdownMenuItem>
+						</fetcher.Form>
+					) : null}
 				</DropdownMenuContent>
 			</DropdownMenu>
 
@@ -428,7 +442,7 @@ export default function Games() {
 								<th>Opponent</th>
 								<th>RSVPs</th>
 								<th>Location</th>
-								{userHasAccessToTeam ? (
+								{userHasAccessToTeam || player ? (
 									<th className={`bg-${team.color}-50 sticky right-0`}></th>
 								) : null}
 							</tr>
@@ -473,9 +487,13 @@ export default function Games() {
 										>
 											{game.location}
 										</td>
-										{userHasAccessToTeam ? (
+										{userHasAccessToTeam || player ? (
 											<td className={`bg-${team.color}-50 sticky right-0`}>
-												<MoreButton game={game} player={player} />
+												<MoreButton
+													userHasAccessToTeam={userHasAccessToTeam}
+													game={game}
+													player={player}
+												/>
 											</td>
 										) : null}
 									</tr>
