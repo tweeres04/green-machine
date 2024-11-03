@@ -85,6 +85,7 @@ function CopyStandingsButton({
 		<Button
 			title="Copy standings"
 			variant="secondary"
+			size="icon"
 			onClick={async () => {
 				await window.navigator.clipboard.writeText(`Stats:
 
@@ -507,7 +508,7 @@ export default function Team() {
 				<h2 className="grow text-2xl">Stats</h2>
 				{userHasAccessToTeam ? (
 					<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
-						<Button variant="secondary">
+						<Button variant="secondary" size="icon">
 							{editMode ? <Eye /> : <Pencil />}
 						</Button>
 					</Link>
