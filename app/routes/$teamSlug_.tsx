@@ -14,7 +14,6 @@ import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
-import { Remove } from '~/components/ui/icons/remove'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Copy } from '~/components/ui/icons/copy'
@@ -42,6 +41,8 @@ import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { useEffect, useState } from 'react'
+import Trash from '~/components/ui/icons/trash'
+import { DialogDescription } from '@radix-ui/react-dialog'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -253,6 +254,67 @@ function StatEditDialog({
 	)
 }
 
+type StatDeleteDialogData =
+	| (Omit<StatEntry, 'playerId'> & { playerName: string })
+	| null
+
+function StatDeleteDialog({
+	show,
+	closeDialog,
+	data,
+}: {
+	show: boolean
+	closeDialog: () => void
+	data: StatDeleteDialogData
+}) {
+	const fetcher = useFetcher()
+
+	const isSubmitting =
+		fetcher.state === 'submitting' &&
+		fetcher.formAction === `/stats/${data?.id}`
+
+	useEffect(() => {
+		if (fetcher.state === 'loading' && fetcher.data?.changes === 1) {
+			closeDialog()
+		}
+	}, [closeDialog, fetcher.data?.changes, fetcher.state])
+
+	return (
+		<Dialog
+			open={show}
+			onOpenChange={(value) => {
+				if (!value) {
+					closeDialog()
+				}
+			}}
+		>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Delete {data?.type}?</DialogTitle>
+					<DialogDescription>
+						By {data?.playerName} on{' '}
+						{data?.timestamp ? format(data.timestamp, dateFormat) : null}
+					</DialogDescription>
+				</DialogHeader>
+				<fetcher.Form action={`/stats/${data?.id}`} method="DELETE">
+					<fieldset disabled={isSubmitting}>
+						<DialogFooter>
+							<DialogClose asChild>
+								<Button variant="secondary" type="button">
+									Cancel
+								</Button>
+							</DialogClose>
+							<Button type="submit" variant="destructive">
+								Delete
+							</Button>
+						</DialogFooter>
+					</fieldset>
+				</fetcher.Form>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
 type OptimisticState =
 	| 'submittingGoal'
 	| 'removingGoal'
@@ -274,6 +336,8 @@ function PlayerRow({
 	days: () => string[]
 }) {
 	const [statEditDialog, setStatEditDialog] = useState<StatEditDialogData>(null)
+	const [statDeleteDialog, setStatDeleteDialog] =
+		useState<StatDeleteDialogData>(null)
 	const navigation = useNavigation()
 	const isUpdating =
 		navigation.state === 'submitting' &&
@@ -320,19 +384,21 @@ function PlayerRow({
 	return (
 		<>
 			<tr key={player.id}>
-				<td className={`sticky left-0 bg-${teamColor}-50`}>
-					<Popover>
-						<PopoverTrigger>
-							<Avatar title={player.name}>
-								<AvatarFallback>{player.name[0]}</AvatarFallback>
-							</Avatar>
-						</PopoverTrigger>
-						<PopoverContent>{player.name}</PopoverContent>
-					</Popover>
-				</td>
 				{editMode ? null : (
-					<td className="hidden md:table-cell">{player.name}</td>
+					<td className={`sticky left-0 bg-${teamColor}-50`}>
+						<Popover>
+							<PopoverTrigger>
+								<Avatar title={player.name}>
+									<AvatarFallback>{player.name[0]}</AvatarFallback>
+								</Avatar>
+							</PopoverTrigger>
+							<PopoverContent>{player.name}</PopoverContent>
+						</Popover>
+					</td>
 				)}
+				<td className={cn(editMode ? null : 'hidden md:table-cell')}>
+					{player.name}
+				</td>
 				{editMode
 					? null
 					: statEntriesByDay.map(([date, entries], entryDateIndex) => (
@@ -373,16 +439,15 @@ function PlayerRow({
 													{type === 'goal' ? '⚽️' : '🍎'}
 												</span>
 											</PopoverTrigger>
-											<PopoverContent>
+											<PopoverContent className="space-y-3">
 												<div>
 													{capitalize(type)} by {player.name} on{' '}
 													{format(localTimestamp, dateFormat)}
 												</div>
 												{userHasAccessToTeam ? (
-													<div className="text-center">
+													<div className="flex gap-1 text-center">
 														<Button
-															variant="link"
-															size="sm"
+															variant="secondary"
 															onClick={() => {
 																setStatEditDialog({
 																	id,
@@ -392,6 +457,21 @@ function PlayerRow({
 															}}
 														>
 															Edit
+														</Button>
+														<Button
+															className="shrink-0"
+															variant="destructive"
+															size="icon"
+															onClick={() => {
+																setStatDeleteDialog({
+																	id,
+																	type,
+																	playerName: player.name,
+																	timestamp,
+																})
+															}}
+														>
+															<Trash />
 														</Button>
 													</div>
 												) : null}
@@ -409,22 +489,7 @@ function PlayerRow({
 						: `${goalCount}G ${assistCount}A`}
 				</td>
 				{editMode ? (
-					<td className="flex gap-1">
-						<fetcher.Form
-							method="post"
-							action={`/players/${player.id}/assists/destroy_latest`}
-						>
-							<Button
-								variant="secondary"
-								size="sm"
-								disabled={isUpdating}
-								aria-label="Remove assist"
-								className="relative"
-							>
-								🍎
-								<Remove />
-							</Button>
-						</fetcher.Form>
+					<td className="flex gap-1 justify-end">
 						<fetcher.Form
 							method="post"
 							action={`/players/${player.id}/assists`}
@@ -438,21 +503,6 @@ function PlayerRow({
 							>
 								🍎
 								<Add />
-							</Button>
-						</fetcher.Form>
-						<fetcher.Form
-							method="post"
-							action={`/players/${player.id}/goals/destroy_latest`}
-						>
-							<Button
-								variant="secondary"
-								size="sm"
-								disabled={isUpdating}
-								aria-label="Remove goal"
-								className="relative"
-							>
-								⚽️
-								<Remove />
 							</Button>
 						</fetcher.Form>
 						<fetcher.Form method="post" action={`/players/${player.id}/goals`}>
@@ -474,6 +524,11 @@ function PlayerRow({
 				show={Boolean(statEditDialog)}
 				closeDialog={() => setStatEditDialog(null)}
 				data={statEditDialog}
+			/>
+			<StatDeleteDialog
+				show={Boolean(statDeleteDialog)}
+				closeDialog={() => setStatDeleteDialog(null)}
+				data={statDeleteDialog}
 			/>
 		</>
 	)
@@ -520,7 +575,7 @@ export default function Team() {
 					{editMode ? null : (
 						<thead>
 							<tr>
-								<th></th> {/* Avatar */}
+								<th></th> {/* Avatar (Name in edit mode) */}
 								<th className="hidden md:table-cell"></th> {/* Name */}
 								{days().map((day) => (
 									<th key={day} className="text-xs [writing-mode:vertical-lr]">
