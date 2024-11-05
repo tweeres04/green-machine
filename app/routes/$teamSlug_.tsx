@@ -70,8 +70,12 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 type PlayerWithStats = Awaited<ReturnType<typeof loader>>['team']['players'][0]
 
 function CopyStandingsButton({
+	teamName,
+	slug,
 	players,
 }: {
+	teamName: string
+	slug: string
 	players: Awaited<ReturnType<typeof loader>>['team']['players']
 }) {
 	const { toast } = useToast()
@@ -81,7 +85,7 @@ function CopyStandingsButton({
 			variant="secondary"
 			size="icon"
 			onClick={async () => {
-				await window.navigator.clipboard.writeText(`Stats:
+				await window.navigator.clipboard.writeText(`${teamName} stats:
 
 ${players
 	.toSorted((a: PlayerWithStats, b: PlayerWithStats) => {
@@ -94,10 +98,12 @@ ${players
 		const assists = p.statEntries.filter((s) => s.type === 'assist').length
 		return `${p.name}: ${goals}G ${assists}A`
 	})
-	.join('\n')}`)
+	.join('\n')}
+	
+https://teamstats.tweeres.com/${slug}`)
 
 				toast({
-					description: 'Standings copied to clipboard',
+					description: 'Stats copied to clipboard',
 				})
 			}}
 		>
@@ -668,7 +674,11 @@ export default function Team() {
 			<Nav team={team} />
 			<div className="flex gap-1 mb-3 items-center">
 				<h2 className="grow text-2xl">Stats</h2>
-				<CopyStandingsButton players={players} />
+				<CopyStandingsButton
+					slug={team.slug}
+					teamName={team.name}
+					players={players}
+				/>
 				{userHasAccessToTeam ? <AddStatsButton players={players} /> : null}
 			</div>
 			<div className="overflow-x-auto w-full">
