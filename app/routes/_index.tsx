@@ -14,6 +14,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	DialogContent,
+	DialogFooter,
 } from '~/components/ui/dialog'
 import invariant from 'tiny-invariant'
 
@@ -50,12 +51,12 @@ function NewTeamForm() {
 					</p>
 				</div>
 
-				<div className="space-x-2">
+				<DialogFooter>
 					<Button type="button" variant="secondary">
 						Cancel
 					</Button>
 					<Button type="submit">Create Team</Button>
-				</div>
+				</DialogFooter>
 			</div>
 		</Form>
 	)
