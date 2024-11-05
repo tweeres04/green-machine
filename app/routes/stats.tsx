@@ -1,9 +1,17 @@
-import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import type { ActionFunctionArgs, MetaFunction } from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
-import { statEntries, players } from '../schema'
-import { eq } from 'drizzle-orm'
+import {
+	statEntries,
+	players,
+	statEntrySchema,
+	teams,
+	teamsUsers,
+} from '../schema'
+import { eq, inArray, and } from 'drizzle-orm'
 
 import { getDb } from '~/lib/getDb'
+import { authenticator } from '~/lib/auth.server'
+import { z, ZodError } from 'zod'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -11,6 +19,57 @@ export const meta: MetaFunction = () => {
 		{ name: 'description', content: 'Green Machine stats' },
 		{ name: 'robots', context: 'noindex' },
 	]
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+	if (request.method.toLowerCase() !== 'post') {
+		throw new Response(null, { status: 404 })
+	}
+
+	const [user, data] = await Promise.all([
+		authenticator.isAuthenticated(request),
+		request.json(),
+	])
+
+	if (!user) {
+		throw new Response(null, { status: 401 })
+	}
+
+	let newEntries: z.infer<typeof statEntrySchema>[]
+	try {
+		newEntries = data.map((d: unknown) => statEntrySchema.parse(d))
+	} catch (err) {
+		if (err instanceof ZodError) {
+			throw new Response(err.message, {
+				status: 400,
+				headers: { 'Content-Type': 'application/json' },
+			})
+		}
+		throw err
+	}
+
+	const db = getDb()
+	const newPlayerIds = newEntries.map((e) => e.playerId)
+	const accessiblePlayerIds = (
+		await db
+			.selectDistinct({ playerId: players.id })
+			.from(players)
+			.innerJoin(teams, eq(teams.id, players.teamId))
+			.innerJoin(teamsUsers, eq(teams.id, teamsUsers.teamId))
+			.where(
+				and(eq(teamsUsers.userId, user.id), inArray(players.id, newPlayerIds))
+			)
+	).map(({ playerId }) => playerId)
+
+	const userHasAccessToPlayers = newPlayerIds.every((id) =>
+		accessiblePlayerIds.includes(id)
+	)
+
+	if (!userHasAccessToPlayers) {
+		throw new Response(null, { status: 403 })
+	}
+
+	return db.insert(statEntries).values(newEntries)
 }
 
 export async function loader() {

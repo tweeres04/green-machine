@@ -1,5 +1,7 @@
 import { relations } from 'drizzle-orm'
 import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
+import { createInsertSchema } from 'drizzle-zod'
+import { z } from 'zod'
 
 export const teams = sqliteTable(
 	'teams',
@@ -111,7 +113,8 @@ export const gamesRelations = relations(games, ({ one, many }) => ({
 	rsvps: many(rsvps),
 }))
 
-type Stat = 'goal' | 'assist'
+const statSchema = z.enum(['goal', 'assist'])
+type Stat = z.infer<typeof statSchema>
 
 export const statEntries = sqliteTable(
 	'stat_entries',
@@ -134,6 +137,10 @@ export const statEntriesRelations = relations(statEntries, ({ one }) => ({
 }))
 
 export type StatEntry = typeof statEntries.$inferSelect
+export const statEntrySchema = createInsertSchema(statEntries, {
+	timestamp: (schema) => schema.timestamp.datetime(),
+	type: statSchema,
+})
 
 export const users = sqliteTable(
 	'users',

@@ -8,7 +8,7 @@ export function Add({ className }: { className?: string }) {
 			viewBox="0 0 24 24"
 			strokeWidth={1.5}
 			stroke="currentColor"
-			className={cn('absolute top-0 right-0 size-4', className)}
+			className={cn('size-5', className)}
 		>
 			<path
 				strokeLinecap="round"
