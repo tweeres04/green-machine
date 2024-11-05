@@ -3,13 +3,7 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import {
-	Link,
-	useFetcher,
-	useLoaderData,
-	useNavigation,
-	useSearchParams,
-} from '@remix-run/react'
+import { useFetcher, useLoaderData } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
@@ -17,8 +11,6 @@ import { Add } from '~/components/ui/icons/add'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Copy } from '~/components/ui/icons/copy'
-import { Eye } from '~/components/ui/icons/eye'
-import { Pencil } from '~/components/ui/icons/pencil'
 import invariant from 'tiny-invariant'
 import { StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
@@ -35,12 +27,13 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from '~/components/ui/dialog'
 import { capitalize } from 'lodash-es'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Trash from '~/components/ui/icons/trash'
 import { DialogDescription } from '@radix-ui/react-dialog'
 
@@ -324,13 +317,11 @@ type OptimisticState =
 
 function PlayerRow({
 	teamColor,
-	editMode,
 	userHasAccessToTeam,
 	player,
 	days,
 }: {
 	teamColor: string
-	editMode: boolean
 	userHasAccessToTeam: boolean
 	player: PlayerWithStats
 	days: () => string[]
@@ -338,11 +329,6 @@ function PlayerRow({
 	const [statEditDialog, setStatEditDialog] = useState<StatEditDialogData>(null)
 	const [statDeleteDialog, setStatDeleteDialog] =
 		useState<StatDeleteDialogData>(null)
-	const navigation = useNavigation()
-	const isUpdating =
-		navigation.state === 'submitting' &&
-		/\/players\/\d+?\/(goals|assists|destroy)/.test(navigation.formAction) &&
-		navigation.formMethod === 'POST'
 
 	const fetcher = useFetcher()
 	const optimisticState: OptimisticState =
@@ -384,103 +370,97 @@ function PlayerRow({
 	return (
 		<>
 			<tr key={player.id}>
-				{editMode ? null : (
-					<td className={`sticky left-0 bg-${teamColor}-50`}>
-						<Popover>
-							<PopoverTrigger>
-								<Avatar title={player.name}>
-									<AvatarFallback>{player.name[0]}</AvatarFallback>
-								</Avatar>
-							</PopoverTrigger>
-							<PopoverContent>{player.name}</PopoverContent>
-						</Popover>
-					</td>
-				)}
-				<td className={cn(editMode ? null : 'hidden md:table-cell')}>
-					{player.name}
+				<td className={`sticky left-0 bg-${teamColor}-50`}>
+					<Popover>
+						<PopoverTrigger>
+							<Avatar title={player.name}>
+								<AvatarFallback>{player.name[0]}</AvatarFallback>
+							</Avatar>
+						</PopoverTrigger>
+						<PopoverContent>{player.name}</PopoverContent>
+					</Popover>
 				</td>
-				{editMode
-					? null
-					: statEntriesByDay.map(([date, entries], entryDateIndex) => (
-							<td
-								key={date}
-								className={cn(
-									'text-center text-nowrap',
-									entryDateIndex !== statEntriesByDay.length - 1
-										? 'border-r border-green-900/25 border-dashed'
-										: null
-								)}
-							>
-								{entries.map(({ id, type, timestamp }, i) => {
-									const localTimestamp = parseISO(timestamp)
+				<td className="hidden md:table-cell">{player.name}</td>
+				{statEntriesByDay.map(([date, entries], entryDateIndex) => (
+					<td
+						key={date}
+						className={cn(
+							'text-center text-nowrap',
+							entryDateIndex !== statEntriesByDay.length - 1
+								? 'border-r border-green-900/25 border-dashed'
+								: null
+						)}
+					>
+						{entries.map(({ id, type, timestamp }, i) => {
+							const localTimestamp = parseISO(timestamp)
 
-									const isStreak =
-										(entryDateIndex !== 0 &&
-											statEntriesByDay[entryDateIndex - 1][1].some(
-												(se) => se.type === type
-											)) ||
-										(entryDateIndex !== statEntriesByDay.length - 1 &&
-											statEntriesByDay[entryDateIndex + 1][1].some(
-												(se) => se.type === type
-											))
+							const isStreak =
+								(entryDateIndex !== 0 &&
+									statEntriesByDay[entryDateIndex - 1][1].some(
+										(se) => se.type === type
+									)) ||
+								(entryDateIndex !== statEntriesByDay.length - 1 &&
+									statEntriesByDay[entryDateIndex + 1][1].some(
+										(se) => se.type === type
+									))
 
-									return (
-										<Popover key={id}>
-											<PopoverTrigger>
-												<span
-													className={cn(
-														'inline-block relative text-xs',
-														isStreak
-															? "before:content-['🔥'] before:absolute before:-z-10 before:text-3xl before:opacity-20 before:left-1/2 before:-translate-x-1/2 before:top-1/2 before:-translate-y-[60%]"
-															: null,
-														i !== 0 ? '-ml-2' : null
-													)}
+							return (
+								<Popover key={id}>
+									<PopoverTrigger>
+										<span
+											className={cn(
+												'inline-block relative text-xs',
+												isStreak
+													? "before:content-['🔥'] before:absolute before:-z-10 before:text-3xl before:opacity-20 before:left-1/2 before:-translate-x-1/2 before:top-1/2 before:-translate-y-[60%]"
+													: null,
+												i !== 0 ? '-ml-2' : null
+											)}
+										>
+											{type === 'goal' ? '⚽️' : '🍎'}
+										</span>
+									</PopoverTrigger>
+									<PopoverContent className="space-y-3">
+										<div>
+											{capitalize(type)} by {player.name} on{' '}
+											{format(localTimestamp, dateFormat)}
+										</div>
+										{userHasAccessToTeam ? (
+											<div className="flex gap-1 text-center">
+												<Button
+													variant="secondary"
+													onClick={() => {
+														setStatEditDialog({
+															id,
+															type,
+															timestamp,
+														})
+													}}
 												>
-													{type === 'goal' ? '⚽️' : '🍎'}
-												</span>
-											</PopoverTrigger>
-											<PopoverContent className="space-y-3">
-												<div>
-													{capitalize(type)} by {player.name} on{' '}
-													{format(localTimestamp, dateFormat)}
-												</div>
-												{userHasAccessToTeam ? (
-													<div className="flex gap-1 text-center">
-														<Button
-															variant="secondary"
-															onClick={() => {
-																setStatEditDialog({
-																	id,
-																	type,
-																	timestamp,
-																})
-															}}
-														>
-															Edit
-														</Button>
-														<Button
-															className="shrink-0"
-															variant="destructive"
-															size="icon"
-															onClick={() => {
-																setStatDeleteDialog({
-																	id,
-																	type,
-																	playerName: player.name,
-																	timestamp,
-																})
-															}}
-														>
-															<Trash />
-														</Button>
-													</div>
-												) : null}
-											</PopoverContent>
-										</Popover>
-									)
-								})}
-							</td>
-					  ))}
+													Edit
+												</Button>
+												<Button
+													className="shrink-0"
+													variant="destructive"
+													size="icon"
+													onClick={() => {
+														setStatDeleteDialog({
+															id,
+															type,
+															playerName: player.name,
+															timestamp,
+														})
+													}}
+												>
+													<Trash />
+												</Button>
+											</div>
+										) : null}
+									</PopoverContent>
+								</Popover>
+							)
+						})}
+					</td>
+				))}
 				<td
 					className={`text-lg text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
 				>
@@ -488,37 +468,6 @@ function PlayerRow({
 						? '-'
 						: `${goalCount}G ${assistCount}A`}
 				</td>
-				{editMode ? (
-					<td className="flex gap-1 justify-end">
-						<fetcher.Form
-							method="post"
-							action={`/players/${player.id}/assists`}
-						>
-							<Button
-								variant="secondary"
-								size="sm"
-								disabled={isUpdating}
-								aria-label="Add assist"
-								className="relative"
-							>
-								🍎
-								<Add />
-							</Button>
-						</fetcher.Form>
-						<fetcher.Form method="post" action={`/players/${player.id}/goals`}>
-							<Button
-								variant="secondary"
-								size="sm"
-								disabled={isUpdating}
-								aria-label="Add goal"
-								className="relative"
-							>
-								⚽️
-								<Add />
-							</Button>
-						</fetcher.Form>
-					</td>
-				) : null}
 			</tr>
 			<StatEditDialog
 				show={Boolean(statEditDialog)}
@@ -534,12 +483,172 @@ function PlayerRow({
 	)
 }
 
+function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
+	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 19) // Chop off offset
+
+	const [dialogOpen, setDialogOpen] = useState(false)
+	const fetcher = useFetcher()
+	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
+	const [datepickerValue, setDatepickerValue] = useState(() =>
+		datepickerTimestampString()
+	)
+	const [timestampValue, setTimestampValue] = useState(() =>
+		parseISO(datepickerValue).toISOString()
+	)
+
+	const isSubmitting = fetcher.state === 'submitting'
+
+	useEffect(() => {
+		if (dialogOpen) {
+			setStats([])
+			const newDatepickerValue = datepickerTimestampString()
+			setDatepickerValue(newDatepickerValue)
+			setTimestampValue(parseISO(newDatepickerValue).toISOString())
+		}
+	}, [dialogOpen])
+
+	useEffect(() => {
+		if (fetcher.state === 'loading' && fetcher.data?.changes > 0) {
+			setDialogOpen(false)
+		}
+	}, [fetcher.data?.changes, fetcher.state])
+
+	return (
+		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+			<Button
+				size="icon"
+				onClick={() => {
+					setDialogOpen(true)
+				}}
+			>
+				<Add />
+			</Button>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Add stats</DialogTitle>
+				</DialogHeader>
+				<Input
+					type="datetime-local"
+					value={datepickerValue}
+					step="1"
+					onChange={(e) => {
+						setDatepickerValue(e.target.value)
+						const newTimestamp = parseISO(e.target.value).toISOString()
+						setTimestampValue(newTimestamp)
+						setStats((stats) =>
+							stats.map((s) => ({
+								...s,
+								timestamp: newTimestamp,
+							}))
+						)
+					}}
+				/>
+				<input type="hidden" name="timestamp" value={timestampValue} />
+				<fetcher.Form
+					onSubmit={(e) => {
+						e.preventDefault()
+						invariant(
+							e.target instanceof HTMLFormElement,
+							'Form not an HTMLFormElement'
+						)
+						const formData = new FormData(e.target)
+						const json = formData.get('stats')
+						invariant(typeof json === 'string', 'Stats value is not a string')
+						fetcher.submit(json, {
+							encType: 'application/json',
+							action: '/stats',
+							method: 'post',
+						})
+					}}
+				>
+					<fieldset disabled={isSubmitting}>
+						<input type="hidden" name="stats" value={JSON.stringify(stats)} />
+						<ul className="py-1 space-y-1 overflow-y-auto max-h-[80dvh]">
+							{players.map((player) => (
+								<li
+									key={player.id}
+									className="grid grid-cols-3 gap-3 items-center"
+								>
+									<div>{player.name}</div>
+									<div>
+										{
+											stats.filter(
+												(s) => s.playerId === player.id && s.type === 'assist'
+											).length
+										}
+										🍎{' '}
+										{
+											stats.filter(
+												(s) => s.playerId === player.id && s.type === 'goal'
+											).length
+										}
+										⚽️
+									</div>
+									<div className="flex gap-1">
+										<Button
+											type="button"
+											size="icon"
+											variant="secondary"
+											className="relative"
+											onClick={() => {
+												setStats((stats) => {
+													return [
+														...stats,
+														{
+															playerId: player.id,
+															timestamp: timestampValue,
+															type: 'assist',
+														},
+													]
+												})
+											}}
+										>
+											🍎
+											<Add className={cn('absolute top-0 right-0 size-4')} />
+										</Button>
+										<Button
+											type="button"
+											size="icon"
+											variant="secondary"
+											className="relative"
+											onClick={() => {
+												setStats((stats) => {
+													return [
+														...stats,
+														{
+															playerId: player.id,
+															timestamp: timestampValue,
+															type: 'goal',
+														},
+													]
+												})
+											}}
+										>
+											⚽️
+											<Add className={cn('absolute top-0 right-0 size-4')} />
+										</Button>
+									</div>
+								</li>
+							))}
+						</ul>
+						<DialogFooter>
+							<DialogClose asChild>
+								<Button variant="secondary" type="button">
+									Cancel
+								</Button>
+							</DialogClose>
+							<Button type="submit">Save</Button>
+						</DialogFooter>
+					</fieldset>
+				</fetcher.Form>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
 export default function Team() {
 	const { team, userHasAccessToTeam } = useLoaderData<typeof loader>()
-	const { slug, players } = team
-	const [searchParams] = useSearchParams()
-
-	const editMode = userHasAccessToTeam && searchParams.has('edit')
+	const { players } = team
 
 	function days() {
 		return Array.from(
@@ -561,38 +670,28 @@ export default function Team() {
 			<Nav team={team} />
 			<div className="flex gap-1 mb-3 items-center">
 				<h2 className="grow text-2xl">Stats</h2>
-				{userHasAccessToTeam ? (
-					<Link to={editMode ? `/${slug}` : `/${slug}?edit`}>
-						<Button variant="secondary" size="icon">
-							{editMode ? <Eye /> : <Pencil />}
-						</Button>
-					</Link>
-				) : null}
 				<CopyStandingsButton players={players} />
+				{userHasAccessToTeam ? <AddStatsButton players={players} /> : null}
 			</div>
 			<div className="overflow-x-auto w-full">
 				<table className="w-full">
-					{editMode ? null : (
-						<thead>
-							<tr>
-								<th></th> {/* Avatar (Name in edit mode) */}
-								<th className="hidden md:table-cell"></th> {/* Name */}
-								{days().map((day) => (
-									<th key={day} className="text-xs [writing-mode:vertical-lr]">
-										{formatLocalIsoDateString(day)}
-									</th>
-								))}
-								<th></th> {/* Totals */}
-							</tr>
-						</thead>
-					)}
-
+					<thead>
+						<tr>
+							<th></th> {/* Avatar */}
+							<th className="hidden md:table-cell"></th> {/* Name */}
+							{days().map((day) => (
+								<th key={day} className="text-xs [writing-mode:vertical-lr]">
+									{formatLocalIsoDateString(day)}
+								</th>
+							))}
+							<th></th> {/* Totals */}
+						</tr>
+					</thead>
 					<tbody>
 						{players.map((p) => (
 							<PlayerRow
 								key={p.id}
 								teamColor={team.color}
-								editMode={editMode}
 								userHasAccessToTeam={userHasAccessToTeam}
 								player={p}
 								days={days}
