@@ -10,6 +10,7 @@ import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
 import { Avatar, AvatarFallback } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
+import { Toaster } from '~/components/ui/toaster'
 import { Copy } from '~/components/ui/icons/copy'
 import invariant from 'tiny-invariant'
 import { StatEntry, type Team } from '~/schema'
@@ -27,13 +28,12 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from '~/components/ui/dialog'
 import { capitalize } from 'lodash-es'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Trash from '~/components/ui/icons/trash'
 import { DialogDescription } from '@radix-ui/react-dialog'
 
@@ -698,6 +698,7 @@ export default function Team() {
 					</tbody>
 				</table>
 			</div>
+			<Toaster />
 		</>
 	)
 }
