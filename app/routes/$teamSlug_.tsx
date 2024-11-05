@@ -484,7 +484,7 @@ function PlayerRow({
 }
 
 function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
-	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 19) // Chop off offset
+	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const fetcher = useFetcher()
@@ -513,6 +513,16 @@ function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
 		}
 	}, [fetcher.data?.changes, fetcher.state])
 
+	function submit(e: MouseEvent) {
+		e.preventDefault()
+
+		fetcher.submit(JSON.stringify(stats), {
+			encType: 'application/json',
+			action: '/stats',
+			method: 'post',
+		})
+	}
+
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 			<Button
@@ -523,14 +533,15 @@ function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
 			>
 				<Add />
 			</Button>
-			<DialogContent>
+			<DialogContent className="flex flex-col max-h-[95dvh] w-[92dvw]">
 				<DialogHeader>
 					<DialogTitle>Add stats</DialogTitle>
 				</DialogHeader>
 				<Input
 					type="datetime-local"
 					value={datepickerValue}
-					step="1"
+					step="60"
+					disabled={isSubmitting}
 					onChange={(e) => {
 						setDatepickerValue(e.target.value)
 						const newTimestamp = parseISO(e.target.value).toISOString()
@@ -543,104 +554,91 @@ function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
 						)
 					}}
 				/>
-				<input type="hidden" name="timestamp" value={timestampValue} />
-				<fetcher.Form
-					onSubmit={(e) => {
-						e.preventDefault()
-						invariant(
-							e.target instanceof HTMLFormElement,
-							'Form not an HTMLFormElement'
-						)
-						const formData = new FormData(e.target)
-						const json = formData.get('stats')
-						invariant(typeof json === 'string', 'Stats value is not a string')
-						fetcher.submit(json, {
-							encType: 'application/json',
-							action: '/stats',
-							method: 'post',
-						})
-					}}
+				<fieldset
+					disabled={isSubmitting}
+					className="grow overflow-y-auto h-[9000px]" // flexbox auto calculates, but I need it higher than what flexbox will calculate
 				>
-					<fieldset disabled={isSubmitting}>
-						<input type="hidden" name="stats" value={JSON.stringify(stats)} />
-						<ul className="py-1 space-y-1 overflow-y-auto max-h-[80dvh]">
-							{players.map((player) => (
-								<li
-									key={player.id}
-									className="grid grid-cols-3 gap-3 items-center"
-								>
-									<div>{player.name}</div>
-									<div>
-										{
-											stats.filter(
-												(s) => s.playerId === player.id && s.type === 'assist'
-											).length
-										}
-										🍎{' '}
-										{
-											stats.filter(
-												(s) => s.playerId === player.id && s.type === 'goal'
-											).length
-										}
+					<ul className="py-1 space-y-1">
+						{players.map((player) => (
+							<li
+								key={player.id}
+								className="grid grid-cols-3 gap-3 items-center"
+							>
+								<div>{player.name}</div>
+								<div>
+									{
+										stats.filter(
+											(s) => s.playerId === player.id && s.type === 'assist'
+										).length
+									}
+									🍎{' '}
+									{
+										stats.filter(
+											(s) => s.playerId === player.id && s.type === 'goal'
+										).length
+									}
+									⚽️
+								</div>
+								<div className="flex gap-1">
+									<Button
+										type="button"
+										size="icon"
+										variant="secondary"
+										className="relative"
+										onClick={() => {
+											setStats((stats) => {
+												return [
+													...stats,
+													{
+														playerId: player.id,
+														timestamp: timestampValue,
+														type: 'assist',
+													},
+												]
+											})
+										}}
+									>
+										🍎
+										<Add className={cn('absolute top-0 right-0 size-4')} />
+									</Button>
+									<Button
+										type="button"
+										size="icon"
+										variant="secondary"
+										className="relative"
+										onClick={() => {
+											setStats((stats) => {
+												return [
+													...stats,
+													{
+														playerId: player.id,
+														timestamp: timestampValue,
+														type: 'goal',
+													},
+												]
+											})
+										}}
+									>
 										⚽️
-									</div>
-									<div className="flex gap-1">
-										<Button
-											type="button"
-											size="icon"
-											variant="secondary"
-											className="relative"
-											onClick={() => {
-												setStats((stats) => {
-													return [
-														...stats,
-														{
-															playerId: player.id,
-															timestamp: timestampValue,
-															type: 'assist',
-														},
-													]
-												})
-											}}
-										>
-											🍎
-											<Add className={cn('absolute top-0 right-0 size-4')} />
-										</Button>
-										<Button
-											type="button"
-											size="icon"
-											variant="secondary"
-											className="relative"
-											onClick={() => {
-												setStats((stats) => {
-													return [
-														...stats,
-														{
-															playerId: player.id,
-															timestamp: timestampValue,
-															type: 'goal',
-														},
-													]
-												})
-											}}
-										>
-											⚽️
-											<Add className={cn('absolute top-0 right-0 size-4')} />
-										</Button>
-									</div>
-								</li>
-							))}
-						</ul>
-						<DialogFooter>
-							<DialogClose asChild>
-								<Button variant="secondary" type="button">
-									Cancel
-								</Button>
-							</DialogClose>
-							<Button type="submit">Save</Button>
-						</DialogFooter>
-					</fieldset>
-				</fetcher.Form>
+										<Add className={cn('absolute top-0 right-0 size-4')} />
+									</Button>
+								</div>
+							</li>
+						))}
+					</ul>
+				</fieldset>
+				<fieldset disabled={isSubmitting}>
+					<DialogFooter>
+						<DialogClose asChild>
+							<Button variant="secondary" type="button">
+								Cancel
+							</Button>
+						</DialogClose>
+						<Button type="submit" onClick={submit}>
+							Save
+						</Button>
+					</DialogFooter>
+				</fieldset>
 			</DialogContent>
 		</Dialog>
 	)
