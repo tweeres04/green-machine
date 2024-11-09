@@ -3,14 +3,16 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import { useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
+import { Form, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
 
 import { getDb } from '~/lib/getDb'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import invariant from 'tiny-invariant'
 import { type Team } from '~/schema'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -92,6 +94,59 @@ function useClearNewPlayerForm(
 	}, [formRef, isAddingPlayer])
 }
 
+type ImageLoadingStatus = 'idle' | 'loading' | 'loaded' | 'error'
+
+function useImageLoadingStatus(
+	src?: string,
+	referrerPolicy?: React.HTMLAttributeReferrerPolicy
+) {
+	const [loadingStatus, setLoadingStatus] = useState<ImageLoadingStatus>('idle')
+
+	useEffect(() => {
+		if (!src) {
+			setLoadingStatus('error')
+			return
+		}
+
+		let isMounted = true
+		const image = new window.Image()
+
+		const updateStatus = (status: ImageLoadingStatus) => () => {
+			if (!isMounted) return
+			setLoadingStatus(status)
+		}
+
+		setLoadingStatus('loading')
+		image.onload = updateStatus('loaded')
+		image.onerror = updateStatus('error')
+		image.src = src
+		if (referrerPolicy) {
+			image.referrerPolicy = referrerPolicy
+		}
+
+		return () => {
+			isMounted = false
+		}
+	}, [src, referrerPolicy])
+
+	return loadingStatus
+}
+
+function Logo({ teamId }: { teamId: number }) {
+	const imageStatus = useImageLoadingStatus(
+		`https://files.tweeres.com/teamstats/teams/${teamId}/logo`
+	)
+
+	return imageStatus === 'loaded' ? (
+		<img
+			src={`https://files.tweeres.com/teamstats/teams/${teamId}/logo`}
+			width="100"
+			height="100"
+			alt="Team logo"
+		/>
+	) : null
+}
+
 export default function EditTeam() {
 	const { team } = useLoaderData<typeof loader>()
 	const { id, slug, color } = team
@@ -100,11 +155,14 @@ export default function EditTeam() {
 
 	useClearNewPlayerForm(formRef)
 
+	// Include uploading a new logo here at some point
+	const submitting = fetcher.state === 'submitting'
+
 	return (
 		<>
 			<Nav title="Team settings" team={team} />
 			<div className="space-y-3">
-				<h3 className="text-xl mb-3">Team Color</h3>
+				<h3 className="text-xl">Team Color</h3>
 				<fetcher.Form
 					method="post"
 					action={`/teams/${id}/color`}
@@ -114,6 +172,7 @@ export default function EditTeam() {
 					}}
 				>
 					<input type="hidden" name="slug" value={slug} />
+					{/* shadcn select box at some point */}
 					<select
 						name="color"
 						className="w-full p-2 border rounded bg-white"
@@ -130,6 +189,25 @@ export default function EditTeam() {
 					</select>
 				</fetcher.Form>
 			</div>
+			<fieldset className="space-y-3" disabled={submitting}>
+				<h3 className="text-xl">Team Logo</h3>
+				<Logo teamId={id} />
+				<div className="flex w-full gap-1">
+					<Form
+						method="post"
+						action={`/teams/${id}/logo`}
+						encType="multipart/form-data"
+						className="flex gap-1"
+						reloadDocument
+					>
+						<Input type="file" name="logo" accept="image/*" />
+						<Button>Upload logo</Button>
+					</Form>
+					<fetcher.Form method="delete" action={`/teams/${id}/logo`}>
+						<Button variant="destructive">Remove logo</Button>
+					</fetcher.Form>
+				</div>
+			</fieldset>
 		</>
 	)
 }

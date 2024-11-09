@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@remix-run/react'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Button } from '~/components/ui/button'
 import { Team } from '~/schema'
 
@@ -30,6 +30,9 @@ export default function Nav({ title, team }: Props) {
 		<div className="flex items-center gap-2">
 			{team ? (
 				<Avatar>
+					<AvatarImage
+						src={`https://files.tweeres.com/teamstats/teams/${team.id}/logo`}
+					></AvatarImage>
 					<AvatarFallback>{team.name[0]}</AvatarFallback>
 				</Avatar>
 			) : null}

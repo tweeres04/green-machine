@@ -43,6 +43,7 @@
 		"lodash-es": "^4.17.21",
 		"lucide-react": "^0.416.0",
 		"mailgun.js": "^10.2.3",
+		"minio": "^8.0.2",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
 		"remix-auth": "^3.7.0",
