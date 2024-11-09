@@ -192,12 +192,12 @@ export default function EditTeam() {
 			<fieldset className="space-y-3" disabled={submitting}>
 				<h3 className="text-xl">Team Logo</h3>
 				<Logo teamId={id} />
-				<div className="flex w-full gap-1">
+				<div className="flex flex-col sm:flex-row w-full gap-1">
 					<Form
 						method="post"
 						action={`/teams/${id}/logo`}
 						encType="multipart/form-data"
-						className="flex gap-1"
+						className="flex flex-col sm:flex-row gap-1"
 						reloadDocument
 					>
 						<Input type="file" name="logo" accept="image/*" />
