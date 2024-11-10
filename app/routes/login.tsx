@@ -1,6 +1,8 @@
 // app/routes/login.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { Form, Link } from '@remix-run/react'
+import { Form, json, Link, useActionData } from '@remix-run/react'
+import { AuthorizationError } from 'remix-auth'
+import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
@@ -16,13 +18,22 @@ export async function action({ request }: ActionFunctionArgs) {
 	// we call the method with the name of the strategy we want to use and the
 	// request object, optionally we pass an object with the URLs we want the user
 	// to be redirected to after a success or a failure
-	return await authenticator.authenticate('user-pass', request, {
-		successRedirect:
-			inviteId && inviteToken
-				? `/invites/${inviteId}?token=${inviteToken}`
-				: '/',
-		failureRedirect: '/login',
-	})
+	try {
+		return await authenticator.authenticate('user-pass', request, {
+			successRedirect:
+				inviteId && inviteToken
+					? `/invites/${inviteId}?token=${inviteToken}`
+					: '/',
+		})
+	} catch (err) {
+		if (err instanceof Response) {
+			return err
+		}
+		if (err instanceof AuthorizationError) {
+			return json(err, { status: 401 })
+		}
+		throw err
+	}
 }
 
 // Finally, we can export a loader function where we check if the user is
@@ -38,6 +49,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // First we create our UI with the form doing a POST and the inputs with the
 // names we are going to use in the strategy
 export default function Login() {
+	const actionData = useActionData<{ message: string } | undefined>()
+
 	return (
 		<Form method="post" className="space-y-3">
 			<h1 className="text-2xl">Sign in</h1>
@@ -61,6 +74,11 @@ export default function Login() {
 					<Link to="/signup">Sign up</Link>
 				</Button>
 			</p>
+			{actionData?.message && (
+				<Alert variant="destructive">
+					<AlertDescription>{actionData.message}</AlertDescription>
+				</Alert>
+			)}
 			<Button>Sign In</Button>
 		</Form>
 	)

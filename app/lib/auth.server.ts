@@ -28,15 +28,15 @@ async function signUp(
 	repeatPassword: FormDataEntryValue | null
 ) {
 	if (!name || typeof name !== 'string') {
-		throw new Response('Name is required', { status: 400 })
+		throw new Error('Name is required')
 	}
 
 	if (!repeatPassword || typeof repeatPassword !== 'string') {
-		throw new Response('You must repeat your password', { status: 400 })
+		throw new Error('You must repeat your password')
 	}
 
 	if (password !== repeatPassword) {
-		throw new Response('Passwords do not match', { status: 400 })
+		throw new Error('Passwords do not match')
 	}
 
 	const hashedPassword = await argon2.hash(password)
@@ -61,13 +61,13 @@ async function login(email: string, password: string) {
 	})
 
 	if (!user) {
-		throw new Response('Invalid email or password', { status: 401 })
+		throw new Error('Invalid email or password')
 	}
 
 	const validPassword = await argon2.verify(user.password, password)
 
 	if (!validPassword) {
-		throw new Response('Invalid email or password', { status: 401 })
+		throw new Error('Invalid email or password')
 	}
 
 	return {
@@ -90,15 +90,15 @@ authenticator.use(
 		const repeatPassword = form.get('repeat_password')
 
 		if (!email || typeof email !== 'string') {
-			throw new Response('Email is required', { status: 400 })
+			throw new Error('Email is required')
 		}
 		if (!password || typeof password !== 'string') {
-			throw new Response('A password is required', { status: 400 })
+			throw new Error('A password is required')
 		}
 
 		const path = new URL(request.url).pathname
 		if (path !== '/login' && path !== '/signup') {
-			throw new Response('Not found', { status: 404 })
+			throw new Error('Not found')
 		}
 		const user =
 			path === '/login'
