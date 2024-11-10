@@ -8,7 +8,7 @@ import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Toaster } from '~/components/ui/toaster'
 import { Copy } from '~/components/ui/icons/copy'
@@ -380,6 +380,10 @@ function PlayerRow({
 					<Popover>
 						<PopoverTrigger>
 							<Avatar title={player.name}>
+								<AvatarImage
+									src={`https://files.tweeres.com/teamstats/players/${player.id}/image`}
+									className="object-cover"
+								/>
 								<AvatarFallback>{player.name[0]}</AvatarFallback>
 							</Avatar>
 						</PopoverTrigger>

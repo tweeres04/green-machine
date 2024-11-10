@@ -9,9 +9,9 @@ import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
 import { ReactNode, useEffect, useRef, useState } from 'react'
-import { Avatar, AvatarFallback } from '~/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import invariant from 'tiny-invariant'
-import { type Team } from '~/schema'
+import { Player, type Team } from '~/schema'
 import Nav from '~/components/ui/nav'
 import {
 	Dialog,
@@ -127,6 +127,10 @@ export default function EditTeam() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
 
+	const [changeImageDialog, setChangeImageDialog] = useState<Player | null>(
+		null
+	)
+
 	const [{ title, description, body }, setMenuDialogState] = useState<{
 		title: string | null
 		description: string | null
@@ -167,6 +171,10 @@ export default function EditTeam() {
 					return (
 						<li className="flex items-center gap-3" key={p.id}>
 							<Avatar>
+								<AvatarImage
+									src={`https://files.tweeres.com/teamstats/players/${p.id}/image`}
+									className="object-cover"
+								/>
 								<AvatarFallback>{p.name[0]}</AvatarFallback>
 							</Avatar>
 							<span className="grow">{p.name}</span>
@@ -182,6 +190,13 @@ export default function EditTeam() {
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent>
+									<DropdownMenuItem
+										onClick={() => {
+											setChangeImageDialog(p)
+										}}
+									>
+										Change image
+									</DropdownMenuItem>
 									{p.userInvite ? (
 										<DropdownMenuItem disabled>
 											{p.userInvite.acceptedAt ? (
@@ -318,6 +333,36 @@ export default function EditTeam() {
 							<Button type="submit">Save</Button>
 						</DialogFooter>
 					</fetcher.Form>
+				</DialogContent>
+			</Dialog>
+			<Dialog
+				open={Boolean(changeImageDialog)}
+				onOpenChange={(value) => {
+					if (!value) {
+						setChangeImageDialog(null)
+					}
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Change image</DialogTitle>
+						<fetcher.Form
+							method="post"
+							action={`/players/${changeImageDialog?.id}/image`}
+							className="space-y-3"
+							encType="multipart/form-data"
+						>
+							<Input type="file" name="name" id="image_input" />
+							<DialogFooter className="flex-col sm:flex-row">
+								<DialogClose>
+									<Button variant="secondary" type="button">
+										Cancel
+									</Button>
+								</DialogClose>
+								<Button type="submit">Save</Button>
+							</DialogFooter>
+						</fetcher.Form>
+					</DialogHeader>
 				</DialogContent>
 			</Dialog>
 		</>
