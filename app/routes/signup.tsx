@@ -1,6 +1,6 @@
 // app/routes/login.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { Form } from '@remix-run/react'
+import { Form, Link } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
@@ -51,6 +51,12 @@ export default function SignUp() {
 					id="repeat_password_input"
 				/>
 			</div>
+			<p>
+				Already have an account?{' '}
+				<Button asChild variant="link">
+					<Link to="/login">Log in</Link>
+				</Button>
+			</p>
 			<Button>Sign up</Button>
 		</Form>
 	)
