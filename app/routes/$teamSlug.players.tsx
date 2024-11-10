@@ -182,7 +182,15 @@ export default function EditTeam() {
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent>
-									{p.userInvite ? null : (
+									{p.userInvite ? (
+										<DropdownMenuItem disabled>
+											{p.userInvite.acceptedAt ? (
+												<>Invite accepted</>
+											) : (
+												<>Invite sent</>
+											)}
+										</DropdownMenuItem>
+									) : (
 										<DropdownMenuItem
 											onClick={() => {
 												setMenuDialogState(() => ({
