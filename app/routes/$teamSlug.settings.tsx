@@ -132,14 +132,20 @@ function useImageLoadingStatus(
 	return loadingStatus
 }
 
-function Logo({ teamId }: { teamId: number }) {
+function Logo({
+	teamId,
+	randomCacheBuster,
+}: {
+	teamId: number
+	randomCacheBuster: number
+}) {
 	const imageStatus = useImageLoadingStatus(
-		`https://files.tweeres.com/teamstats/teams/${teamId}/logo`
+		`https://files.tweeres.com/teamstats/teams/${teamId}/logo?${randomCacheBuster}`
 	)
 
 	return imageStatus === 'loaded' ? (
 		<img
-			src={`https://files.tweeres.com/teamstats/teams/${teamId}/logo`}
+			src={`https://files.tweeres.com/teamstats/teams/${teamId}/logo?${randomCacheBuster}`}
 			width="100"
 			height="100"
 			alt="Team logo"
@@ -148,6 +154,12 @@ function Logo({ teamId }: { teamId: number }) {
 }
 
 export default function EditTeam() {
+	const [randomCacheBuster, setRandomCacheBuster] = useState(() =>
+		Math.random()
+	)
+
+	console.log({ randomCacheBuster })
+
 	const { team } = useLoaderData<typeof loader>()
 	const { id, slug, color } = team
 	const formRef = useRef<HTMLFormElement>(null)
@@ -191,7 +203,7 @@ export default function EditTeam() {
 			</div>
 			<fieldset className="space-y-3" disabled={submitting}>
 				<h3 className="text-xl">Team Logo</h3>
-				<Logo teamId={id} />
+				<Logo teamId={id} randomCacheBuster={randomCacheBuster} />
 				<div className="flex flex-col sm:flex-row w-full gap-1">
 					<Form
 						method="post"
@@ -199,6 +211,10 @@ export default function EditTeam() {
 						encType="multipart/form-data"
 						className="flex flex-col sm:flex-row gap-1"
 						reloadDocument
+						onSubmit={() => {
+							setRandomCacheBuster(Math.random())
+							return true
+						}}
 					>
 						<Input type="file" name="logo" accept="image/*" />
 						<Button>Upload logo</Button>
