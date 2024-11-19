@@ -1,22 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Await, defer, Form, useLoaderData } from '@remix-run/react'
-import { Input } from '~/components/ui/input'
+import { Await, defer, Link, useLoaderData } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
-import { kebabCase } from 'lodash-es'
-import React, { Suspense } from 'react'
+import { Suspense } from 'react'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
 import { sql } from 'drizzle-orm'
-import {
-	Dialog,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-	DialogContent,
-	DialogFooter,
-} from '~/components/ui/dialog'
-import invariant from 'tiny-invariant'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -28,73 +17,6 @@ export const meta: MetaFunction = () => {
 		{ name: 'robots', context: 'noindex' },
 		{ taname: 'link', rel: 'canonical', href: 'https://teamstats.tweeres.com' },
 	]
-}
-
-function NewTeamForm() {
-	const nameRef = React.useRef<HTMLInputElement>(null)
-	const slugRef = React.useRef<HTMLInputElement>(null)
-	useAutoSlug(nameRef, slugRef)
-
-	return (
-		<Form method="post" action="/teams">
-			<div className="space-y-4">
-				<div>
-					<label htmlFor="name">Team Name</label>
-					<Input type="text" name="name" id="name" required ref={nameRef} />
-				</div>
-
-				<div>
-					<label htmlFor="slug">Slug</label>
-					<Input type="text" name="slug" id="slug" required ref={slugRef} />
-					<p className="text-sm">
-						ex: teamstats.tweeres.com/<strong>my-slug</strong>
-					</p>
-				</div>
-
-				<DialogFooter>
-					<Button type="button" variant="secondary">
-						Cancel
-					</Button>
-					<Button type="submit">Create Team</Button>
-				</DialogFooter>
-			</div>
-		</Form>
-	)
-}
-
-function useAutoSlug(
-	nameRef: React.RefObject<HTMLInputElement>,
-	slugRef: React.RefObject<HTMLInputElement>
-) {
-	const [edited, setEdited] = React.useState(false)
-
-	React.useEffect(() => {
-		if (!slugRef.current) return
-
-		slugRef.current.addEventListener('input', () => {
-			setEdited(true)
-		})
-	}, [slugRef])
-
-	React.useEffect(() => {
-		if (!slugRef.current || !nameRef.current) return
-
-		const nameInput = nameRef.current
-		const slugInput = slugRef.current
-
-		function updateSlug() {
-			if (edited) return
-
-			const slug = kebabCase(nameInput.value)
-			slugInput.value = slug
-		}
-
-		nameInput.addEventListener('input', updateSlug)
-
-		return () => {
-			nameInput?.removeEventListener('input', updateSlug)
-		}
-	}, [edited, nameRef, slugRef])
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -180,15 +102,14 @@ export default function Index() {
 									<Await resolve={stats}>
 										{(stats) => {
 											const statsForTeam = stats.find((s) => s.id === t.id)
-											invariant(statsForTeam, 'No statsForTeam')
-											return (
+											return statsForTeam ? (
 												<p>
 													{statsForTeam.playerCount} player
 													{statsForTeam.playerCount !== 1 && 's'},{' '}
 													{statsForTeam.statCount} stat
 													{statsForTeam.statCount !== 1 && 's'} recorded
 												</p>
-											)
+											) : null
 										}}
 									</Await>
 								</Suspense>
@@ -200,17 +121,9 @@ export default function Index() {
 				<p>No teams yet. Create one to get started.</p>
 			)}
 
-			<Dialog>
-				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto">Create team</Button>
-				</DialogTrigger>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>New team</DialogTitle>
-					</DialogHeader>
-					<NewTeamForm />
-				</DialogContent>
-			</Dialog>
+			<Button asChild>
+				<Link to="/teams/new">Create team</Link>
+			</Button>
 		</div>
 	)
 }

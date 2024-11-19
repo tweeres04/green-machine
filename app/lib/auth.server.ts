@@ -74,6 +74,7 @@ async function login(email: string, password: string) {
 		id: user.id,
 		email: user.email,
 		name: user.name,
+		stripeCustomerId: user.stripeCustomerId,
 	}
 }
 
