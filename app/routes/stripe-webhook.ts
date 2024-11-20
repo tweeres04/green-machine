@@ -93,7 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			lineItemResponse.data[0]?.price?.product !==
 			process.env.STRIPE_TEAMSTATS_PRODUCT_ID
 		) {
-			return new Response(null) // Not a TeamStats product
+			return new Response() // Not a TeamStats product
 		}
 
 		if (typeof session.subscription !== 'string') {
@@ -105,7 +105,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 		await updateSubscription(subscription)
 
-		return new Response(null)
+		return new Response()
 	}
 
 	if (
@@ -118,7 +118,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			invoice.lines.data[0]?.price?.product !==
 			process.env.STRIPE_TEAMSTATS_PRODUCT_ID
 		) {
-			return new Response(null) // Not a TeamStats product
+			return new Response() // Not a TeamStats product
 		}
 
 		if (typeof invoice.subscription !== 'string') {
@@ -130,7 +130,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 		await updateSubscription(subscription)
 
-		return new Response(null)
+		return new Response()
 	}
 
 	if (
@@ -143,13 +143,13 @@ export async function action({ request }: ActionFunctionArgs) {
 			subscription.items.data[0]?.price?.product !==
 			process.env.STRIPE_TEAMSTATS_PRODUCT_ID
 		) {
-			return new Response(null) // Not a TeamStats product
+			return new Response() // Not a TeamStats product
 		}
 
 		await updateSubscription(subscription)
 
-		return new Response(null)
+		return new Response()
 	}
 
-	return new Response(null)
+	return new Response()
 }
