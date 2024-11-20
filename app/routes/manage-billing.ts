@@ -7,7 +7,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	invariant(process.env.STRIPE_SECRET_KEY, 'Missing STRIPE_SECRET_KEY in .env')
 	invariant(process.env.BASE_URL, 'Missing BASE_URL in .env')
 
-	const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+	const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+		apiVersion: '2024-10-28.acacia',
+	})
 	const user = await authenticator.isAuthenticated(request)
 
 	if (!user || !user.stripeCustomerId) {

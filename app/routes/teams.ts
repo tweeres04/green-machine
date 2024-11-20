@@ -7,7 +7,9 @@ import Stripe from 'stripe'
 
 export const action: ActionFunction = async ({ request }) => {
 	invariant(process.env.STRIPE_SECRET_KEY, 'Missing STRIPE_SECRET_KEY in .env')
-	const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+	const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+		apiVersion: '2024-10-28.acacia',
+	})
 
 	const user = await authenticator.isAuthenticated(request)
 

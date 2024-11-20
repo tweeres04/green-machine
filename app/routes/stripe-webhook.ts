@@ -10,7 +10,9 @@ invariant(
 	process.env.STRIPE_ENDPOINT_SECRET,
 	'Missing STRIPE_ENDPOINT_SECRET in .env'
 )
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+	apiVersion: '2024-10-28.acacia',
+})
 const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET
 
 async function updateSubscription(subscription: Stripe.Subscription) {
