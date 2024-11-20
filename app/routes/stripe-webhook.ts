@@ -84,6 +84,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (event.type === 'checkout.session.completed') {
 		const session = event.data.object as Stripe.Checkout.Session
+
+		const lineItemResponse = await stripe.checkout.sessions.listLineItems(
+			session.id
+		)
+
+		if (
+			lineItemResponse.data[0]?.price?.product !==
+			process.env.STRIPE_TEAMSTATS_PRODUCT_ID
+		) {
+			return new Response(null) // Not a TeamStats product
+		}
+
 		if (typeof session.subscription !== 'string') {
 			throw new Response('No subscription id', { status: 400 })
 		}
@@ -96,8 +108,18 @@ export async function action({ request }: ActionFunctionArgs) {
 		return new Response(null)
 	}
 
-	if (event.type === 'invoice.paid') {
+	if (
+		event.type === 'invoice.paid' ||
+		event.type === 'invoice.payment_failed'
+	) {
 		const invoice = event.data.object as Stripe.Invoice
+
+		if (
+			invoice.lines.data[0]?.price?.product !==
+			process.env.STRIPE_TEAMSTATS_PRODUCT_ID
+		) {
+			return new Response(null) // Not a TeamStats product
+		}
 
 		if (typeof invoice.subscription !== 'string') {
 			throw new Response('No subscription id', { status: 400 })
@@ -111,31 +133,18 @@ export async function action({ request }: ActionFunctionArgs) {
 		return new Response(null)
 	}
 
-	if (event.type === 'invoice.payment_failed') {
-		const invoice = event.data.object as Stripe.Invoice
+	if (
+		event.type === 'customer.subscription.deleted' ||
+		event.type === 'customer.subscription.updated'
+	) {
+		const subscription = event.data.object as Stripe.Subscription
 
-		if (typeof invoice.subscription !== 'string') {
-			throw new Response('No subscription id', { status: 400 })
+		if (
+			subscription.items.data[0]?.price?.product !==
+			process.env.STRIPE_TEAMSTATS_PRODUCT_ID
+		) {
+			return new Response(null) // Not a TeamStats product
 		}
-		const subscription = await stripe.subscriptions.retrieve(
-			invoice.subscription
-		)
-
-		await updateSubscription(subscription)
-
-		return new Response(null)
-	}
-
-	if (event.type === 'customer.subscription.deleted') {
-		const subscription = event.data.object as Stripe.Subscription
-
-		await updateSubscription(subscription)
-
-		return new Response(null)
-	}
-
-	if (event.type === 'customer.subscription.updated') {
-		const subscription = event.data.object as Stripe.Subscription
 
 		await updateSubscription(subscription)
 
