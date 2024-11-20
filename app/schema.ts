@@ -18,11 +18,41 @@ export const teams = sqliteTable(
 
 export type Team = typeof teams.$inferSelect
 
-export const teamRelations = relations(teams, ({ many }) => ({
+export const teamRelations = relations(teams, ({ many, one }) => ({
 	players: many(players),
 	games: many(games),
 	teamsUsers: many(teamsUsers),
+	subscription: one(teamSubscriptions),
 }))
+
+export const teamSubscriptions = sqliteTable(
+	'team_subscriptions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
+		subscriptionStatus: text('subscription_status').notNull(),
+		periodEnd: integer('period_end').notNull(),
+		cancelAtPeriodEnd: integer('cancel_at_period_end', {
+			mode: 'boolean',
+		}).notNull(),
+		teamId: integer('team_id').notNull(),
+	},
+	(table) => ({
+		teamIdIdx: index('team_subscriptions_team_id_idx').on(table.teamId),
+	})
+)
+
+export type TeamSubscription = typeof teamSubscriptions.$inferSelect
+
+export const teamSubscriptionsRelations = relations(
+	teamSubscriptions,
+	({ one }) => ({
+		team: one(teams, {
+			fields: [teamSubscriptions.teamId],
+			references: [teams.id],
+		}),
+	})
+)
 
 export const players = sqliteTable(
 	'players',
@@ -149,6 +179,7 @@ export const users = sqliteTable(
 		email: text('email').notNull(),
 		password: text('password').notNull(),
 		name: text('name').notNull(),
+		stripeCustomerId: text('stripe_customer_id'),
 	},
 	(table) => ({
 		emailIdx: index('email_idx').on(table.email),

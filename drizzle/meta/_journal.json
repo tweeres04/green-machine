@@ -57,6 +57,13 @@
       "when": 1730465449083,
       "tag": "0007_parched_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1732027999980,
+      "tag": "0008_narrow_taskmaster",
+      "breakpoints": true
     }
   ]
 }

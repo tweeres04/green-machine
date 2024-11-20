@@ -79,6 +79,11 @@ export default function Nav({ title, team }: Props) {
 								</DropdownMenuItem>
 							) : null}
 							<DropdownMenuItem asChild>
+								{user?.stripeCustomerId ? (
+									<Link to="/manage-billing">Manage billing</Link>
+								) : null}
+							</DropdownMenuItem>
+							<DropdownMenuItem asChild>
 								{user ? <Link to="/logout">Logout</Link> : null}
 							</DropdownMenuItem>
 						</>

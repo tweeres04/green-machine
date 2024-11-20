@@ -13,6 +13,7 @@ import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { upperFirst } from 'lodash-es'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -55,6 +56,9 @@ export async function loader({
 	const [team, user] = await Promise.all([
 		db.query.teams.findFirst({
 			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+			with: {
+				subscription: true,
+			},
 		}),
 		authenticator.isAuthenticated(request),
 	])
@@ -158,8 +162,6 @@ export default function EditTeam() {
 		Math.random()
 	)
 
-	console.log({ randomCacheBuster })
-
 	const { team } = useLoaderData<typeof loader>()
 	const { id, slug, color } = team
 	const formRef = useRef<HTMLFormElement>(null)
@@ -174,6 +176,10 @@ export default function EditTeam() {
 		<>
 			<Nav title="Team settings" team={team} />
 			<div className="space-y-3">
+				<h3 className="text-xl">Subscription status</h3>
+				{team.subscription
+					? upperFirst(team.subscription.subscriptionStatus)
+					: 'None'}
 				<h3 className="text-xl">Team Color</h3>
 				<fetcher.Form
 					method="post"
