@@ -425,9 +425,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
 
-	const player = team.players.find(
-		(player) => player.userInvite?.userId === user?.id
-	)
+	const player = user
+		? team.players.find((player) => player.userInvite?.userId === user.id)
+		: null
 
 	return json({ team, userHasAccessToTeam, player })
 }
