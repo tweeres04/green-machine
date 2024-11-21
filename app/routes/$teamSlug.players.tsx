@@ -31,6 +31,7 @@ import {
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
+import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -81,6 +82,7 @@ export async function loader({
 					},
 					orderBy: (players, { asc }) => [asc(players.name)],
 				},
+				subscription: true,
 			},
 		}),
 		authenticator.isAuthenticated(request),
@@ -100,7 +102,9 @@ export async function loader({
 		throw new Response(null, { status: 401 })
 	}
 
-	return { team }
+	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
+
+	return { team, teamHasActiveSubscription: teamHasActiveSubscription_ }
 }
 
 function useClearNewPlayerForm(
@@ -122,7 +126,7 @@ function useClearNewPlayerForm(
 }
 
 export default function EditTeam() {
-	const { team } = useLoaderData<typeof loader>()
+	const { team, teamHasActiveSubscription } = useLoaderData<typeof loader>()
 	const { id, players } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
@@ -194,6 +198,7 @@ export default function EditTeam() {
 										onClick={() => {
 											setChangeImageDialog(p)
 										}}
+										disabled={!teamHasActiveSubscription}
 									>
 										Change image
 									</DropdownMenuItem>
@@ -238,6 +243,7 @@ export default function EditTeam() {
 													),
 												}))
 											}}
+											disabled={!teamHasActiveSubscription}
 										>
 											Send invite
 										</DropdownMenuItem>
@@ -302,7 +308,12 @@ export default function EditTeam() {
 			</Dialog>
 			<Dialog>
 				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto">Add player</Button>
+					<Button
+						className="w-full sm:w-auto"
+						disabled={!teamHasActiveSubscription}
+					>
+						Add player
+					</Button>
 				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>

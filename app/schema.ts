@@ -3,6 +3,8 @@ import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import Stripe from 'stripe'
+
 export const teams = sqliteTable(
 	'teams',
 	{
@@ -30,7 +32,9 @@ export const teamSubscriptions = sqliteTable(
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
-		subscriptionStatus: text('subscription_status').notNull(),
+		subscriptionStatus: text('subscription_status')
+			.$type<Stripe.Subscription.Status>()
+			.notNull(),
 		periodEnd: integer('period_end').notNull(),
 		cancelAtPeriodEnd: integer('cancel_at_period_end', {
 			mode: 'boolean',

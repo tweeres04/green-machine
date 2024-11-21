@@ -28,6 +28,7 @@ import More from '~/components/ui/icons/more'
 import { ReactNode, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 type Game = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -223,10 +224,12 @@ function MoreButton({
 	userHasAccessToTeam,
 	game,
 	player,
+	teamHasActiveSubscription,
 }: {
 	userHasAccessToTeam: boolean
 	game: Game
 	player?: Player
+	teamHasActiveSubscription: boolean
 }) {
 	const fetcher = useFetcher()
 	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
@@ -277,6 +280,7 @@ function MoreButton({
 									/>
 								)
 							}}
+							disabled={!teamHasActiveSubscription}
 						>
 							RSVP
 						</DropdownMenuItem>
@@ -306,6 +310,7 @@ function MoreButton({
 										<CancelForm closeModal={closeModal} game={game} />
 									)
 								}}
+								disabled={!teamHasActiveSubscription}
 							>
 								{game.cancelledAt ? 'Uncancel' : 'Cancel'}
 							</DropdownMenuItem>
@@ -414,6 +419,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 					userInvite: true,
 				},
 			},
+			subscription: true,
 		},
 	})
 
@@ -429,11 +435,19 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		? team.players.find((player) => player.userInvite?.userId === user.id)
 		: null
 
-	return json({ team, userHasAccessToTeam, player })
+	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
+
+	return json({
+		team,
+		userHasAccessToTeam,
+		player,
+		teamHasActiveSubscription: teamHasActiveSubscription_,
+	})
 }
 
 export default function Games() {
-	const { team, userHasAccessToTeam, player } = useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam, player, teamHasActiveSubscription } =
+		useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
 
 	return (
@@ -495,6 +509,7 @@ export default function Games() {
 													userHasAccessToTeam={userHasAccessToTeam}
 													game={game}
 													player={player}
+													teamHasActiveSubscription={teamHasActiveSubscription}
 												/>
 											</td>
 										) : null}
@@ -510,7 +525,12 @@ export default function Games() {
 			{userHasAccessToTeam ? (
 				<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
 					<DialogTrigger asChild>
-						<Button className="w-full sm:w-auto">Add game</Button>
+						<Button
+							className="w-full sm:w-auto"
+							disabled={!teamHasActiveSubscription}
+						>
+							Add game
+						</Button>
 					</DialogTrigger>
 					<DialogContent>
 						<DialogHeader>

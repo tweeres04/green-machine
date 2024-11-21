@@ -36,6 +36,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { useEffect, useState } from 'react'
 import Trash from '~/components/ui/icons/trash'
 import { DialogDescription } from '@radix-ui/react-dialog'
+import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -131,6 +132,7 @@ export async function loader({
 				},
 				orderBy: (players, { asc }) => [asc(players.name)],
 			},
+			subscription: true,
 		},
 	})
 
@@ -159,7 +161,14 @@ export async function loader({
 			return bAssists - aAssists
 		})
 	}
-	return { team, userHasAccessToTeam }
+
+	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
+
+	return {
+		team,
+		userHasAccessToTeam,
+		teamHasActiveSubscription: teamHasActiveSubscription_,
+	}
 }
 
 const dateFormat = 'MMM d'
@@ -493,7 +502,13 @@ function PlayerRow({
 	)
 }
 
-function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
+function AddStatsButton({
+	players,
+	disabled,
+}: {
+	players: PlayerWithStats[]
+	disabled: boolean
+}) {
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
 	const [dialogOpen, setDialogOpen] = useState(false)
@@ -540,6 +555,7 @@ function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
 				onClick={() => {
 					setDialogOpen(true)
 				}}
+				disabled={disabled}
 			>
 				<Add />
 			</Button>
@@ -655,7 +671,8 @@ function AddStatsButton({ players }: { players: PlayerWithStats[] }) {
 }
 
 export default function Team() {
-	const { team, userHasAccessToTeam } = useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam, teamHasActiveSubscription } =
+		useLoaderData<typeof loader>()
 	const { players } = team
 
 	function days() {
@@ -683,7 +700,12 @@ export default function Team() {
 					teamName={team.name}
 					players={players}
 				/>
-				{userHasAccessToTeam ? <AddStatsButton players={players} /> : null}
+				{userHasAccessToTeam ? (
+					<AddStatsButton
+						players={players}
+						disabled={!teamHasActiveSubscription}
+					/>
+				) : null}
 			</div>
 			<div className="overflow-x-auto w-full">
 				<table className="w-full">

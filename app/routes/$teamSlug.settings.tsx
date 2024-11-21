@@ -14,6 +14,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { upperFirst } from 'lodash-es'
+import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -77,7 +78,9 @@ export async function loader({
 		throw new Response(null, { status: 401 })
 	}
 
-	return { team }
+	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
+
+	return { team, teamHasActiveSubscription: teamHasActiveSubscription_ }
 }
 
 function useClearNewPlayerForm(
@@ -162,7 +165,7 @@ export default function EditTeam() {
 		Math.random()
 	)
 
-	const { team } = useLoaderData<typeof loader>()
+	const { team, teamHasActiveSubscription } = useLoaderData<typeof loader>()
 	const { id, slug, color } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
@@ -195,6 +198,7 @@ export default function EditTeam() {
 						name="color"
 						className="w-full p-2 border rounded bg-white"
 						defaultValue={color}
+						disabled={!teamHasActiveSubscription}
 					>
 						<option value="gray">Gray</option>
 						<option value="red">Red</option>
@@ -207,7 +211,10 @@ export default function EditTeam() {
 					</select>
 				</fetcher.Form>
 			</div>
-			<fieldset className="space-y-3" disabled={submitting}>
+			<fieldset
+				className="space-y-3"
+				disabled={submitting || !teamHasActiveSubscription}
+			>
 				<h3 className="text-xl">Team Logo</h3>
 				<Logo teamId={id} randomCacheBuster={randomCacheBuster} />
 				<div className="flex flex-col sm:flex-row w-full gap-1">
