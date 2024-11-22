@@ -100,7 +100,6 @@ export const action: ActionFunction = async ({ request }) => {
 		cancel_url: `${request.headers.get(
 			'origin'
 		)}/canceled?checkout_session_id={CHECKOUT_SESSION_ID}`,
-		automatic_tax: { enabled: true },
 	})
 
 	invariant(session.url, 'Missing session.url')
