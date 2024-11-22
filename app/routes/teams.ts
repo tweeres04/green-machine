@@ -58,7 +58,7 @@ export const action: ActionFunction = async ({ request }) => {
 			error instanceof SqliteError &&
 			error.code === 'SQLITE_CONSTRAINT_UNIQUE'
 		) {
-			throw new Response('Team URL already taken', { status: 409 })
+			throw new Response('Team URL already taken', { status: 400 })
 		}
 		throw error
 	}
@@ -112,6 +112,10 @@ export const action: ActionFunction = async ({ request }) => {
 		cancel_url: `${request.headers.get(
 			'origin'
 		)}/canceled?checkout_session_id={CHECKOUT_SESSION_ID}`,
+		automatic_tax: { enabled: true },
+		customer_update: {
+			address: 'auto',
+		},
 	})
 
 	invariant(session.url, 'Missing session.url')
