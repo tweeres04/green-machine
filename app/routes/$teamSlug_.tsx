@@ -385,7 +385,7 @@ function PlayerRow({
 	return (
 		<>
 			<tr key={player.id}>
-				<td className={`sticky left-0 bg-${teamColor}-50`}>
+				<td className={`sticky left-0 bg-${teamColor}-50 z-10`}>
 					<Popover>
 						<PopoverTrigger>
 							<Avatar title={player.name}>
@@ -512,7 +512,7 @@ function AddStatsButton({
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
 	const [dialogOpen, setDialogOpen] = useState(false)
-	const fetcher = useFetcher()
+	const fetcher = useFetcher<{ changes: number }>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
 	const [datepickerValue, setDatepickerValue] = useState(() =>
 		datepickerTimestampString()
@@ -533,10 +533,14 @@ function AddStatsButton({
 	}, [dialogOpen])
 
 	useEffect(() => {
-		if (fetcher.state === 'loading' && fetcher.data?.changes > 0) {
+		if (
+			fetcher.state === 'loading' &&
+			fetcher?.data &&
+			fetcher.data?.changes > 0
+		) {
 			setDialogOpen(false)
 		}
-	}, [fetcher.data?.changes, fetcher.state])
+	}, [fetcher.data, fetcher.data?.changes, fetcher.state])
 
 	function submit(e: MouseEvent) {
 		e.preventDefault()
@@ -690,6 +694,12 @@ export default function Team() {
 		).toSorted() as string[]
 	}
 
+	useEffect(() => {
+		const tableContainer = document.getElementById('table_container')
+		invariant(tableContainer, 'tableContainer not found')
+		tableContainer.scrollLeft = tableContainer.scrollWidth
+	}, [])
+
 	return (
 		<>
 			<Nav team={team} />
@@ -707,7 +717,7 @@ export default function Team() {
 					/>
 				) : null}
 			</div>
-			<div className="overflow-x-auto w-full">
+			<div className="overflow-x-auto w-full" id="table_container">
 				<table className="w-full">
 					<thead>
 						<tr>
