@@ -1,4 +1,4 @@
-import { Form } from '@remix-run/react'
+import { Form, useFetcher } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { kebabCase } from 'lodash-es'
@@ -12,6 +12,15 @@ import {
 	CardFooter,
 } from '~/components/ui/card'
 import invariant from 'tiny-invariant'
+import { useDebouncedCallback } from 'use-debounce'
+import { LoaderFunctionArgs, json } from '@remix-run/node'
+import { getDb } from '~/lib/getDb'
+import { useDelayedLoading } from '~/lib/useDelayedLoading'
+import { cn } from '~/lib/utils'
+
+interface SlugCheckResponse {
+	slugIsAvailable: boolean
+}
 
 function useAutoSlug(
 	nameRef: React.RefObject<HTMLInputElement>,
@@ -19,6 +28,12 @@ function useAutoSlug(
 ) {
 	const [slugExample, setSlugExample] = React.useState('')
 	const [edited, setEdited] = React.useState(false)
+	const fetcher = useFetcher<SlugCheckResponse>()
+	const [needsCheck, setNeedsCheck] = React.useState(false)
+	const checkSlug = useDebouncedCallback(() => {
+		fetcher.submit({ slug: slugExample }, { method: 'get' })
+		setNeedsCheck(false)
+	}, 300)
 
 	React.useEffect(() => {
 		if (!slugRef.current) return
@@ -40,6 +55,8 @@ function useAutoSlug(
 			const slug = kebabCase(nameInput.value)
 			slugInput.value = slug
 			setSlugExample(slug)
+			setNeedsCheck(true)
+			checkSlug()
 		}
 
 		nameInput.addEventListener('input', updateSlug)
@@ -47,15 +64,38 @@ function useAutoSlug(
 		return () => {
 			nameInput?.removeEventListener('input', updateSlug)
 		}
-	}, [edited, nameRef, slugRef])
+	}, [checkSlug, edited, nameRef, slugRef])
 
-	return slugExample
+	return {
+		slugExample,
+		needsCheck,
+		slugIsAvailable: fetcher.data?.slugIsAvailable,
+		isChecking: fetcher.state !== 'idle',
+	}
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+	const url = new URL(request.url)
+	const slug = url.searchParams.get('slug')
+
+	if (!slug) return json({ slugIsAvailable: false })
+
+	const db = getDb()
+	const existingTeam = await db.query.teams.findFirst({
+		where: (teams, { eq }) => eq(teams.slug, slug),
+	})
+
+	return json({ slugIsAvailable: !existingTeam })
 }
 
 export default function NewTeamForm() {
 	const nameRef = React.useRef<HTMLInputElement>(null)
 	const slugRef = React.useRef<HTMLInputElement>(null)
-	const slugExample = useAutoSlug(nameRef, slugRef)
+	const { slugExample, needsCheck, slugIsAvailable, isChecking } = useAutoSlug(
+		nameRef,
+		slugRef
+	)
+	const showLoadingState = useDelayedLoading(isChecking)
 
 	return (
 		<>
@@ -69,10 +109,32 @@ export default function NewTeamForm() {
 					</div>
 					<div>
 						<label htmlFor="slug">Slug</label>
-						<Input type="text" name="slug" id="slug" required ref={slugRef} />
+						<Input
+							type="text"
+							name="slug"
+							id="slug"
+							required
+							ref={slugRef}
+							aria-invalid={slugIsAvailable === false}
+							className={cn(
+								!needsCheck &&
+									!isChecking &&
+									slugIsAvailable === false &&
+									'border-red-500 text-red-900 bg-red-50'
+							)}
+						/>
 						<p className="text-sm">
 							ex: teamstats.tweeres.com/
 							<strong>{slugExample !== '' ? slugExample : 'my-slug'}</strong>
+							{needsCheck ? null : showLoadingState ? (
+								<span className="ml-2 text-gray-500">
+									Checking availability...
+								</span>
+							) : slugIsAvailable === false ? (
+								<span className="ml-2 text-red-900">Slug already taken</span>
+							) : slugIsAvailable ? (
+								<span className="ml-2 text-green-500">Slug available</span>
+							) : null}
 						</p>
 					</div>
 
@@ -101,6 +163,7 @@ export default function NewTeamForm() {
 									)
 									planInput.value = 'yearly'
 								}}
+								disabled={!slugIsAvailable}
 							>
 								Create Team
 							</Button>

@@ -4,6 +4,7 @@ import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { teams, teamsUsers } from '~/schema'
 import Stripe from 'stripe'
+import { SqliteError } from 'better-sqlite3'
 
 export const action: ActionFunction = async ({ request }) => {
 	invariant(process.env.STRIPE_SECRET_KEY, 'Missing STRIPE_SECRET_KEY in .env')
@@ -35,21 +36,32 @@ export const action: ActionFunction = async ({ request }) => {
 
 	const db = getDb()
 
-	const results = await db.transaction(async (tx) => {
-		const newTeamRows = await tx
-			.insert(teams)
-			.values({
-				name: name,
-				slug: slug,
+	let results
+	try {
+		results = await db.transaction(async (tx) => {
+			const newTeamRows = await tx
+				.insert(teams)
+				.values({
+					name: name,
+					slug: slug,
+				})
+				.returning()
+			await tx.insert(teamsUsers).values({
+				teamId: newTeamRows[0].id,
+				userId: user.id,
 			})
-			.returning()
-		await tx.insert(teamsUsers).values({
-			teamId: newTeamRows[0].id,
-			userId: user.id,
-		})
 
-		return newTeamRows
-	})
+			return newTeamRows
+		})
+	} catch (error) {
+		if (
+			error instanceof SqliteError &&
+			error.code === 'SQLITE_CONSTRAINT_UNIQUE'
+		) {
+			throw new Response('Team URL already taken', { status: 409 })
+		}
+		throw error
+	}
 
 	const newTeam = results[0]
 

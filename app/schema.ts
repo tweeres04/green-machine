@@ -5,18 +5,12 @@ import { z } from 'zod'
 
 import Stripe from 'stripe'
 
-export const teams = sqliteTable(
-	'teams',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		name: text('name').notNull(),
-		slug: text('slug').notNull(),
-		color: text('color').notNull().default('gray'),
-	},
-	(table) => ({
-		slugIdx: index('slug_idx').on(table.slug),
-	})
-)
+export const teams = sqliteTable('teams', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull(),
+	slug: text('slug').notNull().unique(),
+	color: text('color').notNull().default('gray'),
+})
 
 export type Team = typeof teams.$inferSelect
 
