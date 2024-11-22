@@ -3,6 +3,7 @@ import invariant from 'tiny-invariant'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { games } from '~/schema'
+import { activeSubscription } from '~/lib/teamHasActiveSubscription'
 
 export async function action({ request }: ActionFunctionArgs) {
 	if (request.method.toLowerCase() !== 'post') {
@@ -23,10 +24,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	invariant(typeof teamId === 'string', 'No teamId')
 
-	const userHasAccessToTeam = await hasAccessToTeam(user, Number(teamId))
+	const [userHasAccessToTeam, subscription] = await Promise.all([
+		hasAccessToTeam(user, Number(teamId)),
+		db.query.teamSubscriptions.findFirst({
+			where: (teamSubscriptions, { eq }) =>
+				eq(teamSubscriptions.teamId, Number(teamId)),
+		}),
+	])
 
 	if (!userHasAccessToTeam) {
 		throw new Response(null, { status: 403 })
+	}
+
+	if (!activeSubscription(subscription)) {
+		throw new Response('Subscription required', { status: 402 })
 	}
 
 	const timestamp = formData.get('timestamp')
