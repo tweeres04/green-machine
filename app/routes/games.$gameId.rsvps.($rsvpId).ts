@@ -4,6 +4,7 @@ import invariant from 'tiny-invariant'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { rsvps, User } from '~/schema'
+import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 async function handlePost(user: User, gameId: string, formData: FormData) {
 	const db = getDb()
@@ -31,6 +32,7 @@ async function handlePost(user: User, gameId: string, formData: FormData) {
 										columns: { id: true },
 										where: (games, { eq }) => eq(games.id, Number(gameId)),
 									},
+									subscription: true,
 								},
 							},
 						},
@@ -40,17 +42,22 @@ async function handlePost(user: User, gameId: string, formData: FormData) {
 		},
 	})
 
-	// todo: move this receievedInvites check to the db — probably can't use the query api
-	const receievedInvite = dbUser?.receivedInvites.find((ri) =>
+	// todo: move this receivedInvites check to the db — probably can't use the query api
+	const receivedInvite = dbUser?.receivedInvites.find((ri) =>
 		ri.player.team.games.some((g) => g.id === Number(gameId))
 	)
-	const game = receievedInvite?.player?.team?.games[0]
+	const game = receivedInvite?.player?.team?.games[0]
 
 	if (!game) {
 		throw new Response(null, { status: 404 })
 	}
 
-	const playerId = receievedInvite?.player?.id
+	const team = receivedInvite?.player?.team
+	if (!teamHasActiveSubscription(team)) {
+		throw new Response('Team subscription required', { status: 402 })
+	}
+
+	const playerId = receivedInvite?.player?.id
 
 	invariant(playerId, 'No playerId')
 
@@ -77,6 +84,11 @@ async function handlePatch(user: User, rsvpId: string, formData: FormData) {
 							rsvps: {
 								where: (rsvps, { eq }) => eq(rsvps.id, Number(rsvpId)),
 							},
+							team: {
+								with: {
+									subscription: true,
+								},
+							},
 						},
 					},
 				},
@@ -86,14 +98,19 @@ async function handlePatch(user: User, rsvpId: string, formData: FormData) {
 
 	invariant(dbUser, 'No dbUser found')
 
-	// todo: move this receievedInvites check to the db — probably can't use the query api
-	const receievedInvite = dbUser?.receivedInvites.find((ri) =>
+	// todo: move this receivedInvites check to the db — probably can't use the query api
+	const receivedInvite = dbUser?.receivedInvites.find((ri) =>
 		ri.player.rsvps.some((r) => r.id === Number(rsvpId))
 	)
-	const rsvp = receievedInvite?.player.rsvps[0]
+	const rsvp = receivedInvite?.player.rsvps[0]
 
 	if (!rsvp) {
 		throw new Response(null, { status: 404 })
+	}
+
+	const team = receivedInvite?.player?.team
+	if (!teamHasActiveSubscription(team)) {
+		throw new Response('Team subscription required', { status: 402 })
 	}
 
 	const value = formData.get('value')

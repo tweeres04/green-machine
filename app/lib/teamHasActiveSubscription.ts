@@ -1,6 +1,6 @@
-import { TeamSubscription, Team as TeamType } from '~/schema'
+import { TeamSubscription } from '~/schema'
 
-type Team = TeamType & { subscription: TeamSubscription | null }
+type Team = { subscription: TeamSubscription | null }
 
 export function teamHasActiveSubscription(team: Team) {
 	return activeSubscription(team.subscription)
