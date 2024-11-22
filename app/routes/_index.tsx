@@ -6,6 +6,9 @@ import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
 import { sql } from 'drizzle-orm'
+import Stripe from 'stripe'
+import { Badge } from '~/components/ui/badge'
+import { cn } from '~/lib/utils'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -30,11 +33,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		select distinct
 			teams.id,
 			teams.name,
-			teams.slug
+			teams.slug,
+			team_subscriptions.subscription_status subscriptionStatus
 		from teams
 			left join users_teams on teams.id = users_teams.team_id
 			left join players players_for_users on teams.id = players_for_users.team_id
 			left join user_invites on user_invites.player_id = players_for_users.id
+			left join team_subscriptions on teams.id = team_subscriptions.team_id
 		where
 			users_teams.user_id = ${user.id} or user_invites.user_id = ${user.id}
 		order by teams.name
@@ -74,6 +79,7 @@ type Team = {
 	slug: string
 	playerCount: number
 	statCount: number
+	subscriptionStatus: Stripe.Subscription.Status | null
 }
 
 type Stats = {
@@ -91,11 +97,25 @@ export default function Index() {
 			{teams.length > 0 ? (
 				<ul className="space-y-3">
 					{teams.map((t) => {
+						// Need to move this into the helper function at some point
+						const noSubscription =
+							!t.subscriptionStatus ||
+							t.subscriptionStatus === 'canceled' ||
+							t.subscriptionStatus === 'unpaid'
 						return (
 							<li key={t.id}>
-								<Button asChild variant="link" className="pl-0">
+								<Button
+									asChild
+									variant="link"
+									className={cn('pl-0 gap-1', {
+										'text-red-900': noSubscription,
+									})}
+								>
 									<a href={`/${t.slug}`} className="text-xl">
-										{t.name}
+										{t.name}{' '}
+										{noSubscription ? (
+											<Badge variant="secondary">No subscription</Badge>
+										) : null}
 									</a>
 								</Button>
 								<Suspense>
