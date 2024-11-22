@@ -35,14 +35,24 @@ function useAutoSlug(
 		setNeedsCheck(false)
 	}, 300)
 
+	// First useEffect: Handle direct slug input changes
 	React.useEffect(() => {
 		if (!slugRef.current) return
 
-		slugRef.current.addEventListener('input', () => {
-			setEdited(true)
-		})
-	}, [slugRef])
+		const slugInput = slugRef.current
 
+		function handleSlugInput() {
+			setEdited(true)
+			setSlugExample(kebabCase(slugInput.value))
+			setNeedsCheck(true)
+			checkSlug()
+		}
+
+		slugInput.addEventListener('input', handleSlugInput)
+		return () => slugInput.removeEventListener('input', handleSlugInput)
+	}, [slugRef, checkSlug])
+
+	// Second useEffect: Handle name-to-slug sync
 	React.useEffect(() => {
 		if (!slugRef.current || !nameRef.current) return
 
@@ -60,10 +70,7 @@ function useAutoSlug(
 		}
 
 		nameInput.addEventListener('input', updateSlug)
-
-		return () => {
-			nameInput?.removeEventListener('input', updateSlug)
-		}
+		return () => nameInput?.removeEventListener('input', updateSlug)
 	}, [checkSlug, edited, nameRef, slugRef])
 
 	return {
