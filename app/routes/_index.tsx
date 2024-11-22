@@ -122,14 +122,14 @@ export default function Index() {
 									<Await resolve={stats}>
 										{(stats) => {
 											const statsForTeam = stats.find((s) => s.id === t.id)
-											return statsForTeam ? (
+											return (
 												<p>
-													{statsForTeam.playerCount} player
-													{statsForTeam.playerCount !== 1 && 's'},{' '}
-													{statsForTeam.statCount} stat
-													{statsForTeam.statCount !== 1 && 's'} recorded
+													{statsForTeam?.playerCount ?? '0'} player
+													{statsForTeam?.playerCount !== 1 && 's'},{' '}
+													{statsForTeam?.statCount ?? '0'} stat
+													{statsForTeam?.statCount !== 1 && 's'} recorded
 												</p>
-											) : null
+											)
 										}}
 									</Await>
 								</Suspense>
