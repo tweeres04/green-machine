@@ -12,6 +12,7 @@ import { eq, inArray, and } from 'drizzle-orm'
 import { getDb } from '~/lib/getDb'
 import { authenticator } from '~/lib/auth.server'
 import { z, ZodError } from 'zod'
+import { activeSubscription } from '~/lib/teamHasActiveSubscription'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -50,23 +51,37 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const db = getDb()
 	const newPlayerIds = newEntries.map((e) => e.playerId)
-	const accessiblePlayerIds = (
+	const accessiblePlayerTeamIds = (
 		await db
-			.selectDistinct({ playerId: players.id })
+			.selectDistinct({ playerId: players.id, teamId: players.teamId })
 			.from(players)
 			.innerJoin(teams, eq(teams.id, players.teamId))
 			.innerJoin(teamsUsers, eq(teams.id, teamsUsers.teamId))
 			.where(
 				and(eq(teamsUsers.userId, user.id), inArray(players.id, newPlayerIds))
 			)
-	).map(({ playerId }) => playerId)
+	).map(({ playerId, teamId }) => ({ playerId, teamId }))
 
 	const userHasAccessToPlayers = newPlayerIds.every((id) =>
-		accessiblePlayerIds.includes(id)
+		accessiblePlayerTeamIds.map(({ playerId }) => playerId).includes(id)
 	)
 
 	if (!userHasAccessToPlayers) {
 		throw new Response(null, { status: 403 })
+	}
+
+	const teamIds = accessiblePlayerTeamIds.map(({ teamId }) => teamId)
+	const teamsWithActiveSubscription = await db.query.teamSubscriptions.findMany(
+		{
+			where: (teamSubscription, { inArray }) =>
+				inArray(teamSubscription.teamId, teamIds),
+		}
+	)
+
+	if (!teamsWithActiveSubscription.every(activeSubscription)) {
+		throw new Response(null, {
+			status: 402,
+		})
 	}
 
 	return db.insert(statEntries).values(newEntries)
