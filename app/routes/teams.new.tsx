@@ -117,7 +117,8 @@ export default function NewTeamForm() {
 							ref={slugRef}
 							aria-invalid={slugIsAvailable === false}
 							className={cn(
-								!needsCheck &&
+								slugExample &&
+									!needsCheck &&
 									!isChecking &&
 									slugIsAvailable === false &&
 									'border-red-500 text-red-900 bg-red-50'
@@ -126,7 +127,7 @@ export default function NewTeamForm() {
 						<p className="text-sm">
 							ex: teamstats.tweeres.com/
 							<strong>{slugExample !== '' ? slugExample : 'my-slug'}</strong>
-							{needsCheck ? null : showLoadingState ? (
+							{needsCheck || !slugExample ? null : showLoadingState ? (
 								<span className="ml-2 text-gray-500">
 									Checking availability...
 								</span>
