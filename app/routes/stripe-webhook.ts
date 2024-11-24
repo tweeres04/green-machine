@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import invariant from 'tiny-invariant'
 import { getDb } from '~/lib/getDb'
 import { teamSubscriptions, users } from '~/schema'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 invariant(process.env.STRIPE_SECRET_KEY, 'Missing STRIPE_SECRET_KEY in .env')
 invariant(
@@ -62,6 +63,35 @@ async function updateSubscription(subscription: Stripe.Subscription) {
 	})
 }
 
+async function trackNewSubscription(
+	teamId: string,
+	subscription: Stripe.Subscription,
+	session: Stripe.Checkout.Session
+) {
+	const db = getDb()
+	const teamUser = await db.query.teamsUsers.findFirst({
+		where: (teamsUsers, { eq }) => eq(teamsUsers.teamId, Number(teamId)),
+		with: {
+			team: true,
+		},
+	})
+
+	if (!teamUser?.team) {
+		throw new Error('Error tracking new subscription. Team or user not found')
+	}
+
+	mixpanelServer.track('New subscription', {
+		distinct_id: teamUser.userId,
+		'team id': teamId,
+		'team name': teamUser.team.name,
+		'subscription status': subscription.status,
+		'subscription id': subscription.id,
+		amount: session.amount_total ? session.amount_total / 100 : 0,
+		currency: session.currency,
+		ip: 0,
+	})
+}
+
 export async function action({ request }: ActionFunctionArgs) {
 	const body = await request.text()
 	const signature = request.headers.get('stripe-signature')
@@ -106,6 +136,12 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 
 		await updateSubscription(subscription)
+
+		trackNewSubscription(
+			subscription.metadata.team_id,
+			subscription,
+			session
+		).catch(console.error) // Basic error handling - log to sentry at some point
 
 		return new Response()
 	}

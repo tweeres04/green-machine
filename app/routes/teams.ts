@@ -5,6 +5,7 @@ import { getDb } from '~/lib/getDb'
 import { teams, teamsUsers } from '~/schema'
 import Stripe from 'stripe'
 import { SqliteError } from 'better-sqlite3'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 export const action: ActionFunction = async ({ request }) => {
 	invariant(process.env.STRIPE_SECRET_KEY, 'Missing STRIPE_SECRET_KEY in .env')
@@ -67,6 +68,13 @@ export const action: ActionFunction = async ({ request }) => {
 
 	const newTeamId = newTeam.id
 	const newTeamName = newTeam.name
+
+	mixpanelServer.track('Team created', {
+		distinct_id: user.id,
+		'team id': newTeamId,
+		'team name': newTeamName,
+		ip: 0,
+	})
 
 	const price = plan === 'yearly' ? process.env.STRIPE_YEARLY_PRICE_ID : null
 
