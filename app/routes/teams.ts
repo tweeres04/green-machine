@@ -65,8 +65,6 @@ export const action: ActionFunction = async ({ request }) => {
 
 	const newTeam = results[0]
 
-	invariant(newTeam, 'New team not created')
-
 	const newTeamId = newTeam.id
 	const newTeamName = newTeam.name
 

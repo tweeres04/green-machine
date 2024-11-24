@@ -6,6 +6,7 @@ import { getDb } from './getDb'
 import { User, users } from '~/schema'
 import invariant from 'tiny-invariant'
 import { mixpanelServer } from './mixpanel.server'
+import { SqliteError } from 'better-sqlite3'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
 	if (!user) {
@@ -43,20 +44,33 @@ async function signUp(
 	const hashedPassword = await argon2.hash(password)
 
 	const db = getDb()
-	const newUsers = await db
-		.insert(users)
-		.values({
-			name,
-			email,
-			password: hashedPassword,
-		})
-		.returning()
+	let newUsers
+	try {
+		newUsers = await db
+			.insert(users)
+			.values({
+				name,
+				email,
+				password: hashedPassword,
+			})
+			.returning()
+	} catch (error) {
+		if (
+			error instanceof SqliteError &&
+			error.code === 'SQLITE_CONSTRAINT_UNIQUE'
+		) {
+			throw new Error('Email already taken')
+		}
+		throw error
+	}
+
+	const newUser = newUsers[0]
 
 	mixpanelServer.track('sign up', {
-		distinct_id: newUsers[0].id,
+		distinct_id: newUser.id,
 	})
 
-	return newUsers[0]
+	return newUser
 }
 
 async function login(email: string, password: string) {

@@ -170,19 +170,13 @@ export const statEntrySchema = createInsertSchema(statEntries, {
 	type: statSchema,
 })
 
-export const users = sqliteTable(
-	'users',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		email: text('email').notNull(),
-		password: text('password').notNull(),
-		name: text('name').notNull(),
-		stripeCustomerId: text('stripe_customer_id'),
-	},
-	(table) => ({
-		emailIdx: index('email_idx').on(table.email),
-	})
-)
+export const users = sqliteTable('users', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	email: text('email').notNull().unique(),
+	password: text('password').notNull(),
+	name: text('name').notNull(),
+	stripeCustomerId: text('stripe_customer_id'),
+})
 
 export const userRelations = relations(users, ({ many }) => ({
 	teamsUsers: many(teamsUsers),
