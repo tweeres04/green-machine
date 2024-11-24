@@ -6,9 +6,9 @@ import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
 import { sql } from 'drizzle-orm'
-import Stripe from 'stripe'
 import { Badge } from '~/components/ui/badge'
 import { cn } from '~/lib/utils'
+import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -70,26 +70,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			teams.id in ${teamIds}
 	`)
 
-	return defer({ teams: teams_, stats: statsPromise })
-}
-
-type Team = {
-	id: number
-	name: string
-	slug: string
-	playerCount: number
-	statCount: number
-	subscriptionStatus: Stripe.Subscription.Status | null
-}
-
-type Stats = {
-	id: number
-	playerCount: number
-	statCount: number
+	return defer({ user, teams: teams_, stats: statsPromise })
 }
 
 export default function Index() {
-	const { teams, stats } = useLoaderData<{ teams: Team[]; stats: Stats[] }>()
+	const { user, teams, stats } = useLoaderData<typeof loader>()
+
+	useMixpanelIdentify(user)
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">

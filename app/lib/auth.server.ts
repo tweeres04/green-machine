@@ -5,6 +5,7 @@ import argon2 from 'argon2'
 import { getDb } from './getDb'
 import { User, users } from '~/schema'
 import invariant from 'tiny-invariant'
+import { mixpanelServer } from './mixpanel.server'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
 	if (!user) {
@@ -50,6 +51,10 @@ async function signUp(
 			password: hashedPassword,
 		})
 		.returning()
+
+	mixpanelServer.track('sign up', {
+		distinct_id: newUsers[0].id,
+	})
 
 	return newUsers[0]
 }

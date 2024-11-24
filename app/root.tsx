@@ -6,12 +6,15 @@ import {
 	ScrollRestoration,
 	useLoaderData,
 } from '@remix-run/react'
+
 import '~/tailwind.css'
 import { json, LoaderFunctionArgs } from '@remix-run/node'
 import { getDb } from '~/lib/getDb'
 import { TeamColorContext } from '~/lib/teamColorContext'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { UserContext } from '~/lib/userContext'
+import invariant from 'tiny-invariant'
+import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 
 export async function loader({
 	params: { teamSlug },
@@ -33,12 +36,22 @@ export async function loader({
 		? await hasAccessToTeam(user, Number(team.id))
 		: false
 
-	return json({ color: team?.color ?? 'gray', user, userHasAccessToTeam })
+	invariant(process.env.MIXPANEL_TOKEN, 'MIXPANEL_TOKEN missing in .env')
+	const mixpanelToken = process.env.MIXPANEL_TOKEN
+
+	return json({
+		color: team?.color ?? 'gray',
+		user,
+		userHasAccessToTeam,
+		mixpanelToken,
+	})
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { color, user, userHasAccessToTeam } =
+	const { color, user, userHasAccessToTeam, mixpanelToken } =
 		useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
+
+	useMixpanelIdentify(user)
 
 	return (
 		<html lang="en">
@@ -59,6 +72,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				></style>
 			</head>
 			<body className={`bg-${color}-50`}>
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `window.mixpanelToken = "${mixpanelToken}"`,
+					}}
+				/>
 				<TeamColorContext.Provider value={color}>
 					<UserContext.Provider
 						value={user ? { user, userHasAccessToTeam } : null}

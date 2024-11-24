@@ -14,6 +14,7 @@ import { useContext, useState } from 'react'
 import { UserContext } from '~/lib/userContext'
 import Burger from './icons/burger'
 import X from './icons/x'
+import mixpanel from 'mixpanel-browser'
 
 type Props = {
 	title?: string
@@ -84,7 +85,16 @@ export default function Nav({ title, team }: Props) {
 								) : null}
 							</DropdownMenuItem>
 							<DropdownMenuItem asChild>
-								{user ? <Link to="/logout">Logout</Link> : null}
+								{user ? (
+									<Link
+										to="/logout"
+										onClick={() => {
+											mixpanel.reset()
+										}}
+									>
+										Logout
+									</Link>
+								) : null}
 							</DropdownMenuItem>
 						</>
 					) : (
