@@ -6,6 +6,8 @@ import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { getDb } from '~/lib/getDb'
+import { z } from 'zod'
+import { Loader, LoaderCircle } from 'lucide-react'
 
 import {
 	Dialog,
@@ -29,6 +31,8 @@ import { ReactNode, useEffect, useState } from 'react'
 import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import { createInsertSchema } from 'drizzle-zod'
+import { games } from '~/schema'
 
 type Game = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -217,6 +221,113 @@ function CancelForm({
 				</fetcher.Form>
 			</DialogFooter>
 		</fieldset>
+	)
+}
+
+const GameResultSchema = z.object({
+	games: createInsertSchema(games).omit({ teamId: true }).array(),
+})
+
+function ImportScheduleForm({
+	closeModal,
+	teamId,
+}: {
+	closeModal: () => void
+	teamId: number
+}) {
+	const fetcher = useFetcher()
+	const saving = fetcher.state !== 'idle'
+
+	const parseResult = GameResultSchema.safeParse(fetcher.data)
+	const games = parseResult.success ? parseResult.data.games : null
+
+	return games ? (
+		games.length > 0 ? (
+			<>
+				<p>We found these games:</p>
+				<table className="w-full">
+					<thead>
+						<tr>
+							<th>Date and time</th>
+							<th>Opponent</th>
+							<th>Location</th>
+						</tr>
+					</thead>
+					<tbody>
+						{games.map((game) => (
+							<tr key={game.timestamp}>
+								<td>
+									{game.timestamp
+										? format(game.timestamp, "E MMM d 'at' h:mma")
+										: 'TBD'}
+								</td>
+								<td>{game.opponent}</td>
+								<td>{game.location ?? 'TBD'}</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+				<DialogFooter>
+					<Button onClick={closeModal} variant="secondary">
+						Cancel
+					</Button>
+					<fetcher.Form action="/import-schedule/confirm" method="post">
+						<input type="hidden" name="games" value={JSON.stringify(games)} />
+						<input type="hidden" name="team_id" value={teamId} />
+						<Button type="submit" onClick={closeModal}>
+							Import games
+						</Button>
+					</fetcher.Form>
+				</DialogFooter>
+			</>
+		) : (
+			<p>Couldn't find any games</p>
+		)
+	) : (
+		<fetcher.Form action="/import-schedule" method="post">
+			<fieldset className="space-y-3" disabled={saving}>
+				<div>
+					<label htmlFor="schedule_url_input">Schedule URL</label>
+					<Input
+						id="schedule_url_input"
+						required
+						name="schedule_url"
+						type="url"
+						defaultValue="https://vssc.leaguelab.com/league/80834/schedule"
+					/>
+				</div>
+				<div>
+					<label htmlFor="team_name_input">Team Name</label>
+					<Input
+						id="team_name_input"
+						required
+						name="team_name"
+						type="text"
+						defaultValue="Green Machine"
+					/>
+				</div>
+				{(() => {
+					const footer = (
+						<DialogFooter>
+							<Button type="submit" className="w-full">
+								Submit
+							</Button>
+						</DialogFooter>
+					)
+					return fetcher.state === 'submitting' ? (
+						<div className="flex items-center">
+							<div className="flex flex-grow items-center">
+								Importing with AI
+								<LoaderCircle className="ml-2 animate-spin" />
+							</div>
+							{footer}
+						</div>
+					) : (
+						footer
+					)
+				})()}
+			</fieldset>
+		</fetcher.Form>
 	)
 }
 
@@ -437,7 +548,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
+	const userIsTyler = user?.id === 1
+
 	return json({
+		userIsTyler,
 		team,
 		userHasAccessToTeam,
 		player,
@@ -446,9 +560,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export default function Games() {
-	const { team, userHasAccessToTeam, player, teamHasActiveSubscription } =
-		useLoaderData<typeof loader>()
+	const {
+		userIsTyler,
+		team,
+		userHasAccessToTeam,
+		player,
+		teamHasActiveSubscription,
+	} = useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
+	const [importScheduleModal, setImportScheduleModal] = useState(false)
 
 	return (
 		<>
@@ -523,25 +643,51 @@ export default function Games() {
 				<p>No games yet</p>
 			)}
 			{userHasAccessToTeam ? (
-				<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
-					<DialogTrigger asChild>
-						<Button
-							className="w-full sm:w-auto"
-							disabled={!teamHasActiveSubscription}
+				<div className="space-y-1">
+					<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
+						<DialogTrigger asChild>
+							<Button
+								className="w-full sm:w-auto"
+								disabled={!teamHasActiveSubscription}
+							>
+								Add game
+							</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Add game</DialogTitle>
+							</DialogHeader>
+							<GameForm
+								closeModal={() => setNewGameModal(false)}
+								teamId={team.id}
+							/>
+						</DialogContent>
+					</Dialog>{' '}
+					{userIsTyler ? (
+						<Dialog
+							open={importScheduleModal}
+							onOpenChange={setImportScheduleModal}
 						>
-							Add game
-						</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Add game</DialogTitle>
-						</DialogHeader>
-						<GameForm
-							closeModal={() => setNewGameModal(false)}
-							teamId={team.id}
-						/>
-					</DialogContent>
-				</Dialog>
+							<DialogTrigger asChild>
+								<Button
+									className="w-full sm:w-auto"
+									disabled={!teamHasActiveSubscription}
+								>
+									Import schedule
+								</Button>
+							</DialogTrigger>
+							<DialogContent className="max-h-dvh overflow-y-scroll">
+								<DialogHeader>
+									<DialogTitle>Import schedule</DialogTitle>
+								</DialogHeader>
+								<ImportScheduleForm
+									closeModal={() => setImportScheduleModal(false)}
+									teamId={team.id}
+								/>
+							</DialogContent>
+						</Dialog>
+					) : null}
+				</div>
 			) : null}
 		</>
 	)
