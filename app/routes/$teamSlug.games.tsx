@@ -7,7 +7,7 @@ import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
-import { Loader, LoaderCircle } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 
 import {
 	Dialog,
@@ -579,10 +579,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
-	const userIsTyler = user?.id === 1
+	const userIsTylerOrMelissa = [1, 2].includes(user?.id ?? -1)
 
 	return json({
-		userIsTyler,
+		userIsTylerOrMelissa,
 		team,
 		userHasAccessToTeam,
 		player,
@@ -592,7 +592,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function Games() {
 	const {
-		userIsTyler,
+		userIsTylerOrMelissa,
 		team,
 		userHasAccessToTeam,
 		player,
@@ -694,7 +694,7 @@ export default function Games() {
 							/>
 						</DialogContent>
 					</Dialog>{' '}
-					{userIsTyler ? (
+					{userIsTylerOrMelissa ? (
 						<Dialog
 							open={importScheduleModal}
 							onOpenChange={setImportScheduleModal}
