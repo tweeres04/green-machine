@@ -427,6 +427,37 @@ function MoreButton({
 							</DropdownMenuItem>
 						</fetcher.Form>
 					) : null}
+					{userHasAccessToTeam ? (
+						<DropdownMenuItem
+							onClick={() => {
+								setDialogTitle('Are you sure?')
+								setDialogDescription('This action cannot be undone.')
+								setDialogContent(
+									<DialogFooter>
+										<DialogClose asChild>
+											<Button variant="secondary" type="button">
+												Cancel
+											</Button>
+										</DialogClose>
+										<fetcher.Form
+											method="delete"
+											action={`/games/${game.id}/destroy`}
+										>
+											<Button
+												variant="destructive"
+												className="w-full sm:w-auto"
+											>
+												Remove
+											</Button>
+										</fetcher.Form>
+									</DialogFooter>
+								)
+							}}
+							disabled={!teamHasActiveSubscription}
+						>
+							Remove game
+						</DropdownMenuItem>
+					) : null}
 				</DropdownMenuContent>
 			</DropdownMenu>
 
