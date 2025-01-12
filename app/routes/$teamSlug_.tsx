@@ -674,7 +674,7 @@ function AddStatsButton({
 	)
 }
 
-export default function Team() {
+export default function Stats() {
 	const { team, userHasAccessToTeam, teamHasActiveSubscription } =
 		useLoaderData<typeof loader>()
 	const { players } = team
@@ -702,9 +702,9 @@ export default function Team() {
 
 	return (
 		<>
-			<Nav team={team} />
+			<Nav title="Stats" team={team} />
 			<div className="flex gap-1 mb-3 items-center">
-				<h2 className="grow text-2xl">Stats</h2>
+				<div className="grow"></div>
 				<CopyStandingsButton
 					slug={team.slug}
 					teamName={team.name}
