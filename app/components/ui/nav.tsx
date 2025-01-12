@@ -64,6 +64,11 @@ export default function Nav({ title, team }: Props) {
 									<Link to={`/${team.slug}/players`}>Players</Link>
 								</DropdownMenuItem>
 							) : null}
+							{userHasAccessToTeam && pathname !== `/${team.slug}/seasons` ? (
+								<DropdownMenuItem asChild>
+									<Link to={`/${team.slug}/seasons`}>Seasons</Link>
+								</DropdownMenuItem>
+							) : null}
 							{userHasAccessToTeam && pathname !== `/${team.slug}/settings` ? (
 								<DropdownMenuItem asChild>
 									<Link to={`/${team.slug}/settings`}>Settings</Link>

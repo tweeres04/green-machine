@@ -19,6 +19,7 @@ export const teamRelations = relations(teams, ({ many, one }) => ({
 	games: many(games),
 	teamsUsers: many(teamsUsers),
 	subscription: one(teamSubscriptions),
+	seasons: many(seasons),
 }))
 
 export const teamSubscriptions = sqliteTable(
@@ -235,5 +236,20 @@ export const rsvpsRelations = relations(rsvps, ({ one }) => ({
 	game: one(games, {
 		fields: [rsvps.gameId],
 		references: [games.id],
+	}),
+}))
+
+export const seasons = sqliteTable('seasons', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull(),
+	startDate: text('start_date').notNull(),
+	endDate: text('end_date').notNull(),
+	teamId: integer('team_id').notNull(),
+})
+
+export const seasonsRelations = relations(seasons, ({ one }) => ({
+	team: one(teams, {
+		fields: [seasons.teamId],
+		references: [teams.id],
 	}),
 }))
