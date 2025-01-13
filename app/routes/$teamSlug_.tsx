@@ -3,7 +3,12 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import { useFetcher, useLoaderData } from '@remix-run/react'
+import {
+	useFetcher,
+	useLoaderData,
+	useLocation,
+	useNavigate,
+} from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
@@ -13,7 +18,7 @@ import { useToast } from '~/components/ui/use-toast'
 import { Toaster } from '~/components/ui/toaster'
 import { Copy } from '~/components/ui/icons/copy'
 import invariant from 'tiny-invariant'
-import { StatEntry, type Team } from '~/schema'
+import { Season, StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
 import { format, formatISO, parseISO } from 'date-fns'
 import {
@@ -37,6 +42,14 @@ import { useEffect, useState } from 'react'
 import Trash from '~/components/ui/icons/trash'
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+} from '~/components/ui/dropdown-menu'
+import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -123,16 +136,36 @@ export async function loader({
 
 	const db = getDb()
 
+	const searchParams = new URL(request.url).searchParams
+	const seasonId = searchParams.get('season')
+
+	const season = seasonId
+		? await db.query.seasons.findFirst({
+				where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+		  })
+		: null
+
 	const team = await db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
 		with: {
 			players: {
 				with: {
-					statEntries: true,
+					statEntries: seasonId
+						? {
+								where: (statEntries, { and, gte, lte }) => {
+									invariant(season, 'No season inside stats query')
+									return and(
+										gte(statEntries.timestamp, season.startDate),
+										lte(statEntries.timestamp, season.endDate)
+									)
+								},
+						  }
+						: true,
 				},
 				orderBy: (players, { asc }) => [asc(players.name)],
 			},
 			subscription: true,
+			seasons: true,
 		},
 	})
 
@@ -141,7 +174,6 @@ export async function loader({
 	}
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
-	const searchParams = new URL(request.url).searchParams
 	const editMode = userHasAccessToTeam && searchParams.has('edit')
 
 	if (!editMode) {
@@ -168,6 +200,8 @@ export async function loader({
 		team,
 		userHasAccessToTeam,
 		teamHasActiveSubscription: teamHasActiveSubscription_,
+		seasons: team.seasons,
+		season,
 	}
 }
 
@@ -674,9 +708,55 @@ function AddStatsButton({
 	)
 }
 
+function SeasonDropdown({
+	seasons,
+	season,
+}: {
+	seasons: { id: number; name: string }[]
+	season: Season
+}) {
+	const path = useLocation().pathname
+	const navigate = useNavigate()
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="secondary">
+					{season?.name ?? 'All seasons'}
+					<ChevronDown />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent>
+				<DropdownMenuRadioGroup
+					value={season?.id?.toString() ?? ''}
+					onValueChange={(newSeasonId) => {
+						if (newSeasonId) {
+							navigate(`${path}?season=${newSeasonId}`)
+						} else {
+							navigate(path)
+						}
+					}}
+				>
+					<DropdownMenuRadioItem value="">All Seasons</DropdownMenuRadioItem>
+					{seasons.map((season) => (
+						<DropdownMenuRadioItem value={season.id.toString()} key={season.id}>
+							{season.name}
+						</DropdownMenuRadioItem>
+					))}
+				</DropdownMenuRadioGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	)
+}
+
 export default function Stats() {
-	const { team, userHasAccessToTeam, teamHasActiveSubscription } =
-		useLoaderData<typeof loader>()
+	const {
+		team,
+		userHasAccessToTeam,
+		teamHasActiveSubscription,
+		season,
+		seasons,
+	} = useLoaderData<typeof loader>()
 	const { players } = team
 
 	function days() {
@@ -704,7 +784,11 @@ export default function Stats() {
 		<>
 			<Nav title="Stats" team={team} />
 			<div className="flex gap-1 mb-3 items-center">
-				<div className="grow"></div>
+				<div className="grow">
+					{seasons.length > 0 && (
+						<SeasonDropdown seasons={seasons} season={season} />
+					)}
+				</div>
 				<CopyStandingsButton
 					slug={team.slug}
 					teamName={team.name}
