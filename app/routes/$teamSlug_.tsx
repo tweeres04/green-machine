@@ -643,7 +643,7 @@ function AddStatsButton({
 									}
 									⚽️
 								</div>
-								<div className="flex gap-1">
+								<div className="flex gap-1 justify-end">
 									<Button
 										type="button"
 										size="icon"
