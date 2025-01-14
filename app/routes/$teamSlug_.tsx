@@ -802,17 +802,19 @@ export default function Stats() {
 				) : null}
 			</div>
 			<div className="overflow-x-auto w-full" id="table_container">
-				<table className="w-full">
+				<table className="w-full [&_td]:px-1">
 					<thead>
 						<tr>
-							<th></th> {/* Avatar */}
+							<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
+							{/* Avatar */}
 							<th className="hidden md:table-cell"></th> {/* Name */}
 							{days().map((day) => (
 								<th key={day} className="text-xs [writing-mode:vertical-lr]">
 									{formatLocalIsoDateString(day)}
 								</th>
 							))}
-							<th></th> {/* Totals */}
+							{/* Totals */}
+							<th className={`sticky right-0 bg-${team.color}-50 z-10`}></th>
 						</tr>
 					</thead>
 					<tbody>
