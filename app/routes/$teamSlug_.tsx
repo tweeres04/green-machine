@@ -18,7 +18,7 @@ import { useToast } from '~/components/ui/use-toast'
 import { Toaster } from '~/components/ui/toaster'
 import { Copy } from '~/components/ui/icons/copy'
 import invariant from 'tiny-invariant'
-import { Season, StatEntry, type Team } from '~/schema'
+import { Game, Season, StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
 import { format, formatISO, parseISO } from 'date-fns'
 import {
@@ -49,7 +49,15 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
-import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
+} from '~/components/ui/select'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -159,11 +167,15 @@ export async function loader({
 										lte(statEntries.timestamp, season.endDate)
 									)
 								},
+								with: {
+									game: true,
+								},
 						  }
-						: true,
+						: { with: { game: true } },
 				},
 				orderBy: (players, { asc }) => [asc(players.name)],
 			},
+			games: true,
 			subscription: true,
 			seasons: true,
 		},
@@ -174,25 +186,22 @@ export async function loader({
 	}
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
-	const editMode = userHasAccessToTeam && searchParams.has('edit')
 
-	if (!editMode) {
-		// todo: move this sorting to the db at some point
-		team.players = team.players.toSorted((a, b) => {
-			const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
-			const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
+	// todo: move this sorting to the db at some point
+	team.players = team.players.toSorted((a, b) => {
+		const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
+		const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
 
-			const goalDifference = bGoals - aGoals
+		const goalDifference = bGoals - aGoals
 
-			if (goalDifference !== 0) {
-				return goalDifference
-			}
-			const aAssists = a.statEntries.filter((se) => se.type === 'assist').length
-			const bAssists = b.statEntries.filter((se) => se.type === 'assist').length
+		if (goalDifference !== 0) {
+			return goalDifference
+		}
+		const aAssists = a.statEntries.filter((se) => se.type === 'assist').length
+		const bAssists = b.statEntries.filter((se) => se.type === 'assist').length
 
-			return bAssists - aAssists
-		})
-	}
+		return bAssists - aAssists
+	})
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
@@ -213,7 +222,7 @@ function formatLocalIsoDateString(dateIsoString: string) {
 	return result
 }
 
-type StatEditDialogData = Omit<StatEntry, 'playerId'> | null
+type StatEditDialogData = Omit<StatEntry, 'playerId' | 'gameId'> | null
 
 function StatEditDialog({
 	show,
@@ -297,7 +306,7 @@ function StatEditDialog({
 }
 
 type StatDeleteDialogData =
-	| (Omit<StatEntry, 'playerId'> & { playerName: string })
+	| (Omit<StatEntry, 'playerId' | 'gameId'> & { playerName: string })
 	| null
 
 function StatDeleteDialog({
@@ -379,31 +388,13 @@ function PlayerRow({
 	const [statDeleteDialog, setStatDeleteDialog] =
 		useState<StatDeleteDialogData>(null)
 
-	const fetcher = useFetcher()
-	const optimisticState: OptimisticState =
-		fetcher.state === 'submitting' || fetcher.state === 'loading'
-			? fetcher.formAction === `/players/${player.id}/goals`
-				? 'submittingGoal'
-				: fetcher.formAction === `/players/${player.id}/goals/destroy_latest`
-				? 'removingGoal'
-				: fetcher.formAction === `/players/${player.id}/assists`
-				? 'submittingAssist'
-				: fetcher.formAction === `/players/${player.id}/assists/destroy_latest`
-				? 'removingAssist'
-				: null
-			: null
-
-	const goalCount =
-		player.statEntries.filter((s) => s.type === 'goal').length +
-		(optimisticState === 'submittingGoal' ? 1 : 0) +
-		(optimisticState === 'removingGoal' ? -1 : 0)
-	const assistCount =
-		player.statEntries.filter((s) => s.type === 'assist').length +
-		(optimisticState === 'submittingAssist' ? 1 : 0) +
-		(optimisticState === 'removingAssist' ? -1 : 0)
+	const goalCount = player.statEntries.filter((s) => s.type === 'goal').length
+	const assistCount = player.statEntries.filter(
+		(s) => s.type === 'assist'
+	).length
 	const statEntriesByDay: [string, StatEntry[]][] = player.statEntries.reduce(
 		(acc: [string, StatEntry[]][], se) => {
-			const date = parseISO(se.timestamp)
+			const date = parseISO(se.game?.timestamp ?? se.timestamp)
 			const dateString = formatISO(date, {
 				representation: 'date',
 			})
@@ -539,20 +530,26 @@ function PlayerRow({
 function AddStatsButton({
 	players,
 	disabled,
+	games,
 }: {
 	players: PlayerWithStats[]
 	disabled: boolean
+	games: Game[]
 }) {
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const fetcher = useFetcher<{ changes: number }>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
-	const [datepickerValue, setDatepickerValue] = useState(() =>
-		datepickerTimestampString()
+	const [selectedGameId, setSelectedGameId] = useState<string | null>(() =>
+		games.length === 0 ? 'manual' : null
+	)
+
+	const [datepickerValue, setDatepickerValue] = useState(
+		datepickerTimestampString
 	)
 	const [timestampValue, setTimestampValue] = useState(() =>
-		parseISO(datepickerValue).toISOString()
+		parseISO(datepickerTimestampString()).toISOString()
 	)
 
 	const isSubmitting = fetcher.state === 'submitting'
@@ -575,6 +572,21 @@ function AddStatsButton({
 			setDialogOpen(false)
 		}
 	}, [fetcher.data, fetcher.data?.changes, fetcher.state])
+
+	function handleGameSelection(gameIdString: string) {
+		setSelectedGameId(gameIdString)
+		const newDatepickerValue = datepickerTimestampString()
+		setDatepickerValue(newDatepickerValue)
+		const newTimestamp = parseISO(newDatepickerValue).toISOString()
+		setTimestampValue(newTimestamp)
+		setStats((oldStats) =>
+			oldStats.map((s) => ({
+				...s,
+				timestamp: newTimestamp,
+				gameId: gameIdString === 'manual' ? null : Number(gameIdString),
+			}))
+		)
+	}
 
 	function submit(e: MouseEvent) {
 		e.preventDefault()
@@ -601,25 +613,51 @@ function AddStatsButton({
 				<DialogHeader>
 					<DialogTitle>Add stats</DialogTitle>
 				</DialogHeader>
-				<Input
-					type="datetime-local"
-					value={datepickerValue}
-					step="60"
+
+				<Select
 					disabled={isSubmitting}
-					onChange={(e) => {
-						setDatepickerValue(e.target.value)
-						const newTimestamp = parseISO(e.target.value).toISOString()
-						setTimestampValue(newTimestamp)
-						setStats((stats) =>
-							stats.map((s) => ({
-								...s,
-								timestamp: newTimestamp,
-							}))
-						)
-					}}
-				/>
+					value={selectedGameId ? selectedGameId : ''}
+					onValueChange={handleGameSelection}
+				>
+					<SelectTrigger>
+						<SelectValue placeholder="Select game" />
+					</SelectTrigger>
+					<SelectContent>
+						{games.map((g) => (
+							<SelectItem key={g.id} value={g.id.toString()}>
+								{g.timestamp
+									? format(parseISO(g.timestamp), 'EEE MMM d h:mm a')
+									: 'TBD'}{' '}
+								vs {g.opponent}
+							</SelectItem>
+						))}
+						{games.length > 0 ? <SelectSeparator /> : null}
+						<SelectItem value="manual">Enter a date and time</SelectItem>
+					</SelectContent>
+				</Select>
+
+				{selectedGameId === 'manual' && (
+					<Input
+						type="datetime-local"
+						value={datepickerValue}
+						step="60"
+						disabled={isSubmitting}
+						onChange={(e) => {
+							setDatepickerValue(e.target.value)
+							const newTimestamp = parseISO(e.target.value).toISOString()
+							setTimestampValue(newTimestamp)
+							setStats((stats) =>
+								stats.map((s) => ({
+									...s,
+									timestamp: newTimestamp,
+								}))
+							)
+						}}
+					/>
+				)}
+
 				<fieldset
-					disabled={isSubmitting}
+					disabled={!selectedGameId || isSubmitting}
 					className="grow overflow-y-auto h-[9000px]" // flexbox auto calculates, but I need it higher than what flexbox will calculate
 				>
 					<ul className="py-1 space-y-1">
@@ -657,6 +695,10 @@ function AddStatsButton({
 														playerId: player.id,
 														timestamp: timestampValue,
 														type: 'assist',
+														gameId:
+															selectedGameId === 'manual'
+																? null
+																: Number(selectedGameId),
 													},
 												]
 											})
@@ -678,6 +720,10 @@ function AddStatsButton({
 														playerId: player.id,
 														timestamp: timestampValue,
 														type: 'goal',
+														gameId:
+															selectedGameId === 'manual'
+																? null
+																: Number(selectedGameId),
 													},
 												]
 											})
@@ -698,7 +744,7 @@ function AddStatsButton({
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button type="submit" onClick={submit}>
+						<Button type="submit" onClick={submit} disabled={!selectedGameId}>
 							Save
 						</Button>
 					</DialogFooter>
@@ -764,7 +810,7 @@ export default function Stats() {
 			new Set(
 				players.flatMap((p) =>
 					p.statEntries.flatMap((se) => {
-						const date = parseISO(se.timestamp)
+						const date = parseISO(se.game?.timestamp ?? se.timestamp)
 						const isoString = formatISO(date, { representation: 'date' })
 
 						return isoString
@@ -798,6 +844,7 @@ export default function Stats() {
 					<AddStatsButton
 						players={players}
 						disabled={!teamHasActiveSubscription}
+						games={team.games}
 					/>
 				) : null}
 			</div>

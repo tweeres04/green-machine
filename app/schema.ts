@@ -152,9 +152,11 @@ export const statEntries = sqliteTable(
 		playerId: integer('player_id').notNull(),
 		timestamp: text('timestamp').notNull(),
 		type: text('type').$type<Stat>().notNull(),
+		gameId: integer('game_id'),
 	},
 	(table) => ({
 		playerIdIdx: index('player_id_idx').on(table.playerId),
+		gameIdIdx: index('game_id_idx').on(table.gameId),
 	})
 )
 
@@ -163,11 +165,18 @@ export const statEntriesRelations = relations(statEntries, ({ one }) => ({
 		fields: [statEntries.playerId],
 		references: [players.id],
 	}),
+	game: one(games, {
+		fields: [statEntries.gameId],
+		references: [games.id],
+	}),
 }))
 
 export type StatEntry = typeof statEntries.$inferSelect
 export const statEntrySchema = createInsertSchema(statEntries, {
-	timestamp: (schema) => schema.timestamp.datetime(),
+	timestamp: (schema) =>
+		schema.timestamp.datetime({
+			local: true,
+		}),
 	type: statSchema,
 })
 
