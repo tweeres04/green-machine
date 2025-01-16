@@ -53,7 +53,9 @@ import { ChevronDown } from 'lucide-react'
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectSeparator,
 	SelectTrigger,
 	SelectValue,
@@ -175,7 +177,9 @@ export async function loader({
 				},
 				orderBy: (players, { asc }) => [asc(players.name)],
 			},
-			games: true,
+			games: {
+				orderBy: (games, { asc }) => [asc(games.timestamp)],
+			},
 			subscription: true,
 			seasons: true,
 		},
@@ -598,6 +602,30 @@ function AddStatsButton({
 		})
 	}
 
+	let pastGames = games
+		.filter((g) => {
+			const gameDate = g.timestamp ? parseISO(g.timestamp) : null
+			const now = new Date()
+
+			return gameDate && gameDate <= now
+		})
+		.reverse()
+
+	const mostRecentGame = pastGames[0]
+
+	pastGames = pastGames.slice(1)
+
+	function GameOption({ game }: { game: Game }) {
+		return (
+			<SelectItem value={game.id.toString()}>
+				{game.timestamp
+					? format(parseISO(game.timestamp), 'EEE MMM d h:mm a')
+					: 'TBD'}{' '}
+				vs {game.opponent}
+			</SelectItem>
+		)
+	}
+
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 			<Button
@@ -623,15 +651,31 @@ function AddStatsButton({
 						<SelectValue placeholder="Select game" />
 					</SelectTrigger>
 					<SelectContent>
-						{games.map((g) => (
-							<SelectItem key={g.id} value={g.id.toString()}>
-								{g.timestamp
-									? format(parseISO(g.timestamp), 'EEE MMM d h:mm a')
-									: 'TBD'}{' '}
-								vs {g.opponent}
-							</SelectItem>
-						))}
-						{games.length > 0 ? <SelectSeparator /> : null}
+						{mostRecentGame ? (
+							<>
+								<SelectGroup>
+									<SelectLabel>Most recent game</SelectLabel>
+									<GameOption game={mostRecentGame} />
+								</SelectGroup>
+								<SelectSeparator />
+							</>
+						) : null}
+						{pastGames.length > 0 ? (
+							<>
+								<SelectGroup>
+									<SelectLabel>Past games</SelectLabel>
+									{pastGames.map((g) => (
+										<SelectItem key={g.id} value={g.id.toString()}>
+											{g.timestamp
+												? format(parseISO(g.timestamp), 'EEE MMM d h:mm a')
+												: 'TBD'}{' '}
+											vs {g.opponent}
+										</SelectItem>
+									))}
+								</SelectGroup>
+								<SelectSeparator />
+							</>
+						) : null}
 						<SelectItem value="manual">Enter a date and time</SelectItem>
 					</SelectContent>
 				</Select>
