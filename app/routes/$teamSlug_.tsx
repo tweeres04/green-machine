@@ -20,7 +20,7 @@ import { Copy } from '~/components/ui/icons/copy'
 import invariant from 'tiny-invariant'
 import { Game, Season, StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
-import { format, formatISO, parseISO } from 'date-fns'
+import { endOfDay, format, formatISO, parseISO } from 'date-fns'
 import {
 	Popover,
 	PopoverContent,
@@ -164,9 +164,16 @@ export async function loader({
 						? {
 								where: (statEntries, { and, gte, lte }) => {
 									invariant(season, 'No season inside stats query')
+
+									let endOfSeasonEndDay: Date | string = parseISO(
+										season.endDate
+									)
+									endOfSeasonEndDay = endOfDay(endOfSeasonEndDay)
+									endOfSeasonEndDay = endOfSeasonEndDay.toISOString() // need toISOString here because sqlite does string comparison
+
 									return and(
 										gte(statEntries.timestamp, season.startDate),
-										lte(statEntries.timestamp, season.endDate)
+										lte(statEntries.timestamp, endOfSeasonEndDay)
 									)
 								},
 								with: {
