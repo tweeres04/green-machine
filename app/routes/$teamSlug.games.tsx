@@ -33,6 +33,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
 import { games } from '~/schema'
+import _ from 'lodash'
 
 type Game = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -538,6 +539,71 @@ function RsvpDialog({
 	)
 }
 
+function StatsDialog({
+	children,
+	statEntries,
+	game,
+}: {
+	children: ReactNode
+	statEntries: Game['statEntries']
+	game: Game
+	players: Player[]
+}) {
+	const groupedStats = _.groupBy(statEntries, 'playerId')
+
+	const formattedDate = game.timestamp
+		? format(game.timestamp, 'E MMM d')
+		: 'TBD'
+	const formattedTime = game.timestamp ? format(game.timestamp, 'h:mma') : 'TBD'
+
+	const sortedGroupedStats = Object.entries(groupedStats).toSorted(
+		([, a], [, b]) => a[0].player.name.localeCompare(b[0].player.name)
+	)
+
+	return (
+		<Dialog>
+			<DialogTrigger>{children}</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>
+						{game.opponent} - {formattedDate} at {formattedTime}
+					</DialogTitle>
+				</DialogHeader>
+				<div className="space-y-1">
+					{sortedGroupedStats.map(([playerId, entries]) => {
+						const player = entries[0].player
+						const goals = entries.filter(
+							(entry) => entry.type === 'goal'
+						).length
+						const assists = entries.filter(
+							(entry) => entry.type === 'assist'
+						).length
+						return (
+							<div
+								key={playerId}
+								className="grid grid-cols-2 sm:grid-cols-[1fr_3fr]"
+							>
+								<div>{player.name}:</div>
+								<div>
+									{goals > 0 && `${goals} goal${goals === 1 ? '' : 's'}`}
+									{goals > 0 && assists > 0 && ', '}
+									{assists > 0 &&
+										`${assists} assist${assists === 1 ? '' : 's'}`}
+								</div>
+							</div>
+						)
+					})}
+				</div>
+				<DialogFooter>
+					<DialogClose>
+						<Button>Done</Button>
+					</DialogClose>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	const { teamSlug } = params
 	invariant(teamSlug, 'Missing teamSlug parameter')
@@ -553,6 +619,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 				orderBy: (games, { asc }) => asc(games.timestamp),
 				with: {
 					rsvps: true,
+					statEntries: {
+						with: {
+							player: true,
+						},
+					},
 				},
 			},
 			players: {
@@ -611,8 +682,9 @@ export default function Games() {
 							<tr className="[&_th]:text-left">
 								<th>Date/time</th>
 								<th>Opponent</th>
-								<th>RSVPs</th>
 								<th>Location</th>
+								<th>RSVPs</th>
+								<th>Stats</th>
 								{userHasAccessToTeam || player ? (
 									<th className={`bg-${team.color}-50 sticky right-0`}></th>
 								) : null}
@@ -641,6 +713,11 @@ export default function Games() {
 										<td
 											className={cn(game.cancelledAt ? 'line-through' : null)}
 										>
+											{game.location}
+										</td>
+										<td
+											className={cn(game.cancelledAt ? 'line-through' : null)}
+										>
 											<RsvpDialog rsvps={game.rsvps} players={team.players}>
 												{yeses > 0 ? (
 													<div className="font-bold">{yeses} yes</div>
@@ -649,10 +726,29 @@ export default function Games() {
 												<div>{team.players.length - game.rsvps.length} TBD</div>
 											</RsvpDialog>
 										</td>
-										<td
-											className={cn(game.cancelledAt ? 'line-through' : null)}
-										>
-											{game.location}
+										<td className="text-center">
+											{(() => {
+												const goals = game.statEntries.filter(
+													(se) => se.type === 'goal'
+												).length
+												const assists = game.statEntries.filter(
+													(se) => se.type === 'assist'
+												).length
+
+												if (!goals && !assists) {
+													return <>-</>
+												}
+												return (
+													<StatsDialog
+														statEntries={game.statEntries}
+														game={game}
+														players={team.players}
+													>
+														{goals} goal{goals === 1 ? '' : 's'}, {assists}{' '}
+														assist{assists === 1 ? '' : 's'}
+													</StatsDialog>
+												)
+											})()}
 										</td>
 										{userHasAccessToTeam || player ? (
 											<td className={`bg-${team.color}-50 sticky right-0`}>

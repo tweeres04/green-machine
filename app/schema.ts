@@ -140,6 +140,7 @@ export const gamesRelations = relations(games, ({ one, many }) => ({
 		references: [teams.id],
 	}),
 	rsvps: many(rsvps),
+	statEntries: many(statEntries), // Add this line
 }))
 
 const statSchema = z.enum(['goal', 'assist'])
