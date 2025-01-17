@@ -1,4 +1,4 @@
-import { Form, useFetcher } from '@remix-run/react'
+import { Form, useFetcher, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { kebabCase } from 'lodash-es'
@@ -13,10 +13,10 @@ import {
 } from '~/components/ui/card'
 import invariant from 'tiny-invariant'
 import { useDebouncedCallback } from 'use-debounce'
-import { LoaderFunctionArgs, json } from '@remix-run/node'
-import { getDb } from '~/lib/getDb'
+import { json } from '@remix-run/node'
 import { useDelayedLoading } from '~/lib/useDelayedLoading'
 import { cn } from '~/lib/utils'
+import Stripe from 'stripe'
 
 interface SlugCheckResponse {
 	slugIsAvailable: boolean
@@ -31,7 +31,10 @@ function useAutoSlug(
 	const fetcher = useFetcher<SlugCheckResponse>()
 	const [needsCheck, setNeedsCheck] = React.useState(false)
 	const checkSlug = useDebouncedCallback(() => {
-		fetcher.submit({ slug: slugExample }, { method: 'get' })
+		fetcher.submit(
+			{ slug: slugExample },
+			{ method: 'get', action: '/check-slug' }
+		)
 		setNeedsCheck(false)
 	}, 300)
 
@@ -81,21 +84,29 @@ function useAutoSlug(
 	}
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-	const url = new URL(request.url)
-	const slug = url.searchParams.get('slug')
+export async function loader() {
+	invariant(process.env.STRIPE_SECRET_KEY, 'STRIPE_SECRET_KEY must be set')
+	invariant(
+		process.env.STRIPE_YEARLY_PRICE_ID,
+		'STRIPE_YEARLY_PRICE_ID must be set'
+	)
 
-	if (!slug) return json({ slugIsAvailable: false })
-
-	const db = getDb()
-	const existingTeam = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, slug),
+	const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+		apiVersion: '2024-10-28.acacia',
 	})
+	const priceData = await stripe.prices.retrieve(
+		process.env.STRIPE_YEARLY_PRICE_ID
+	)
 
-	return json({ slugIsAvailable: !existingTeam })
+	invariant(priceData.unit_amount, 'Price data not found')
+
+	const price = priceData.unit_amount / 100 // Convert to dollars
+
+	return json({ price })
 }
 
 export default function NewTeamForm() {
+	const { price } = useLoaderData<typeof loader>()
 	const nameRef = React.useRef<HTMLInputElement>(null)
 	const slugRef = React.useRef<HTMLInputElement>(null)
 	const { slugExample, needsCheck, slugIsAvailable, isChecking } = useAutoSlug(
@@ -148,7 +159,7 @@ export default function NewTeamForm() {
 
 					<Card>
 						<CardHeader>
-							<CardTitle>$49 USD/yr</CardTitle>
+							<CardTitle>${price} USD/yr</CardTitle>
 						</CardHeader>
 						<CardContent className="text-xs">
 							<p className="mb-3">Includes everything your team needs:</p>
