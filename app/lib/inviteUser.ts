@@ -3,6 +3,7 @@ import { getDb } from './getDb'
 import Mailgun from 'mailgun.js'
 import { randomBytes } from 'node:crypto'
 import { userInvites } from '~/schema'
+import { formatISO } from 'date-fns'
 
 async function sendInviteEmail({
 	teamId,
@@ -70,7 +71,7 @@ export async function inviteUser({
 		.values({
 			email,
 			playerId: playerId,
-			createdAt: new Date().toISOString(),
+			createdAt: formatISO(new Date()),
 			token: randomToken,
 			inviterId: userId,
 		})

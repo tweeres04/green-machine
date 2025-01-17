@@ -213,7 +213,7 @@ function CancelForm({
 							invariant(cancelledAtInput, 'cancelledAtInput not found')
 							cancelledAtInput.value = game.cancelledAt
 								? ''
-								: new Date().toISOString()
+								: formatISO(new Date())
 						}}
 					>
 						{game.cancelledAt ? 'Uncancel' : 'Cancel'} game

@@ -169,8 +169,9 @@ export async function loader({
 										season.endDate
 									)
 									endOfSeasonEndDay = endOfDay(endOfSeasonEndDay)
-									endOfSeasonEndDay = endOfSeasonEndDay.toISOString() // need toISOString here because sqlite does string comparison
+									endOfSeasonEndDay = formatISO(endOfSeasonEndDay)
 
+									// this _may_ fail across dst since sqlite does a string comparison (but I'll tackle that if it actually happens)
 									return and(
 										gte(statEntries.timestamp, season.startDate),
 										lte(statEntries.timestamp, endOfSeasonEndDay)
@@ -286,7 +287,7 @@ function StatEditDialog({
 										'#timestamp_input' // I should use a ref at some point
 									)
 								invariant(timestampInput, 'timestampInput not found')
-								timestampInput.value = new Date(e.target.value).toISOString()
+								timestampInput.value = formatISO(parseISO(e.target.value))
 							}}
 						/>
 						<input
@@ -295,7 +296,7 @@ function StatEditDialog({
 							id="timestamp_input"
 							defaultValue={
 								datepickerTimestampString
-									? new Date(datepickerTimestampString).toISOString()
+									? formatISO(parseISO(datepickerTimestampString))
 									: undefined
 							}
 						/>
@@ -560,7 +561,7 @@ function AddStatsButton({
 		datepickerTimestampString
 	)
 	const [timestampValue, setTimestampValue] = useState(() =>
-		parseISO(datepickerTimestampString()).toISOString()
+		formatISO(parseISO(datepickerTimestampString()))
 	)
 
 	const isSubmitting = fetcher.state === 'submitting'
@@ -570,7 +571,7 @@ function AddStatsButton({
 			setStats([])
 			const newDatepickerValue = datepickerTimestampString()
 			setDatepickerValue(newDatepickerValue)
-			setTimestampValue(parseISO(newDatepickerValue).toISOString())
+			setTimestampValue(formatISO(parseISO(newDatepickerValue)))
 		}
 	}, [dialogOpen])
 
@@ -588,7 +589,7 @@ function AddStatsButton({
 		setSelectedGameId(gameIdString)
 		const newDatepickerValue = datepickerTimestampString()
 		setDatepickerValue(newDatepickerValue)
-		const newTimestamp = parseISO(newDatepickerValue).toISOString()
+		const newTimestamp = formatISO(parseISO(newDatepickerValue))
 		setTimestampValue(newTimestamp)
 		setStats((oldStats) =>
 			oldStats.map((s) => ({
@@ -695,7 +696,7 @@ function AddStatsButton({
 						disabled={isSubmitting}
 						onChange={(e) => {
 							setDatepickerValue(e.target.value)
-							const newTimestamp = parseISO(e.target.value).toISOString()
+							const newTimestamp = formatISO(parseISO(e.target.value))
 							setTimestampValue(newTimestamp)
 							setStats((stats) =>
 								stats.map((s) => ({

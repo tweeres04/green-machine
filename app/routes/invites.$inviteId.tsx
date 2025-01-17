@@ -1,5 +1,6 @@
 import { json, LoaderFunctionArgs, redirect } from '@remix-run/node'
 import { Link, useLoaderData } from '@remix-run/react'
+import { formatISO } from 'date-fns'
 import { eq } from 'drizzle-orm'
 import invariant from 'tiny-invariant'
 import { Button } from '~/components/ui/button'
@@ -63,7 +64,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		.update(userInvites)
 		.set({
 			userId: user.id,
-			acceptedAt: new Date().toISOString(),
+			acceptedAt: formatISO(new Date()),
 		})
 		.where(eq(userInvites.id, inviteId))
 
