@@ -39,76 +39,83 @@ export default function Nav({ title, team }: Props) {
 			) : null}
 			<h1 className="grow text-3xl">{title ?? team?.name}</h1>
 
-			<DropdownMenu open={menuIsOpen} onOpenChange={setMenuIsOpen}>
-				<DropdownMenuTrigger asChild>
-					<Button variant="secondary" size="icon">
-						{menuIsOpen ? <X /> : <Burger />}
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent className="[&_a[role=menuitem]]:cursor-pointer">
-					{team ? (
-						<>
-							<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
-							{pathname !== `/${team.slug}` ? (
-								<DropdownMenuItem asChild>
-									<Link to={`/${team.slug}`}>Stats</Link>
-								</DropdownMenuItem>
-							) : null}
-							{pathname !== `/${team.slug}/games` ? (
-								<DropdownMenuItem asChild>
-									<Link to={`/${team.slug}/games`}>Games</Link>
-								</DropdownMenuItem>
-							) : null}
-							{userHasAccessToTeam && pathname !== `/${team.slug}/players` ? (
-								<DropdownMenuItem asChild>
-									<Link to={`/${team.slug}/players`}>Players</Link>
-								</DropdownMenuItem>
-							) : null}
-							{userHasAccessToTeam && pathname !== `/${team.slug}/seasons` ? (
-								<DropdownMenuItem asChild>
-									<Link to={`/${team.slug}/seasons`}>Seasons</Link>
-								</DropdownMenuItem>
-							) : null}
-							{userHasAccessToTeam && pathname !== `/${team.slug}/settings` ? (
-								<DropdownMenuItem asChild>
-									<Link to={`/${team.slug}/settings`}>Settings</Link>
-								</DropdownMenuItem>
-							) : null}
-						</>
-					) : null}
-					{user ? (
-						<>
-							<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
-							{pathname !== '/' ? (
-								<DropdownMenuItem asChild>
-									<a href="/">Teams</a>
-								</DropdownMenuItem>
-							) : null}
-							<DropdownMenuItem asChild>
-								{user?.stripeCustomerId ? (
-									<Link to="/manage-billing">Manage billing</Link>
+			{!user && !team ? (
+				<Link to="/login">
+					<Button variant="secondary">Sign in</Button>
+				</Link>
+			) : (
+				<DropdownMenu open={menuIsOpen} onOpenChange={setMenuIsOpen}>
+					<DropdownMenuTrigger asChild>
+						<Button variant="secondary" size="icon">
+							{menuIsOpen ? <X /> : <Burger />}
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent className="[&_a[role=menuitem]]:cursor-pointer">
+						{team ? (
+							<>
+								<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
+								{pathname !== `/${team.slug}` ? (
+									<DropdownMenuItem asChild>
+										<Link to={`/${team.slug}`}>Stats</Link>
+									</DropdownMenuItem>
 								) : null}
-							</DropdownMenuItem>
-							<DropdownMenuItem asChild>
-								{user ? (
-									<Link
-										to="/logout"
-										onClick={() => {
-											mixpanel.reset()
-										}}
-									>
-										Logout
-									</Link>
+								{pathname !== `/${team.slug}/games` ? (
+									<DropdownMenuItem asChild>
+										<Link to={`/${team.slug}/games`}>Games</Link>
+									</DropdownMenuItem>
 								) : null}
+								{userHasAccessToTeam && pathname !== `/${team.slug}/players` ? (
+									<DropdownMenuItem asChild>
+										<Link to={`/${team.slug}/players`}>Players</Link>
+									</DropdownMenuItem>
+								) : null}
+								{userHasAccessToTeam && pathname !== `/${team.slug}/seasons` ? (
+									<DropdownMenuItem asChild>
+										<Link to={`/${team.slug}/seasons`}>Seasons</Link>
+									</DropdownMenuItem>
+								) : null}
+								{userHasAccessToTeam &&
+								pathname !== `/${team.slug}/settings` ? (
+									<DropdownMenuItem asChild>
+										<Link to={`/${team.slug}/settings`}>Settings</Link>
+									</DropdownMenuItem>
+								) : null}
+							</>
+						) : null}
+						{user ? (
+							<>
+								<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+								{pathname !== '/' ? (
+									<DropdownMenuItem asChild>
+										<a href="/">Teams</a>
+									</DropdownMenuItem>
+								) : null}
+								<DropdownMenuItem asChild>
+									{user?.stripeCustomerId ? (
+										<Link to="/manage-billing">Manage billing</Link>
+									) : null}
+								</DropdownMenuItem>
+								<DropdownMenuItem asChild>
+									{user ? (
+										<Link
+											to="/logout"
+											onClick={() => {
+												mixpanel.reset()
+											}}
+										>
+											Logout
+										</Link>
+									) : null}
+								</DropdownMenuItem>
+							</>
+						) : (
+							<DropdownMenuItem asChild>
+								<Link to="/login">Login</Link>
 							</DropdownMenuItem>
-						</>
-					) : (
-						<DropdownMenuItem asChild>
-							<Link to="/login">Login</Link>
-						</DropdownMenuItem>
-					)}
-				</DropdownMenuContent>
-			</DropdownMenu>
+						)}
+					</DropdownMenuContent>
+				</DropdownMenu>
+			)}
 		</div>
 	)
 }
