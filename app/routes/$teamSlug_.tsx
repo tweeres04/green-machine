@@ -103,6 +103,8 @@ function CopyStandingsButton({
 	players: Awaited<ReturnType<typeof loader>>['team']['players']
 }) {
 	const { toast } = useToast()
+	const location = useLocation()
+
 	return (
 		<Button
 			title="Copy standings"
@@ -124,7 +126,7 @@ ${players
 	})
 	.join('\n')}
 	
-https://teamstats.tweeres.com/${slug}`)
+https://teamstats.tweeres.com/${slug}${location.search}`)
 
 				toast({
 					description: 'Stats copied to clipboard',
@@ -148,6 +150,7 @@ export async function loader({
 
 	const searchParams = new URL(request.url).searchParams
 	const seasonId = searchParams.get('season')
+	const sort = searchParams.get('sort') ?? 'goals'
 
 	const season = seasonId
 		? await db.query.seasons.findFirst({
@@ -201,18 +204,26 @@ export async function loader({
 
 	// todo: move this sorting to the db at some point
 	team.players = team.players.toSorted((a, b) => {
+		if (sort === 'name') {
+			return a.name.localeCompare(b.name)
+		}
+
 		const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
 		const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
-
-		const goalDifference = bGoals - aGoals
-
-		if (goalDifference !== 0) {
-			return goalDifference
-		}
 		const aAssists = a.statEntries.filter((se) => se.type === 'assist').length
 		const bAssists = b.statEntries.filter((se) => se.type === 'assist').length
 
-		return bAssists - aAssists
+		if (sort === 'goals') {
+			if (bGoals !== aGoals) return bGoals - aGoals
+			if (bAssists !== aAssists) return bAssists - aAssists
+			return a.name.localeCompare(b.name)
+		}
+		if (sort === 'assists') {
+			if (bAssists !== aAssists) return bAssists - aAssists
+			if (bGoals !== aGoals) return bGoals - aGoals
+			return a.name.localeCompare(b.name)
+		}
+		return 0
 	})
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
@@ -571,7 +582,8 @@ function AddStatsButton({
 			setStats([])
 			const newDatepickerValue = datepickerTimestampString()
 			setDatepickerValue(newDatepickerValue)
-			setTimestampValue(formatISO(parseISO(newDatepickerValue)))
+			const newTimestamp = formatISO(parseISO(newDatepickerValue))
+			setTimestampValue(newTimestamp)
 		}
 	}, [dialogOpen])
 
@@ -847,6 +859,43 @@ function SeasonDropdown({
 	)
 }
 
+function SortDropdown() {
+	const path = useLocation().pathname
+	const navigate = useNavigate()
+	const searchParams = new URLSearchParams(useLocation().search)
+	const sort = searchParams.get('sort') ?? 'goals'
+
+	const sortLabel = {
+		name: 'Name',
+		goals: 'Most goals',
+		assists: 'Most assists',
+	}[sort]
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="secondary">
+					{sortLabel}
+					<ChevronDown />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent>
+				<DropdownMenuRadioGroup
+					value={sort}
+					onValueChange={(newSort) => {
+						searchParams.set('sort', newSort)
+						navigate(`${path}?${searchParams.toString()}`)
+					}}
+				>
+					<DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="goals">Goals</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="assists">Assists</DropdownMenuRadioItem>
+				</DropdownMenuRadioGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	)
+}
+
 export default function Stats() {
 	const {
 		team,
@@ -882,10 +931,11 @@ export default function Stats() {
 		<>
 			<Nav title="Stats" team={team} />
 			<div className="flex gap-1 mb-3 items-center">
-				<div className="grow">
+				<div className="grow flex flex-col sm:flex-row gap-1">
 					{seasons.length > 0 && (
 						<SeasonDropdown seasons={seasons} season={season} />
 					)}
+					<SortDropdown />
 				</div>
 				<CopyStandingsButton
 					slug={team.slug}
