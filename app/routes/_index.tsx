@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Await, defer, Link, useLoaderData } from '@remix-run/react'
+import { Await, defer, json, Link, useLoaderData } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 import { Suspense } from 'react'
 import { authenticator } from '~/lib/auth.server'
@@ -9,6 +9,7 @@ import { sql } from 'drizzle-orm'
 import { Badge } from '~/components/ui/badge'
 import { cn } from '~/lib/utils'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
+import HomeLandingPage from '~/components/home-landing-page'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -23,9 +24,11 @@ export const meta: MetaFunction = () => {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-	const user = await authenticator.isAuthenticated(request, {
-		failureRedirect: '/login',
-	})
+	const user = await authenticator.isAuthenticated(request)
+
+	if (!user) {
+		return json({ user, teams: [], stats: [] })
+	}
 
 	const db = getDb()
 
@@ -77,6 +80,10 @@ export default function Index() {
 	const { user, teams, stats } = useLoaderData<typeof loader>()
 
 	useMixpanelIdentify(user)
+
+	if (!user) {
+		return <HomeLandingPage />
+	}
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">

@@ -13,10 +13,11 @@ import {
 } from '~/components/ui/card'
 import invariant from 'tiny-invariant'
 import { useDebouncedCallback } from 'use-debounce'
-import { json } from '@remix-run/node'
+import { json, LoaderFunctionArgs } from '@remix-run/node'
 import { useDelayedLoading } from '~/lib/useDelayedLoading'
 import { cn } from '~/lib/utils'
 import Stripe from 'stripe'
+import { authenticator } from '~/lib/auth.server'
 
 interface SlugCheckResponse {
 	slugIsAvailable: boolean
@@ -84,7 +85,11 @@ function useAutoSlug(
 	}
 }
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
+	await authenticator.isAuthenticated(request, {
+		failureRedirect: '/signup',
+	})
+
 	invariant(process.env.STRIPE_SECRET_KEY, 'STRIPE_SECRET_KEY must be set')
 	invariant(
 		process.env.STRIPE_YEARLY_PRICE_ID,

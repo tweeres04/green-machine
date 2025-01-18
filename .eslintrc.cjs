@@ -83,5 +83,6 @@ module.exports = {
 	],
 	rules: {
 		'no-mixed-spaces-and-tabs': 'off',
+		'react/no-unescaped-entities': 'off',
 	},
 }
