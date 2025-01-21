@@ -13,7 +13,7 @@ import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
-import { LoaderCircle, ChevronDown } from 'lucide-react'
+import { LoaderCircle, ChevronDown, Share } from 'lucide-react'
 
 import {
 	Dialog,
@@ -42,6 +42,7 @@ import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
 import { games, Team } from '~/schema'
 import _ from 'lodash'
+import { useToast } from '~/components/ui/use-toast'
 
 type Game = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -812,6 +813,57 @@ function GameRow({
 	)
 }
 
+function ShareNextGameButton({
+	teamName,
+	slug,
+	nextGame,
+}: {
+	teamName: string
+	slug: string
+	nextGame: Game
+}) {
+	const { toast } = useToast()
+	const location = useLocation()
+
+	const shareAvailable = typeof window !== 'undefined' && 'share' in navigator
+
+	const title = `${teamName} Next Game`
+	const url = `https://teamstats.tweeres.com/${slug}/games${location.search}`
+	const gameDetails = `${nextGame.opponent} ${
+		nextGame.timestamp
+			? format(parseISO(nextGame.timestamp), "'on' E MMM d 'at' h:mma")
+			: 'TBD'
+	} at ${nextGame.location ?? 'TBD'}`
+
+	return (
+		<Button
+			title="Share next game"
+			variant="secondary"
+			size="icon"
+			onClick={async () => {
+				if (shareAvailable) {
+					await navigator.share({
+						title,
+						text: gameDetails,
+						url,
+					})
+				} else {
+					await window.navigator.clipboard.writeText(`${title}:
+
+${gameDetails}
+
+${url}`)
+					toast({
+						description: 'Next game details copied to clipboard',
+					})
+				}
+			}}
+		>
+			{<Share />}
+		</Button>
+	)
+}
+
 export default function Games() {
 	const {
 		userIsTylerOrMelissa,
@@ -863,9 +915,16 @@ export default function Games() {
 							{nextGame ? (
 								<>
 									<tr>
-										<th colSpan={6} className="text-left">
+										<th colSpan={5} className="text-left">
 											Next Game
 										</th>
+										<td className={`bg-${team.color}-50 sticky right-0`}>
+											<ShareNextGameButton
+												slug={team.slug}
+												teamName={team.name}
+												nextGame={nextGame}
+											/>
+										</td>
 									</tr>
 									<GameRow
 										game={nextGame}
