@@ -16,7 +16,6 @@ import { Add } from '~/components/ui/icons/add'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Toaster } from '~/components/ui/toaster'
-import { Copy } from '~/components/ui/icons/copy'
 import invariant from 'tiny-invariant'
 import { Game, Season, StatEntry, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
@@ -49,7 +48,7 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Share } from 'lucide-react'
 import {
 	Select,
 	SelectContent,
@@ -105,35 +104,48 @@ function CopyStandingsButton({
 	const { toast } = useToast()
 	const location = useLocation()
 
+	const shareAvailable = typeof window !== 'undefined' && 'share' in navigator
+
+	const title = `${teamName} Standings`
+	const url = `https://teamstats.tweeres.com/${slug}${location.search}`
+	const standingsText = `${players
+		.toSorted((a: PlayerWithStats, b: PlayerWithStats) => {
+			const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
+			const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
+			return bGoals - aGoals
+		})
+		.map((p: PlayerWithStats) => {
+			const goals = p.statEntries.filter((s) => s.type === 'goal').length
+			const assists = p.statEntries.filter((s) => s.type === 'assist').length
+			return `${p.name}: ${goals}G ${assists}A`
+		})
+		.join('\n')}`
+
 	return (
 		<Button
 			title="Copy standings"
 			variant="secondary"
 			size="icon"
 			onClick={async () => {
-				await window.navigator.clipboard.writeText(`${teamName} stats:
+				if (shareAvailable) {
+					await navigator.share({
+						title,
+						text: standingsText,
+						url,
+					})
+				} else {
+					await window.navigator.clipboard.writeText(`${title}:
 
-${players
-	.toSorted((a: PlayerWithStats, b: PlayerWithStats) => {
-		const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
-		const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
-		return bGoals - aGoals
-	})
-	.map((p: PlayerWithStats) => {
-		const goals = p.statEntries.filter((s) => s.type === 'goal').length
-		const assists = p.statEntries.filter((s) => s.type === 'assist').length
-		return `${p.name}: ${goals}G ${assists}A`
-	})
-	.join('\n')}
-	
-https://teamstats.tweeres.com/${slug}${location.search}`)
+${standingsText}
 
-				toast({
-					description: 'Stats copied to clipboard',
-				})
+${url}`)
+					toast({
+						description: 'Standings copied to clipboard',
+					})
+				}
 			}}
 		>
-			<Copy />
+			{<Share />}
 		</Button>
 	)
 }
