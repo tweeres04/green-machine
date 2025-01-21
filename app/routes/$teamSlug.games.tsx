@@ -846,7 +846,7 @@ export default function Games() {
 			</div>
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">
-					<table className="w-full [&_td]:pt-2 [&_th:not(:first-child)]:pl-3 [&_td:not(:first-child)]:pl-3">
+					<table className="w-full [&_td]:pt-2 [&_tbody_th]:pt-2 [&_th:not(:first-child)]:pl-3 [&_td:not(:first-child)]:pl-3">
 						<thead>
 							<tr className="[&_th]:text-left">
 								<th>Date/time</th>
@@ -863,9 +863,9 @@ export default function Games() {
 							{nextGame ? (
 								<>
 									<tr>
-										<td colSpan={6} className="font-bold">
+										<th colSpan={6} className="text-left">
 											Next Game
-										</td>
+										</th>
 									</tr>
 									<GameRow
 										game={nextGame}
@@ -879,9 +879,9 @@ export default function Games() {
 							{pastGames.length > 0 ? (
 								<>
 									<tr>
-										<td colSpan={6} className="font-bold">
+										<th colSpan={6} className="text-left">
 											Past Games
-										</td>
+										</th>
 									</tr>
 									{pastGames.map((game) => (
 										<GameRow
@@ -898,9 +898,9 @@ export default function Games() {
 							{upcomingGames.length > 0 ? (
 								<>
 									<tr>
-										<td colSpan={6} className="font-bold">
+										<th colSpan={6} className="text-left">
 											Upcoming Games
-										</td>
+										</th>
 									</tr>
 									{upcomingGames.map((game) => (
 										<GameRow
