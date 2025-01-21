@@ -1,13 +1,19 @@
 import { LoaderFunctionArgs } from '@remix-run/node'
-import { json, useFetcher, useLoaderData } from '@remix-run/react'
-import { format, formatISO } from 'date-fns'
+import {
+	json,
+	useFetcher,
+	useLoaderData,
+	useLocation,
+	useNavigate,
+} from '@remix-run/react'
+import { endOfDay, format, formatISO, parseISO } from 'date-fns'
 import invariant from 'tiny-invariant'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
-import { LoaderCircle } from 'lucide-react'
+import { LoaderCircle, ChevronDown } from 'lucide-react'
 
 import {
 	Dialog,
@@ -24,6 +30,8 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
 
 import More from '~/components/ui/icons/more'
@@ -32,7 +40,7 @@ import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
-import { games } from '~/schema'
+import { games, Team } from '~/schema'
 import _ from 'lodash'
 
 type Game = Awaited<
@@ -612,6 +620,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const db = getDb()
 
+	const searchParams = new URL(request.url).searchParams
+	const seasonId = searchParams.get('season')
+
+	const season = seasonId
+		? await db.query.seasons.findFirst({
+				where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+		  })
+		: null
+
 	const teamPromise = db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
 		with: {
@@ -625,6 +642,19 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 						},
 					},
 				},
+				where: season
+					? (statEntries, { and, gte, lte }) => {
+							let endOfSeasonEndDay: Date | string = parseISO(season.endDate)
+							endOfSeasonEndDay = endOfDay(endOfSeasonEndDay)
+							endOfSeasonEndDay = formatISO(endOfSeasonEndDay)
+
+							// this _may_ fail across dst since sqlite does a string comparison (but I'll tackle that if it actually happens)
+							return and(
+								gte(statEntries.timestamp, season.startDate),
+								lte(statEntries.timestamp, endOfSeasonEndDay)
+							)
+					  }
+					: undefined,
 			},
 			players: {
 				with: {
@@ -633,6 +663,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 				},
 			},
 			subscription: true,
+			seasons: true,
 		},
 	})
 
@@ -658,7 +689,127 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		userHasAccessToTeam,
 		player,
 		teamHasActiveSubscription: teamHasActiveSubscription_,
+		seasons: team.seasons,
+		season,
 	})
+}
+
+function SeasonDropdown({
+	seasons,
+	season,
+}: {
+	seasons: { id: number; name: string }[]
+	season: { id: number; name: string } | null
+}) {
+	const path = useLocation().pathname
+	const navigate = useNavigate()
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button variant="secondary">
+					{season?.name ?? 'All seasons'}
+					<ChevronDown />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent>
+				<DropdownMenuRadioGroup
+					value={season?.id?.toString() ?? ''}
+					onValueChange={(newSeasonId) => {
+						if (newSeasonId) {
+							navigate(`${path}?season=${newSeasonId}`)
+						} else {
+							navigate(path)
+						}
+					}}
+				>
+					<DropdownMenuRadioItem value="">All seasons</DropdownMenuRadioItem>
+					{seasons.map((season) => (
+						<DropdownMenuRadioItem value={season.id.toString()} key={season.id}>
+							{season.name}
+						</DropdownMenuRadioItem>
+					))}
+				</DropdownMenuRadioGroup>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	)
+}
+
+type GameRowProps = {
+	game: Game
+	team: Team & { players: Player[] }
+	userHasAccessToTeam: boolean
+	player: Player
+	teamHasActiveSubscription: boolean
+}
+
+function GameRow({
+	game,
+	team,
+	userHasAccessToTeam,
+	player,
+	teamHasActiveSubscription,
+}: GameRowProps) {
+	const yeses = game.rsvps.filter((r) => r.rsvp === 'yes').length
+	const nos = game.rsvps.filter((r) => r.rsvp === 'no').length
+	return (
+		<tr key={game.id}>
+			<td className="relative">
+				<div className={cn(game.cancelledAt ? 'line-through' : null)}>
+					{game.timestamp
+						? format(game.timestamp, "E MMM d 'at' h:mma")
+						: 'TBD'}
+				</div>
+			</td>
+			<td className={cn(game.cancelledAt ? 'line-through' : null)}>
+				{game.opponent}
+			</td>
+			<td className={cn(game.cancelledAt ? 'line-through' : null)}>
+				{game.location}
+			</td>
+			<td className={cn(game.cancelledAt ? 'line-through' : null)}>
+				<RsvpDialog rsvps={game.rsvps} players={team.players}>
+					{yeses > 0 ? <div className="font-bold">{yeses} yes</div> : null}
+					{nos > 0 ? <div>{nos} no</div> : null}
+					<div>{team.players.length - game.rsvps.length} TBD</div>
+				</RsvpDialog>
+			</td>
+			<td className="text-center">
+				{(() => {
+					const goals = game.statEntries.filter(
+						(se) => se.type === 'goal'
+					).length
+					const assists = game.statEntries.filter(
+						(se) => se.type === 'assist'
+					).length
+
+					if (!goals && !assists) {
+						return <>-</>
+					}
+					return (
+						<StatsDialog
+							statEntries={game.statEntries}
+							game={game}
+							players={team.players}
+						>
+							{goals} goal{goals === 1 ? '' : 's'}, {assists} assist
+							{assists === 1 ? '' : 's'}
+						</StatsDialog>
+					)
+				})()}
+			</td>
+			{userHasAccessToTeam || player ? (
+				<td className={`bg-${team.color}-50 sticky right-0`}>
+					<MoreButton
+						userHasAccessToTeam={userHasAccessToTeam}
+						game={game}
+						player={player}
+						teamHasActiveSubscription={teamHasActiveSubscription}
+					/>
+				</td>
+			) : null}
+		</tr>
+	)
 }
 
 export default function Games() {
@@ -668,13 +819,31 @@ export default function Games() {
 		userHasAccessToTeam,
 		player,
 		teamHasActiveSubscription,
+		season,
+		seasons,
 	} = useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
 
+	const now = new Date()
+	const upcomingGames = team.games.filter(
+		(game) => game.timestamp && new Date(game.timestamp) > now
+	)
+	const pastGames = team.games
+		.filter((game) => game.timestamp && new Date(game.timestamp) <= now)
+		.reverse()
+	const nextGame = upcomingGames.shift()
+
 	return (
 		<>
 			<Nav title="Games" team={team} />
+			<div className="flex gap-1 mb-3 items-center">
+				<div className="grow flex flex-col sm:flex-row gap-1">
+					{seasons.length > 0 && (
+						<SeasonDropdown seasons={seasons} season={season} />
+					)}
+				</div>
+			</div>
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">
 					<table className="w-full [&_td]:pt-2 [&_th:not(:last-child)]:pr-3 [&_td:not(:last-child)]:pr-3">
@@ -691,78 +860,60 @@ export default function Games() {
 							</tr>
 						</thead>
 						<tbody>
-							{team.games.map((game) => {
-								const yeses = game.rsvps.filter((r) => r.rsvp === 'yes').length
-								const nos = game.rsvps.filter((r) => r.rsvp === 'no').length
-								return (
-									<tr key={game.id}>
-										<td className="relative">
-											<div
-												className={cn(game.cancelledAt ? 'line-through' : null)}
-											>
-												{game.timestamp
-													? format(game.timestamp, "E MMM d 'at' h:mma")
-													: 'TBD'}
-											</div>
+							{nextGame ? (
+								<>
+									<tr>
+										<td colSpan={6} className="font-bold">
+											Next Game
 										</td>
-										<td
-											className={cn(game.cancelledAt ? 'line-through' : null)}
-										>
-											{game.opponent}
-										</td>
-										<td
-											className={cn(game.cancelledAt ? 'line-through' : null)}
-										>
-											{game.location}
-										</td>
-										<td
-											className={cn(game.cancelledAt ? 'line-through' : null)}
-										>
-											<RsvpDialog rsvps={game.rsvps} players={team.players}>
-												{yeses > 0 ? (
-													<div className="font-bold">{yeses} yes</div>
-												) : null}
-												{nos > 0 ? <div>{nos} no</div> : null}
-												<div>{team.players.length - game.rsvps.length} TBD</div>
-											</RsvpDialog>
-										</td>
-										<td className="text-center">
-											{(() => {
-												const goals = game.statEntries.filter(
-													(se) => se.type === 'goal'
-												).length
-												const assists = game.statEntries.filter(
-													(se) => se.type === 'assist'
-												).length
-
-												if (!goals && !assists) {
-													return <>-</>
-												}
-												return (
-													<StatsDialog
-														statEntries={game.statEntries}
-														game={game}
-														players={team.players}
-													>
-														{goals} goal{goals === 1 ? '' : 's'}, {assists}{' '}
-														assist{assists === 1 ? '' : 's'}
-													</StatsDialog>
-												)
-											})()}
-										</td>
-										{userHasAccessToTeam || player ? (
-											<td className={`bg-${team.color}-50 sticky right-0`}>
-												<MoreButton
-													userHasAccessToTeam={userHasAccessToTeam}
-													game={game}
-													player={player}
-													teamHasActiveSubscription={teamHasActiveSubscription}
-												/>
-											</td>
-										) : null}
 									</tr>
-								)
-							})}
+									<GameRow
+										game={nextGame}
+										team={team}
+										userHasAccessToTeam={userHasAccessToTeam}
+										player={player}
+										teamHasActiveSubscription={teamHasActiveSubscription}
+									/>
+								</>
+							) : null}
+							{pastGames.length > 0 ? (
+								<>
+									<tr>
+										<td colSpan={6} className="font-bold">
+											Past Games
+										</td>
+									</tr>
+									{pastGames.map((game) => (
+										<GameRow
+											key={game.id}
+											game={game}
+											team={team}
+											userHasAccessToTeam={userHasAccessToTeam}
+											player={player}
+											teamHasActiveSubscription={teamHasActiveSubscription}
+										/>
+									))}
+								</>
+							) : null}
+							{upcomingGames.length > 0 ? (
+								<>
+									<tr>
+										<td colSpan={6} className="font-bold">
+											Upcoming Games
+										</td>
+									</tr>
+									{upcomingGames.map((game) => (
+										<GameRow
+											key={game.id}
+											game={game}
+											team={team}
+											userHasAccessToTeam={userHasAccessToTeam}
+											player={player}
+											teamHasActiveSubscription={teamHasActiveSubscription}
+										/>
+									))}
+								</>
+							) : null}
 						</tbody>
 					</table>
 				</div>

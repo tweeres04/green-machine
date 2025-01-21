@@ -832,7 +832,7 @@ function SeasonDropdown({
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="secondary">
-					{season?.name ?? 'All stats'}
+					{season?.name ?? 'All seasons'}
 					<ChevronDown />
 				</Button>
 			</DropdownMenuTrigger>
@@ -847,7 +847,7 @@ function SeasonDropdown({
 						}
 					}}
 				>
-					<DropdownMenuRadioItem value="">All stats</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="">All seasons</DropdownMenuRadioItem>
 					{seasons.map((season) => (
 						<DropdownMenuRadioItem value={season.id.toString()} key={season.id}>
 							{season.name}
