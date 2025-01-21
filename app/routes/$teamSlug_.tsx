@@ -66,7 +66,7 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	} = data as { team: Team }
 
 	const title = `${name} - TeamStats`
-	const description = `Team stats for ${name}. Add goals and assists for each player. Copy the standings to share with your team.`
+	const description = `Team stats for ${name}. Add goals and assists for each player. Shareable standings.`
 	const url = `https://teamstats.tweeres.com/${slug}`
 
 	return [
