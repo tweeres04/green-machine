@@ -846,7 +846,7 @@ export default function Games() {
 			</div>
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">
-					<table className="w-full [&_td]:pt-2 [&_th:not(:last-child)]:pr-3 [&_td:not(:last-child)]:pr-3">
+					<table className="w-full [&_td]:pt-2 [&_th:not(:first-child)]:pl-3 [&_td:not(:first-child)]:pl-3">
 						<thead>
 							<tr className="[&_th]:text-left">
 								<th>Date/time</th>
