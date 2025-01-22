@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
 
 const teamColors = [
 	'gray',
@@ -64,6 +65,9 @@ const config: Config = {
 			},
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Nunito Sans Variable', ...defaultTheme.fontFamily.sans],
+			},
 			keyframes: {
 				'accordion-down': {
 					from: { height: '0' },

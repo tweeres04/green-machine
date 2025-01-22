@@ -445,10 +445,12 @@ function PlayerRow({
 	return (
 		<>
 			<tr key={player.id}>
-				<td className={`sticky left-0 bg-${teamColor}-50 z-10`}>
+				<td
+					className={`sticky left-0 bg-${teamColor}-50 z-10 flex items-center`}
+				>
 					<Popover>
 						<PopoverTrigger>
-							<Avatar title={player.name}>
+							<Avatar title={player.name} className="shadow">
 								<AvatarImage
 									src={`https://files.tweeres.com/teamstats/players/${player.id}/image`}
 									className="object-cover"
@@ -467,7 +469,8 @@ function PlayerRow({
 							'text-center text-nowrap',
 							entryDateIndex !== statEntriesByDay.length - 1
 								? 'border-r border-green-900/25 border-dashed'
-								: null
+								: null,
+							`has-[.stat]:bg-${teamColor}-100`
 						)}
 					>
 						{entries.map(({ id, type, timestamp }, i) => {
@@ -488,7 +491,7 @@ function PlayerRow({
 									<PopoverTrigger>
 										<span
 											className={cn(
-												'inline-block relative text-xs',
+												'stat inline-block relative text-xs',
 												isStreak
 													? "before:content-['🔥'] before:absolute before:-z-10 before:text-3xl before:opacity-20 before:left-1/2 before:-translate-x-1/2 before:top-1/2 before:-translate-y-[60%]"
 													: null,
@@ -541,7 +544,7 @@ function PlayerRow({
 					</td>
 				))}
 				<td
-					className={`text-lg text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
+					className={`text-xl text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
 				>
 					{player.statEntries.length === 0
 						? '-'
@@ -942,28 +945,14 @@ export default function Stats() {
 	return (
 		<>
 			<Nav title="Stats" team={team} />
-			<div className="flex gap-1 mb-3 items-center">
-				<div className="grow flex flex-col sm:flex-row gap-1">
-					{seasons.length > 0 && (
-						<SeasonDropdown seasons={seasons} season={season} />
-					)}
-					<SortDropdown />
-				</div>
-				<CopyStandingsButton
-					slug={team.slug}
-					teamName={team.name}
-					players={players}
-				/>
-				{userHasAccessToTeam ? (
-					<AddStatsButton
-						players={players}
-						disabled={!teamHasActiveSubscription}
-						games={team.games}
-					/>
-				) : null}
+			<div className="flex gap-1 flex-row-reverse">
+				{seasons.length > 0 && (
+					<SeasonDropdown seasons={seasons} season={season} />
+				)}
+				<SortDropdown />
 			</div>
 			<div className="overflow-x-auto w-full" id="table_container">
-				<table className="w-full [&_td]:px-1">
+				<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
 					<thead>
 						<tr>
 							<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
@@ -990,6 +979,22 @@ export default function Stats() {
 						))}
 					</tbody>
 				</table>
+			</div>
+			<div
+				className={`fixed bottom-3 right-3 border-${team.color}-200 p-2 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow`}
+			>
+				<CopyStandingsButton
+					slug={team.slug}
+					teamName={team.name}
+					players={players}
+				/>{' '}
+				{userHasAccessToTeam ? (
+					<AddStatsButton
+						players={players}
+						disabled={!teamHasActiveSubscription}
+						games={team.games}
+					/>
+				) : null}
 			</div>
 			<Toaster />
 		</>

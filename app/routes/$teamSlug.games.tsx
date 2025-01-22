@@ -919,12 +919,10 @@ export default function Games() {
 	return (
 		<>
 			<Nav title="Games" team={team} />
-			<div className="flex gap-1 mb-3 items-center">
-				<div className="grow flex flex-col sm:flex-row gap-1">
-					{seasons.length > 0 && (
-						<SeasonDropdown seasons={seasons} season={season} />
-					)}
-				</div>
+			<div className="flex flex-row-reverse">
+				{seasons.length > 0 && (
+					<SeasonDropdown seasons={seasons} season={season} />
+				)}
 			</div>
 			{team.games.length > 0 ? (
 				<div className="w-full overflow-x-auto">

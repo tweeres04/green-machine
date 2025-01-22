@@ -7,6 +7,7 @@ import {
 	useLoaderData,
 } from '@remix-run/react'
 
+import '@fontsource-variable/nunito-sans'
 import '~/tailwind.css'
 import { json, LoaderFunctionArgs } from '@remix-run/node'
 import { getDb } from '~/lib/getDb'

@@ -28,7 +28,11 @@ export default function Nav({ title, team }: Props) {
 	const [menuIsOpen, setMenuIsOpen] = useState(false)
 
 	return (
-		<div className="flex items-center gap-2">
+		<div
+			className={`flex items-center gap-2 border-b border-${
+				team?.color ?? 'gray'
+			}-200 -mx-2 -mt-2 p-2`}
+		>
 			{team ? (
 				<Avatar>
 					<AvatarImage
@@ -37,7 +41,7 @@ export default function Nav({ title, team }: Props) {
 					<AvatarFallback>{team.name[0]}</AvatarFallback>
 				</Avatar>
 			) : null}
-			<h1 className="grow text-3xl">{title ?? team?.name}</h1>
+			<h1 className="grow text-2xl">{title ?? team?.name}</h1>
 
 			{!user && !team ? (
 				<Link to="/login">
