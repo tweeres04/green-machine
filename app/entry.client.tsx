@@ -16,7 +16,7 @@ declare global {
 }
 
 mixpanel.init(window.mixpanelToken, {
-	debug: true,
+	debug: process.env.NODE_ENV !== 'production',
 	track_pageview: 'url-with-path-and-query-string',
 	persistence: 'localStorage',
 })
