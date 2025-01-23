@@ -989,7 +989,10 @@ export default function Stats() {
 							{/* Avatar */}
 							<th className="hidden md:table-cell"></th> {/* Name */}
 							{days().map((day) => (
-								<th key={day} className="text-xs [writing-mode:vertical-lr]">
+								<th
+									key={day}
+									className="text-xs [writing-mode:vertical-lr] -rotate-45"
+								>
 									{formatLocalIsoDateString(day)}
 								</th>
 							))}
