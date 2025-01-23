@@ -186,6 +186,7 @@ export async function loader({
 									endOfSeasonEndDay = endOfDay(endOfSeasonEndDay)
 									endOfSeasonEndDay = formatISO(endOfSeasonEndDay)
 
+									// TODO: need to check the game date first
 									// this _may_ fail across dst since sqlite does a string comparison (but I'll tackle that if it actually happens)
 									return and(
 										gte(statEntries.timestamp, season.startDate),
@@ -946,10 +947,24 @@ export default function Stats() {
 		<>
 			<Nav title="Stats" team={team} />
 			<div className="flex gap-1 flex-row-reverse">
+				<div className="hidden sm:block">
+					<CopyStandingsButton
+						slug={team.slug}
+						teamName={team.name}
+						players={players}
+					/>{' '}
+					{userHasAccessToTeam ? (
+						<AddStatsButton
+							players={players}
+							disabled={!teamHasActiveSubscription}
+							games={team.games}
+						/>
+					) : null}
+				</div>
+				<SortDropdown />
 				{seasons.length > 0 && (
 					<SeasonDropdown seasons={seasons} season={season} />
 				)}
-				<SortDropdown />
 			</div>
 			<div className="overflow-x-auto w-full" id="table_container">
 				<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
@@ -981,7 +996,7 @@ export default function Stats() {
 				</table>
 			</div>
 			<div
-				className={`fixed bottom-3 right-3 border-${team.color}-200 p-2 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow`}
+				className={`sm:hidden fixed bottom-4 right-4 border-${team.color}-200 p-4 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow`}
 			>
 				<CopyStandingsButton
 					slug={team.slug}
