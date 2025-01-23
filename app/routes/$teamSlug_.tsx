@@ -48,7 +48,7 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
-import { ChevronDown, Share } from 'lucide-react'
+import { ArrowRightCircle, ChevronDown, Share } from 'lucide-react'
 import {
 	Select,
 	SelectContent,
@@ -1022,8 +1022,32 @@ export default function Stats() {
 				</table>
 			</div>
 			<div
-				className={`sm:hidden fixed bottom-4 right-4 border-${team.color}-200 p-4 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow`}
+				className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
 			>
+				<button
+					className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-2 border-${team.color}-200 rounded-full p-1 shadown bg-${team.color}-50`}
+					onClick={(event) => {
+						const parentElement = event.currentTarget.parentElement
+						const rightArrow = parentElement?.querySelector(
+							'[data-toggle-id=right_circle]'
+						)
+						const translateClassname = 'translate-x-[calc(100%-19px)]' // offsetwidth was returning undefined, so I'm hardcoding this for now
+						const rotateClassname = 'rotate-180'
+
+						if (parentElement?.classList.contains(translateClassname)) {
+							parentElement.classList.remove(translateClassname)
+							rightArrow?.classList.remove(rotateClassname)
+						} else {
+							parentElement?.classList.add(translateClassname)
+							rightArrow?.classList.add(rotateClassname)
+						}
+					}}
+				>
+					<ArrowRightCircle
+						className="text-green-900 transition-transform duration-500 ease-out"
+						data-toggle-id="right_circle"
+					/>
+				</button>
 				<CopyStandingsButton
 					slug={team.slug}
 					teamName={team.name}
