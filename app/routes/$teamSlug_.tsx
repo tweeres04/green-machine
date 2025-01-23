@@ -918,9 +918,9 @@ function SortDropdown() {
 						navigate(`${path}?${searchParams.toString()}`)
 					}}
 				>
-					<DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
 					<DropdownMenuRadioItem value="goals">Goals</DropdownMenuRadioItem>
 					<DropdownMenuRadioItem value="assists">Assists</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>
