@@ -203,6 +203,21 @@ export async function loader({
 			},
 			games: {
 				orderBy: (games, { asc }) => [asc(games.timestamp)],
+				where: seasonId
+					? (games, { and, gte, lte }) => {
+							invariant(season, 'No season inside stats query')
+
+							let endOfSeasonEndDay: Date | string = parseISO(season.endDate)
+							endOfSeasonEndDay = endOfDay(endOfSeasonEndDay)
+							endOfSeasonEndDay = formatISO(endOfSeasonEndDay)
+
+							// this _may_ fail across dst since sqlite does a string comparison (but I'll tackle that if it actually happens)
+							return and(
+								gte(games.timestamp, season.startDate),
+								lte(games.timestamp, endOfSeasonEndDay)
+							)
+					  }
+					: undefined,
 			},
 			subscription: true,
 			seasons: true,
