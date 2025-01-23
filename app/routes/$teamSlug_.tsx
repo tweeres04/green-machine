@@ -736,7 +736,7 @@ function AddStatsButton({
 				)}
 
 				<fieldset
-					disabled={!selectedGameId || isSubmitting}
+					disabled={isSubmitting}
 					className="grow overflow-y-auto h-[9000px]" // flexbox auto calculates, but I need it higher than what flexbox will calculate
 				>
 					<ul className="py-1 space-y-1">
