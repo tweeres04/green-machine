@@ -746,20 +746,20 @@ function AddStatsButton({
 								className="grid grid-cols-3 gap-3 items-center"
 							>
 								<div>{player.name}</div>
-								<div>
-									{
-										stats.filter(
-											(s) => s.playerId === player.id && s.type === 'assist'
-										).length
-									}
-									🍎{' '}
-									{
-										stats.filter(
-											(s) => s.playerId === player.id && s.type === 'goal'
-										).length
-									}
-									⚽️
-								</div>
+								{(() => {
+									const goals = stats.filter(
+										(s) => s.playerId === player.id && s.type === 'goal'
+									).length
+									const assists = stats.filter(
+										(s) => s.playerId === player.id && s.type === 'assist'
+									).length
+									return (
+										<div className="flex gap-1">
+											{assists ? <span>{assists} 🍎</span> : null}
+											{goals ? <span>{goals} ⚽️</span> : null}
+										</div>
+									)
+								})()}
 								<div className="flex gap-1 justify-end">
 									<Button
 										type="button"

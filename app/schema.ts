@@ -176,7 +176,7 @@ export type StatEntry = typeof statEntries.$inferSelect
 export const statEntrySchema = createInsertSchema(statEntries, {
 	timestamp: (schema) =>
 		schema.timestamp.datetime({
-			local: true,
+			offset: true,
 		}),
 	type: statSchema,
 })
