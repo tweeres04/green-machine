@@ -165,17 +165,25 @@ export async function loader({
 	const sort = searchParams.get('sort') ?? 'goals'
 
 	const season = seasonId
-		? await db.query.seasons.findFirst({
-				where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+		? seasonId === 'all'
+			? null
+			: await db.query.seasons.findFirst({
+					where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+			  })
+		: await db.query.seasons.findFirst({
+				where: (seasons, { and, gte, lte }) =>
+					and(
+						lte(seasons.startDate, formatISO(new Date())),
+						gte(seasons.endDate, formatISO(new Date()))
+					),
 		  })
-		: null
 
 	const team = await db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
 		with: {
 			players: {
 				with: {
-					statEntries: seasonId
+					statEntries: season
 						? {
 								where: (statEntries, { and, gte, lte }) => {
 									invariant(season, 'No season inside stats query')
@@ -203,7 +211,7 @@ export async function loader({
 			},
 			games: {
 				orderBy: (games, { asc }) => [asc(games.timestamp)],
-				where: seasonId
+				where: season
 					? (games, { and, gte, lte }) => {
 							invariant(season, 'No season inside stats query')
 
@@ -878,7 +886,7 @@ function SeasonDropdown({
 						}
 					}}
 				>
-					<DropdownMenuRadioItem value="">All seasons</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="all">All seasons</DropdownMenuRadioItem>
 					{seasons.map((season) => (
 						<DropdownMenuRadioItem value={season.id.toString()} key={season.id}>
 							{season.name}
