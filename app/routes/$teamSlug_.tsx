@@ -1044,7 +1044,7 @@ export default function Stats() {
 					}}
 				>
 					<ArrowRightCircle
-						className="text-green-900 transition-transform duration-500 ease-out"
+						className={`text-${team.color}-900 transition-transform duration-500 ease-out`}
 						data-toggle-id="right_circle"
 					/>
 				</button>
