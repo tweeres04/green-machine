@@ -988,8 +988,8 @@ function GameCard({
 					</Badge>
 				)}
 			</CardContent>
-			<CardFooter className="justify-end gap-1">
-				{userHasAccessToTeam || player ? (
+			{userHasAccessToTeam || player ? (
+				<CardFooter className="justify-end gap-1">
 					<>
 						<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
 							{player ? (
@@ -1025,15 +1025,17 @@ function GameCard({
 								nextGame={game}
 							/>
 						) : null}
-						<MoreButton
-							userHasAccessToTeam={userHasAccessToTeam}
-							game={game}
-							player={player}
-							teamHasActiveSubscription={teamHasActiveSubscription}
-						/>
+						{userHasAccessToTeam ? (
+							<MoreButton
+								userHasAccessToTeam={userHasAccessToTeam}
+								game={game}
+								player={player}
+								teamHasActiveSubscription={teamHasActiveSubscription}
+							/>
+						) : null}
 					</>
-				) : null}
-			</CardFooter>
+				</CardFooter>
+			) : null}
 		</Card>
 	)
 }
