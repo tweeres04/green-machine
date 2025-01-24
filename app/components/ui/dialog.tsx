@@ -103,7 +103,7 @@ const DialogDescription = React.forwardRef<
 		<DialogPrimitive.Description
 			ref={ref}
 			className={cn(
-				`text-sm text-${teamColor}-500 dark:text-${teamColor}-400`,
+				`text-sm text-${teamColor}-900 dark:text-${teamColor}-400`,
 				className
 			)}
 			{...props}

@@ -20,7 +20,14 @@ import Nav from '~/components/ui/nav'
 import { Badge } from '~/components/ui/badge'
 import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
-import { LoaderCircle, ChevronDown, Share, MapPin, Users } from 'lucide-react'
+import {
+	LoaderCircle,
+	ChevronDown,
+	Share,
+	MapPin,
+	Users,
+	Mail,
+} from 'lucide-react'
 
 import {
 	Dialog,
@@ -54,6 +61,7 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
+	CardFooter,
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
@@ -422,6 +430,7 @@ function MoreButton({
 				<DropdownMenuContent>
 					{player ? (
 						<DropdownMenuItem
+							className="hidden sm:block"
 							onClick={() => {
 								setDialogTitle(`RSVP to game against ${game.opponent}`)
 								setDialogDescription(
@@ -919,6 +928,8 @@ function GameCard({
 	teamHasActiveSubscription,
 	nextGame = false,
 }: GameRowProps) {
+	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
+
 	return (
 		<Card
 			className={
@@ -959,10 +970,12 @@ function GameCard({
 			</CardHeader>
 
 			<CardContent className="space-x-1">
-				<Badge>
-					{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
-					{team.players.length} attending
-				</Badge>
+				<RsvpDialog rsvps={game.rsvps} players={team.players}>
+					<Badge>
+						{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
+						{team.players.length} attending
+					</Badge>
+				</RsvpDialog>
 				{game.statEntries.some((se) => se.type === 'goal') && (
 					<Badge variant="secondary">
 						{game.statEntries.filter((se) => se.type === 'goal').length} goals
@@ -975,6 +988,52 @@ function GameCard({
 					</Badge>
 				)}
 			</CardContent>
+			<CardFooter className="justify-end gap-1">
+				{userHasAccessToTeam || player ? (
+					<>
+						<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
+							{player ? (
+								<DialogTrigger asChild>
+									<Button disabled={!teamHasActiveSubscription} size="icon">
+										<Mail />
+									</Button>
+								</DialogTrigger>
+							) : null}
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>
+										RSVP to game against {game.opponent}
+									</DialogTitle>
+									<DialogDescription>
+										{game.location ?? 'Location TBD'},{' '}
+										{game.timestamp
+											? format(game.timestamp, "E MMM d 'at' h:mma")
+											: 'date and time TBD'}
+									</DialogDescription>
+								</DialogHeader>
+								<RsvpForm
+									player={player}
+									game={game}
+									closeModal={() => setRsvpDialogOpen(false)}
+								/>
+							</DialogContent>
+						</Dialog>
+						{nextGame ? (
+							<ShareNextGameButton
+								teamName={team.name}
+								slug={team.slug}
+								nextGame={game}
+							/>
+						) : null}
+						<MoreButton
+							userHasAccessToTeam={userHasAccessToTeam}
+							game={game}
+							player={player}
+							teamHasActiveSubscription={teamHasActiveSubscription}
+						/>
+					</>
+				) : null}
+			</CardFooter>
 		</Card>
 	)
 }
