@@ -333,18 +333,11 @@ function ImportScheduleForm({
 						required
 						name="schedule_url"
 						type="url"
-						defaultValue="https://vssc.leaguelab.com/league/80834/schedule"
 					/>
 				</div>
 				<div>
 					<label htmlFor="team_name_input">Team Name</label>
-					<Input
-						id="team_name_input"
-						required
-						name="team_name"
-						type="text"
-						defaultValue="Green Machine"
-					/>
+					<Input id="team_name_input" required name="team_name" type="text" />
 				</div>
 				{(() => {
 					const footer = (
