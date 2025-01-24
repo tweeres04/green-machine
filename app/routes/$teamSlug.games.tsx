@@ -6,14 +6,21 @@ import {
 	useLocation,
 	useNavigate,
 } from '@remix-run/react'
-import { endOfDay, format, formatISO, parseISO } from 'date-fns'
+import {
+	endOfDay,
+	format,
+	formatDistanceToNowStrict,
+	formatISO,
+	parseISO,
+} from 'date-fns'
 import invariant from 'tiny-invariant'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
+import { Badge } from '~/components/ui/badge'
 import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
-import { LoaderCircle, ChevronDown, Share } from 'lucide-react'
+import { LoaderCircle, ChevronDown, Share, MapPin, Users } from 'lucide-react'
 
 import {
 	Dialog,
@@ -43,6 +50,14 @@ import { createInsertSchema } from 'drizzle-zod'
 import { games, Team } from '~/schema'
 import _ from 'lodash'
 import { useToast } from '~/components/ui/use-toast'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '~/components/ui/card'
+import { Separator } from '~/components/ui/separator'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -648,10 +663,18 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	const seasonId = searchParams.get('season')
 
 	const season = seasonId
-		? await db.query.seasons.findFirst({
-				where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+		? seasonId === 'all'
+			? null
+			: await db.query.seasons.findFirst({
+					where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+			  })
+		: await db.query.seasons.findFirst({
+				where: (seasons, { and, gte, lte }) =>
+					and(
+						lte(seasons.startDate, formatISO(new Date())),
+						gte(seasons.endDate, formatISO(new Date()))
+					),
 		  })
-		: null
 
 	const teamPromise = db.query.teams.findFirst({
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
@@ -765,6 +788,7 @@ type GameRowProps = {
 	userHasAccessToTeam: boolean
 	player: Player
 	teamHasActiveSubscription: boolean
+	nextGame?: boolean
 }
 
 function GameRow({
@@ -887,6 +911,74 @@ ${url}`)
 	)
 }
 
+function GameCard({
+	game,
+	team,
+	userHasAccessToTeam,
+	player,
+	teamHasActiveSubscription,
+	nextGame = false,
+}: GameRowProps) {
+	return (
+		<Card
+			className={
+				nextGame
+					? `shadow-lg bg-${team.color}-300 relative border-l-4 border-l-${team.color}-900 rounded-l-none`
+					: undefined
+			}
+		>
+			<div className="flex flex-row-reverse pt-3 pr-3">
+				{nextGame ? <Badge variant="secondary">Next game</Badge> : null}
+			</div>
+			<CardHeader>
+				<CardTitle>
+					<div>
+						{game.timestamp
+							? format(game.timestamp, 'E MMM d - h:mma')
+							: 'Date and time TBD'}
+					</div>
+					<div className="text-sm">
+						{game.timestamp
+							? formatDistanceToNowStrict(new Date(game.timestamp), {
+									addSuffix: true,
+							  })
+							: null}
+					</div>
+				</CardTitle>
+				<CardDescription>
+					<div className="flex gap-2">
+						<span className="flex gap-1">
+							<Users /> {game.opponent}
+						</span>
+						<span>·</span>
+						<span className="flex gap-1">
+							<MapPin /> {game.location}
+						</span>
+					</div>
+				</CardDescription>
+			</CardHeader>
+
+			<CardContent className="space-x-1">
+				<Badge>
+					{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
+					{team.players.length} attending
+				</Badge>
+				{game.statEntries.some((se) => se.type === 'goal') && (
+					<Badge variant="secondary">
+						{game.statEntries.filter((se) => se.type === 'goal').length} goals
+					</Badge>
+				)}
+				{game.statEntries.some((se) => se.type === 'assist') && (
+					<Badge variant="secondary">
+						{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
+						assists
+					</Badge>
+				)}
+			</CardContent>
+		</Card>
+	)
+}
+
 export default function Games() {
 	const {
 		userIsTylerOrMelissa,
@@ -918,85 +1010,141 @@ export default function Games() {
 				)}
 			</div>
 			{team.games.length > 0 ? (
-				<div className="w-full overflow-x-auto">
-					<table className="w-full [&_td]:pt-2 [&_tbody_th]:pt-2 [&_th:not(:first-child)]:pl-3 [&_td:not(:first-child)]:pl-3">
-						<thead>
-							<tr className="[&_th]:text-left">
-								<th>Date/time</th>
-								<th>Opponent</th>
-								<th>Location</th>
-								<th>RSVPs</th>
-								<th>Stats</th>
-								{userHasAccessToTeam || player ? (
-									<th className={`bg-${team.color}-50 sticky right-0`}></th>
+				<>
+					<div className="sm:hidden space-y-10">
+						{nextGame ? (
+							<div className="my-3">
+								<GameCard
+									game={nextGame}
+									team={team}
+									userHasAccessToTeam={userHasAccessToTeam}
+									player={player}
+									teamHasActiveSubscription={teamHasActiveSubscription}
+									nextGame
+								/>
+							</div>
+						) : null}
+						{nextGame && pastGames.length > 0 ? (
+							<Separator className="w-10/12 mx-auto" />
+						) : null}
+						{pastGames.length > 0 ? (
+							<>
+								<div className="font-bold">Previous games</div>
+								<div className="my-3 space-y-3">
+									{pastGames.map((pg) => (
+										<GameCard
+											key={pg.id}
+											game={pg}
+											team={team}
+											userHasAccessToTeam={userHasAccessToTeam}
+											player={player}
+											teamHasActiveSubscription={teamHasActiveSubscription}
+										/>
+									))}
+								</div>
+							</>
+						) : null}
+						{(upcomingGames.length > 0 && nextGame) || pastGames.length > 0 ? (
+							<Separator className="w-10/12 mx-auto" />
+						) : null}
+						{upcomingGames.length > 0 ? (
+							<>
+								<div className="font-bold">Upcoming games</div>
+								<div className="my-3 space-y-3">
+									{upcomingGames.map((pg) => (
+										<GameCard
+											key={pg.id}
+											game={pg}
+											team={team}
+											userHasAccessToTeam={userHasAccessToTeam}
+											player={player}
+											teamHasActiveSubscription={teamHasActiveSubscription}
+										/>
+									))}
+								</div>
+							</>
+						) : null}
+					</div>
+					<div className="hidden sm:block w-full overflow-x-auto">
+						<table className="w-full [&_td]:pt-2 [&_tbody_th]:pt-2 [&_th:not(:first-child)]:pl-3 [&_td:not(:first-child)]:pl-3">
+							<thead>
+								<tr className="[&_th]:text-left">
+									<th>Date/time</th>
+									<th>Opponent</th>
+									<th>Location</th>
+									<th>RSVPs</th>
+									<th>Stats</th>
+									{userHasAccessToTeam || player ? (
+										<th className={`bg-${team.color}-50 sticky right-0`}></th>
+									) : null}
+								</tr>
+							</thead>
+							<tbody>
+								{nextGame ? (
+									<>
+										<tr>
+											<th colSpan={5} className="text-left">
+												Next Game
+											</th>
+											<td className={`bg-${team.color}-50 sticky right-0`}>
+												<ShareNextGameButton
+													slug={team.slug}
+													teamName={team.name}
+													nextGame={nextGame}
+												/>
+											</td>
+										</tr>
+										<GameRow
+											game={nextGame}
+											team={team}
+											userHasAccessToTeam={userHasAccessToTeam}
+											player={player}
+											teamHasActiveSubscription={teamHasActiveSubscription}
+										/>
+									</>
 								) : null}
-							</tr>
-						</thead>
-						<tbody>
-							{nextGame ? (
-								<>
-									<tr>
-										<th colSpan={5} className="text-left">
-											Next Game
-										</th>
-										<td className={`bg-${team.color}-50 sticky right-0`}>
-											<ShareNextGameButton
-												slug={team.slug}
-												teamName={team.name}
-												nextGame={nextGame}
+								{pastGames.length > 0 ? (
+									<>
+										<tr>
+											<th colSpan={6} className="text-left">
+												Past Games
+											</th>
+										</tr>
+										{pastGames.map((game) => (
+											<GameRow
+												key={game.id}
+												game={game}
+												team={team}
+												userHasAccessToTeam={userHasAccessToTeam}
+												player={player}
+												teamHasActiveSubscription={teamHasActiveSubscription}
 											/>
-										</td>
-									</tr>
-									<GameRow
-										game={nextGame}
-										team={team}
-										userHasAccessToTeam={userHasAccessToTeam}
-										player={player}
-										teamHasActiveSubscription={teamHasActiveSubscription}
-									/>
-								</>
-							) : null}
-							{pastGames.length > 0 ? (
-								<>
-									<tr>
-										<th colSpan={6} className="text-left">
-											Past Games
-										</th>
-									</tr>
-									{pastGames.map((game) => (
-										<GameRow
-											key={game.id}
-											game={game}
-											team={team}
-											userHasAccessToTeam={userHasAccessToTeam}
-											player={player}
-											teamHasActiveSubscription={teamHasActiveSubscription}
-										/>
-									))}
-								</>
-							) : null}
-							{upcomingGames.length > 0 ? (
-								<>
-									<tr>
-										<th colSpan={6} className="text-left">
-											Upcoming Games
-										</th>
-									</tr>
-									{upcomingGames.map((game) => (
-										<GameRow
-											key={game.id}
-											game={game}
-											team={team}
-											userHasAccessToTeam={userHasAccessToTeam}
-											player={player}
-											teamHasActiveSubscription={teamHasActiveSubscription}
-										/>
-									))}
-								</>
-							) : null}
-						</tbody>
-					</table>
-				</div>
+										))}
+									</>
+								) : null}
+								{upcomingGames.length > 0 ? (
+									<>
+										<tr>
+											<th colSpan={6} className="text-left">
+												Upcoming Games
+											</th>
+										</tr>
+										{upcomingGames.map((game) => (
+											<GameRow
+												key={game.id}
+												game={game}
+												team={team}
+												userHasAccessToTeam={userHasAccessToTeam}
+												player={player}
+												teamHasActiveSubscription={teamHasActiveSubscription}
+											/>
+										))}
+									</>
+								) : null}
+							</tbody>
+						</table>
+					</div>
+				</>
 			) : (
 				<p>No games yet</p>
 			)}

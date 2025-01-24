@@ -16,8 +16,11 @@ const safelist = teamColors.flatMap((teamColor) => {
 	return [
 		`bg-${teamColor}-50`,
 		`bg-${teamColor}-100`,
+		`bg-${teamColor}-200`,
+		`bg-${teamColor}-300`,
 		`bg-${teamColor}-900`,
 		`border-${teamColor}-200`,
+		`border-l-${teamColor}-900`,
 		`hover:bg-${teamColor}-100`,
 		`hover:bg-${teamColor}-900`,
 		`hover:bg-${teamColor}-100`,
