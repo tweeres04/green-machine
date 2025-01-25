@@ -3,6 +3,7 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
+import { eq } from 'drizzle-orm'
 import {
 	useFetcher,
 	useLoaderData,
@@ -17,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Toaster } from '~/components/ui/toaster'
 import invariant from 'tiny-invariant'
-import { Game, Season, StatEntry, type Team } from '~/schema'
+import { Game, Season, StatEntry, teams, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
 import { endOfDay, format, formatISO, parseISO } from 'date-fns'
 import {
@@ -169,15 +170,24 @@ export async function loader({
 	const seasonId = searchParams.get('season')
 	const sort = searchParams.get('sort') ?? 'goals'
 
+	const teamQuery = db
+		.select({ id: teams.id })
+		.from(teams)
+		.where(eq(teams.slug, teamSlug))
 	const season = seasonId
 		? seasonId === 'all'
 			? null
 			: await db.query.seasons.findFirst({
-					where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+					where: (seasons, { and, eq }) =>
+						and(
+							eq(seasons.teamId, teamQuery),
+							eq(seasons.id, parseInt(seasonId))
+						),
 			  })
 		: await db.query.seasons.findFirst({
-				where: (seasons, { and, gte, lte }) =>
+				where: (seasons, { and, eq, gte, lte }) =>
 					and(
+						eq(seasons.teamId, teamQuery),
 						lte(seasons.startDate, formatISO(new Date())),
 						gte(seasons.endDate, formatISO(new Date()))
 					),

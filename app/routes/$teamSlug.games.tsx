@@ -1,4 +1,5 @@
 import { LoaderFunctionArgs, MetaArgs, MetaFunction } from '@remix-run/node'
+import { eq } from 'drizzle-orm'
 import {
 	json,
 	useFetcher,
@@ -54,7 +55,7 @@ import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
-import { games, Team } from '~/schema'
+import { games, Team, teams } from '~/schema'
 import _ from 'lodash'
 import { useToast } from '~/components/ui/use-toast'
 import {
@@ -671,15 +672,24 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	const searchParams = new URL(request.url).searchParams
 	const seasonId = searchParams.get('season')
 
+	const teamQuery = db
+		.select({ id: teams.id })
+		.from(teams)
+		.where(eq(teams.slug, teamSlug))
 	const season = seasonId
 		? seasonId === 'all'
 			? null
 			: await db.query.seasons.findFirst({
-					where: (seasons, { eq }) => eq(seasons.id, parseInt(seasonId)),
+					where: (seasons, { and, eq }) =>
+						and(
+							eq(seasons.teamId, teamQuery),
+							eq(seasons.id, parseInt(seasonId))
+						),
 			  })
 		: await db.query.seasons.findFirst({
-				where: (seasons, { and, gte, lte }) =>
+				where: (seasons, { and, eq, gte, lte }) =>
 					and(
+						eq(seasons.teamId, teamQuery),
 						lte(seasons.startDate, formatISO(new Date())),
 						gte(seasons.endDate, formatISO(new Date()))
 					),
