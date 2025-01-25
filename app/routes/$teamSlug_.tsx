@@ -49,7 +49,7 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
-import { ArrowRightCircle, ChevronDown, Share } from 'lucide-react'
+import { ArrowRightCircle, ArrowUpDown, Calendar, Share } from 'lucide-react'
 import {
 	Select,
 	SelectContent,
@@ -885,9 +885,9 @@ function SeasonDropdown({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="secondary">
-					{season?.name ?? 'All seasons'}
-					<ChevronDown />
+				<Button variant="secondary" className="flex items-center gap-1">
+					<Calendar />
+					<span>{season?.name ?? 'All seasons'}</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
@@ -928,9 +928,9 @@ function SortDropdown() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="secondary">
-					{sortLabel}
-					<ChevronDown />
+				<Button variant="secondary" className="flex items-center gap-1">
+					<ArrowUpDown />
+					<span>{sortLabel}</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>

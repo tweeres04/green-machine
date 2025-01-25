@@ -23,11 +23,11 @@ import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
 import {
 	LoaderCircle,
-	ChevronDown,
 	Share,
 	MapPin,
 	Users,
 	Mail,
+	Calendar,
 } from 'lucide-react'
 
 import {
@@ -773,9 +773,9 @@ function SeasonDropdown({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="secondary">
-					{season?.name ?? 'All seasons'}
-					<ChevronDown />
+				<Button variant="secondary" className="flex items-center gap-1">
+					<span>{season?.name ?? 'All seasons'}</span>
+					<Calendar />
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
