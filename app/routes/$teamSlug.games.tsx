@@ -604,7 +604,6 @@ function StatsDialog({
 	children: ReactNode
 	statEntries: Game['statEntries']
 	game: Game
-	players: Player[]
 }) {
 	const groupedStats = _.groupBy(statEntries, 'playerId')
 
@@ -987,15 +986,19 @@ function GameCard({
 					</Badge>
 				</RsvpDialog>
 				{game.statEntries.some((se) => se.type === 'goal') && (
-					<Badge variant="secondary">
-						{game.statEntries.filter((se) => se.type === 'goal').length} goals
-					</Badge>
+					<StatsDialog game={game} statEntries={game.statEntries}>
+						<Badge variant="secondary">
+							{game.statEntries.filter((se) => se.type === 'goal').length} goals
+						</Badge>
+					</StatsDialog>
 				)}
 				{game.statEntries.some((se) => se.type === 'assist') && (
-					<Badge variant="secondary">
-						{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
-						assists
-					</Badge>
+					<StatsDialog game={game} statEntries={game.statEntries}>
+						<Badge variant="secondary">
+							{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
+							assists
+						</Badge>
+					</StatsDialog>
 				)}
 			</CardContent>
 			{userHasAccessToTeam || player ? (
