@@ -92,34 +92,39 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 
 type PlayerWithStats = Awaited<ReturnType<typeof loader>>['team']['players'][0]
 
-function CopyStandingsButton({
+function ShareStandingsButton({
 	teamName,
 	slug,
 	players,
+	season,
 }: {
 	teamName: string
 	slug: string
 	players: Awaited<ReturnType<typeof loader>>['team']['players']
+	season?: Season | null
 }) {
 	const { toast } = useToast()
 	const location = useLocation()
 
 	const shareAvailable = typeof window !== 'undefined' && 'share' in navigator
 
-	const title = `${teamName} Standings`
+	const title = `${teamName} Standings${season ? ` (${season.name})` : ''}`
 	const url = `https://teamstats.tweeres.com/${slug}${location.search}`
-	const standingsText = `${players
-		.toSorted((a: PlayerWithStats, b: PlayerWithStats) => {
-			const aGoals = a.statEntries.filter((se) => se.type === 'goal').length
-			const bGoals = b.statEntries.filter((se) => se.type === 'goal').length
-			return bGoals - aGoals
-		})
-		.map((p: PlayerWithStats) => {
-			const goals = p.statEntries.filter((s) => s.type === 'goal').length
-			const assists = p.statEntries.filter((s) => s.type === 'assist').length
-			return `${p.name}: ${goals}G ${assists}A`
-		})
-		.join('\n')}`
+	const playersWithStats = players.filter(
+		(p: PlayerWithStats) => p.statEntries.length > 0
+	)
+	const standingsText =
+		playersWithStats.length > 0
+			? `${playersWithStats
+					.map((p: PlayerWithStats) => {
+						const goals = p.statEntries.filter((s) => s.type === 'goal').length
+						const assists = p.statEntries.filter(
+							(s) => s.type === 'assist'
+						).length
+						return `${p.name}: ${goals}G ${assists}A`
+					})
+					.join('\n')}`
+			: 'No stats yet'
 
 	return (
 		<Button
@@ -971,10 +976,11 @@ export default function Stats() {
 			<Nav title="Stats" team={team} />
 			<div className="flex gap-1 flex-row-reverse">
 				<div className="hidden sm:block">
-					<CopyStandingsButton
+					<ShareStandingsButton
 						slug={team.slug}
 						teamName={team.name}
 						players={players}
+						season={season}
 					/>{' '}
 					{userHasAccessToTeam ? (
 						<AddStatsButton
@@ -1048,10 +1054,11 @@ export default function Stats() {
 						data-toggle-id="right_circle"
 					/>
 				</button>
-				<CopyStandingsButton
+				<ShareStandingsButton
 					slug={team.slug}
 					teamName={team.name}
 					players={players}
+					season={season}
 				/>{' '}
 				{userHasAccessToTeam ? (
 					<AddStatsButton
