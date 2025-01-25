@@ -944,7 +944,7 @@ function GameCard({
 		<Card
 			className={
 				nextGame
-					? `shadow-lg bg-${team.color}-300 relative border-l-4 border-l-${team.color}-900 rounded-l-none`
+					? `shadow-lg relative border-l-4 border-l-${team.color}-900 rounded-l-none`
 					: undefined
 			}
 		>
