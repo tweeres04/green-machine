@@ -800,84 +800,6 @@ function SeasonDropdown({
 	)
 }
 
-type GameRowProps = {
-	game: Game
-	team: Team & { players: Player[] }
-	userHasAccessToTeam: boolean
-	player: Player
-	teamHasActiveSubscription: boolean
-	nextGame?: boolean
-}
-
-function GameRow({
-	game,
-	team,
-	userHasAccessToTeam,
-	player,
-	teamHasActiveSubscription,
-}: GameRowProps) {
-	const yeses = game.rsvps.filter((r) => r.rsvp === 'yes').length
-	const nos = game.rsvps.filter((r) => r.rsvp === 'no').length
-	return (
-		<tr key={game.id}>
-			<td className="relative">
-				<div className={cn(game.cancelledAt ? 'line-through' : null)}>
-					{game.timestamp
-						? format(game.timestamp, "E MMM d 'at' h:mma")
-						: 'TBD'}
-				</div>
-			</td>
-			<td className={cn(game.cancelledAt ? 'line-through' : null)}>
-				{game.opponent}
-			</td>
-			<td className={cn(game.cancelledAt ? 'line-through' : null)}>
-				{game.location}
-			</td>
-			<td className={cn(game.cancelledAt ? 'line-through' : null)}>
-				<RsvpDialog rsvps={game.rsvps} players={team.players}>
-					{yeses > 0 ? <div className="font-bold">{yeses} yes</div> : null}
-					{nos > 0 ? <div>{nos} no</div> : null}
-					<div>{team.players.length - game.rsvps.length} TBD</div>
-				</RsvpDialog>
-			</td>
-			<td className="text-center">
-				{(() => {
-					const goals = game.statEntries.filter(
-						(se) => se.type === 'goal'
-					).length
-					const assists = game.statEntries.filter(
-						(se) => se.type === 'assist'
-					).length
-
-					if (!goals && !assists) {
-						return <>-</>
-					}
-					return (
-						<StatsDialog
-							statEntries={game.statEntries}
-							game={game}
-							players={team.players}
-						>
-							{goals} goal{goals === 1 ? '' : 's'}, {assists} assist
-							{assists === 1 ? '' : 's'}
-						</StatsDialog>
-					)
-				})()}
-			</td>
-			{userHasAccessToTeam || player ? (
-				<td className={`bg-${team.color}-50 sticky right-0`}>
-					<MoreButton
-						userHasAccessToTeam={userHasAccessToTeam}
-						game={game}
-						player={player}
-						teamHasActiveSubscription={teamHasActiveSubscription}
-					/>
-				</td>
-			) : null}
-		</tr>
-	)
-}
-
 function ShareNextGameButton({
 	teamName,
 	slug,
@@ -929,6 +851,15 @@ ${url}`)
 	)
 }
 
+type GameCardProps = {
+	game: Game
+	team: Team & { players: Player[] }
+	userHasAccessToTeam: boolean
+	player: Player
+	teamHasActiveSubscription: boolean
+	nextGame?: boolean
+}
+
 function GameCard({
 	game,
 	team,
@@ -936,7 +867,7 @@ function GameCard({
 	player,
 	teamHasActiveSubscription,
 	nextGame = false,
-}: GameRowProps) {
+}: GameCardProps) {
 	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
 
 	return (
@@ -1085,7 +1016,7 @@ export default function Games() {
 			</div>
 			{team.games.length > 0 ? (
 				<>
-					<div className="sm:hidden space-y-10">
+					<div className="space-y-10">
 						{nextGame ? (
 							<div className="my-3">
 								<GameCard
@@ -1138,85 +1069,6 @@ export default function Games() {
 								</div>
 							</>
 						) : null}
-					</div>
-					<div className="hidden sm:block w-full overflow-x-auto">
-						<table className="w-full [&_td]:pt-2 [&_tbody_th]:pt-2 [&_th:not(:first-child)]:pl-3 [&_td:not(:first-child)]:pl-3">
-							<thead>
-								<tr className="[&_th]:text-left">
-									<th>Date/time</th>
-									<th>Opponent</th>
-									<th>Location</th>
-									<th>RSVPs</th>
-									<th>Stats</th>
-									{userHasAccessToTeam || player ? (
-										<th className={`bg-${team.color}-50 sticky right-0`}></th>
-									) : null}
-								</tr>
-							</thead>
-							<tbody>
-								{nextGame ? (
-									<>
-										<tr>
-											<th colSpan={5} className="text-left">
-												Next Game
-											</th>
-											<td className={`bg-${team.color}-50 sticky right-0`}>
-												<ShareNextGameButton
-													slug={team.slug}
-													teamName={team.name}
-													nextGame={nextGame}
-												/>
-											</td>
-										</tr>
-										<GameRow
-											game={nextGame}
-											team={team}
-											userHasAccessToTeam={userHasAccessToTeam}
-											player={player}
-											teamHasActiveSubscription={teamHasActiveSubscription}
-										/>
-									</>
-								) : null}
-								{pastGames.length > 0 ? (
-									<>
-										<tr>
-											<th colSpan={6} className="text-left">
-												Past Games
-											</th>
-										</tr>
-										{pastGames.map((game) => (
-											<GameRow
-												key={game.id}
-												game={game}
-												team={team}
-												userHasAccessToTeam={userHasAccessToTeam}
-												player={player}
-												teamHasActiveSubscription={teamHasActiveSubscription}
-											/>
-										))}
-									</>
-								) : null}
-								{upcomingGames.length > 0 ? (
-									<>
-										<tr>
-											<th colSpan={6} className="text-left">
-												Upcoming Games
-											</th>
-										</tr>
-										{upcomingGames.map((game) => (
-											<GameRow
-												key={game.id}
-												game={game}
-												team={team}
-												userHasAccessToTeam={userHasAccessToTeam}
-												player={player}
-												teamHasActiveSubscription={teamHasActiveSubscription}
-											/>
-										))}
-									</>
-								) : null}
-							</tbody>
-						</table>
 					</div>
 				</>
 			) : (
