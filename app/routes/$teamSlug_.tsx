@@ -1038,7 +1038,7 @@ export default function Stats() {
 				</table>
 			</div>
 			<div
-				className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
+				className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 pl-6 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
 			>
 				<button
 					className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-2 border-${team.color}-200 rounded-full p-1 shadown bg-${team.color}-50`}
