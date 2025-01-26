@@ -28,6 +28,8 @@ import {
 	Users,
 	Mail,
 	Calendar,
+	MailCheck,
+	MailX,
 } from 'lucide-react'
 
 import {
@@ -947,9 +949,28 @@ function GameCard({
 						<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
 							{player ? (
 								<DialogTrigger asChild>
-									<Button disabled={!teamHasActiveSubscription} size="icon">
-										<Mail />
-									</Button>
+									{(() => {
+										const rsvp = game.rsvps.find(
+											(rsvp) => rsvp.playerId === player.id
+										)
+										return (
+											<Button
+												disabled={!teamHasActiveSubscription}
+												size="icon"
+												variant={rsvp ? 'secondary' : 'default'}
+											>
+												{rsvp ? (
+													rsvp.rsvp === 'yes' ? (
+														<MailCheck />
+													) : (
+														<MailX />
+													)
+												) : (
+													<Mail />
+												)}
+											</Button>
+										)
+									})()}
 								</DialogTrigger>
 							) : null}
 							<DialogContent>
