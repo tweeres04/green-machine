@@ -83,7 +83,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					<UserContext.Provider
 						value={user ? { user, userHasAccessToTeam } : null}
 					>
-						<div className={`max-w-[700px] mx-auto space-y-8 p-2`}>
+						<div className="max-w-[700px] mx-auto space-y-8 p-2 relative">
 							{children}
 						</div>
 					</UserContext.Provider>

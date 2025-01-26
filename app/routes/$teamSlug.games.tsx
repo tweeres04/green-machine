@@ -51,7 +51,6 @@ import {
 
 import More from '~/components/ui/icons/more'
 import { ReactNode, useEffect, useState } from 'react'
-import { cn } from '~/lib/utils'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
@@ -67,6 +66,8 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
+import { GuestUserAlert } from '~/components/ui/guest-user-alert'
+import { getSession } from '~/lib/five-minute-session.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -732,7 +733,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		},
 	})
 
-	const [user, team] = await Promise.all([userPromise, teamPromise])
+	const [user, team, session] = await Promise.all([
+		userPromise,
+		teamPromise,
+		getSession(request.headers.get('Cookie')),
+	])
 
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
@@ -748,6 +753,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const userIsTylerOrMelissa = [1, 2].includes(user?.id ?? -1)
 
+	const guestUserAlertDismissed =
+		session.get('guestUserAlertDismissed') === 'true'
+
 	return json({
 		userIsTylerOrMelissa,
 		team,
@@ -756,6 +764,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		teamHasActiveSubscription: teamHasActiveSubscription_,
 		seasons: team.seasons,
 		season,
+		guestUserAlertDismissed,
 	})
 }
 
@@ -993,6 +1002,7 @@ export default function Games() {
 		teamHasActiveSubscription,
 		season,
 		seasons,
+		guestUserAlertDismissed,
 	} = useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
@@ -1009,6 +1019,12 @@ export default function Games() {
 	return (
 		<>
 			<Nav title="Games" team={team} />
+			<GuestUserAlert
+				teamId={team.id}
+				userHasAccessToTeam={userHasAccessToTeam}
+				player={!!player}
+				dismissed={guestUserAlertDismissed}
+			/>
 			<div className="flex flex-row-reverse">
 				{seasons.length > 0 && (
 					<SeasonDropdown seasons={seasons} season={season} />

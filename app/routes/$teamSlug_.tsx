@@ -11,6 +11,7 @@ import {
 	useNavigate,
 } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
+import { GuestUserAlert } from '~/components/ui/guest-user-alert'
 
 import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
@@ -60,6 +61,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '~/components/ui/select'
+import { getSession } from '~/lib/five-minute-session.server' // Add this import
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -198,6 +200,7 @@ export async function loader({
 		with: {
 			players: {
 				with: {
+					userInvite: true,
 					statEntries: season
 						? {
 								where: (statEntries, { and, gte, lte }) => {
@@ -277,7 +280,15 @@ export async function loader({
 		return 0
 	})
 
+	const player = user
+		? team.players.find((player) => player.userInvite?.userId === user.id)
+		: null
+
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
+
+	const session = await getSession(request.headers.get('Cookie'))
+	const guestUserAlertDismissed =
+		session.get('guestUserAlertDismissed') === 'true'
 
 	return {
 		team,
@@ -285,6 +296,8 @@ export async function loader({
 		teamHasActiveSubscription: teamHasActiveSubscription_,
 		seasons: team.seasons,
 		season,
+		player,
+		guestUserAlertDismissed,
 	}
 }
 
@@ -957,6 +970,8 @@ export default function Stats() {
 		teamHasActiveSubscription,
 		season,
 		seasons,
+		player,
+		guestUserAlertDismissed,
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
@@ -1078,6 +1093,12 @@ export default function Stats() {
 					/>
 				) : null}
 			</div>
+			<GuestUserAlert
+				userHasAccessToTeam={userHasAccessToTeam}
+				player={Boolean(player)}
+				dismissed={guestUserAlertDismissed}
+				teamId={team.id}
+			/>
 			<Toaster />
 		</>
 	)

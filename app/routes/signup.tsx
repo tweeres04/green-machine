@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
+import { getSession } from '~/lib/session.server'
 
 // First we create our UI with the form doing a POST and the inputs with the
 // names we are going to use in the strategy
@@ -74,12 +75,18 @@ export default function SignUp() {
 // Second, we need to export an action function, here we will use the
 // `authenticator.authenticate method`
 export async function action({ request }: ActionFunctionArgs) {
+	const session = await getSession(request.headers.get('Cookie'))
+
+	const inviteRequestTeamId = session.get('inviteRequestTeamId')
+
 	// we call the method with the name of the strategy we want to use and the
 	// request object, optionally we pass an object with the URLs we want the user
 	// to be redirected to after a success or a failure
 	try {
 		return await authenticator.authenticate('user-pass', request, {
-			successRedirect: '/',
+			successRedirect: inviteRequestTeamId
+				? `/request-invite?team_id=${inviteRequestTeamId}`
+				: '/',
 		})
 	} catch (err) {
 		if (err instanceof Response) {

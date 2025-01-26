@@ -20,6 +20,7 @@ export const teamRelations = relations(teams, ({ many, one }) => ({
 	teamsUsers: many(teamsUsers),
 	subscription: one(teamSubscriptions),
 	seasons: many(seasons),
+	userInviteRequests: many(userInviteRequests),
 }))
 
 export const teamSubscriptions = sqliteTable(
@@ -116,6 +117,36 @@ export const userInvitesRelations = relations(userInvites, ({ one }) => ({
 		relationName: 'received_invites',
 	}),
 }))
+
+export const userInviteRequests = sqliteTable(
+	'user_invite_requests',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: integer('user_id').notNull(),
+		teamId: integer('team_id').notNull(),
+		token: text('token').notNull(), // We probably don't need a token since the admin will be logged in
+		createdAt: text('created_at').notNull(),
+		acceptedAt: text('accepted_at'),
+	},
+	(table) => ({
+		userIdIdx: index('user_invite_requests_user_id_idx').on(table.userId),
+		teamIdIdx: index('user_invite_requests_team_id_idx').on(table.teamId),
+	})
+)
+
+export const userInviteRequestsRelations = relations(
+	userInviteRequests,
+	({ one }) => ({
+		user: one(users, {
+			fields: [userInviteRequests.userId],
+			references: [users.id],
+		}),
+		team: one(teams, {
+			fields: [userInviteRequests.teamId],
+			references: [teams.id],
+		}),
+	})
+)
 
 export const games = sqliteTable(
 	'games',
