@@ -862,6 +862,30 @@ ${url}`)
 	)
 }
 
+function GameDistanceToNow({ gameTime }: { gameTime: string | null }) {
+	const [, setCurrentTime] = useState(new Date()) // just to force a rerender to update formatDistanceToNow
+
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === 'visible') {
+				setCurrentTime(new Date())
+			}
+		}
+		document.addEventListener('visibilitychange', handleVisibilityChange)
+		return () => {
+			document.removeEventListener('visibilitychange', handleVisibilityChange)
+		}
+	}, [])
+
+	return gameTime ? (
+		<div className="text-sm">
+			{formatDistanceToNowStrict(new Date(gameTime), {
+				addSuffix: true,
+			})}
+		</div>
+	) : null
+}
+
 type GameCardProps = {
 	game: Game
 	team: Team & { players: Player[] }
@@ -899,13 +923,7 @@ function GameCard({
 							? format(game.timestamp, 'E MMM d - h:mma')
 							: 'Date and time TBD'}
 					</div>
-					<div className="text-sm">
-						{game.timestamp
-							? formatDistanceToNowStrict(new Date(game.timestamp), {
-									addSuffix: true,
-							  })
-							: null}
-					</div>
+					<GameDistanceToNow gameTime={game.timestamp} />
 				</CardTitle>
 				<CardDescription>
 					<div className="flex gap-2">
