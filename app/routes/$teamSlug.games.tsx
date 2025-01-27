@@ -52,7 +52,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 
 import More from '~/components/ui/icons/more'
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useContext, useEffect, useState } from 'react'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
@@ -70,6 +70,7 @@ import {
 import { Separator } from '~/components/ui/separator'
 import { GuestUserAlert } from '~/components/ui/guest-user-alert'
 import { getSession } from '~/lib/five-minute-session.server'
+import { TeamColorContext } from '~/lib/teamColorContext'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -544,6 +545,7 @@ function RsvpDialog({
 	rsvps: Game['rsvps']
 	players: Player[]
 }) {
+	const teamColor = useContext(TeamColorContext)
 	const rsvpInfo = [
 		{
 			rsvp: 'Yes',
@@ -582,12 +584,20 @@ function RsvpDialog({
 								</div>
 								<ul>
 									{players.map((player) => (
-										<li key={player.id}>{player.name}</li>
+										<li key={player.id}>
+											{player.name}
+											{player.userInvite?.acceptedAt ? null : (
+												<span className={`text-${teamColor}-500`}>*</span>
+											)}
+										</li>
 									))}
 								</ul>
 							</div>
 						)
 					})}
+					<p className={`text-sm text-${teamColor}-500`}>
+						* not on TeamStats yet
+					</p>
 				</div>
 				<DialogFooter>
 					<DialogClose>
