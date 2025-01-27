@@ -739,6 +739,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 					rsvps: true,
 					userInvite: true,
 				},
+				orderBy: (players, { asc }) => asc(players.name),
 			},
 			subscription: true,
 			seasons: true,
