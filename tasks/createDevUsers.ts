@@ -1,5 +1,5 @@
 import { getDb } from '~/lib/getDb'
-import { players, teams, teamsUsers, userInvites, users } from '~/schema'
+import { players, teams, userInvites, users } from '~/schema'
 import argon2 from 'argon2'
 import { formatISO } from 'date-fns'
 

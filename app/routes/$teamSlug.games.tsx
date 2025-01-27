@@ -247,7 +247,7 @@ function CancelForm({
 	closeModal: () => void
 	game: Game
 }) {
-	const fetcher = useFetcher()
+	const fetcher = useFetcher<{ changes: number }>()
 
 	const saving = fetcher.state !== 'idle'
 
@@ -586,7 +586,9 @@ function RsvpDialog({
 									{players.map((player) => (
 										<li key={player.id}>
 											{player.name}
-											{player.userInvite?.acceptedAt ? null : (
+											{player.userInvites.some(
+												(ui) => ui?.acceptedAt
+											) ? null : (
 												<span className={`text-${teamColor}-500`}>*</span>
 											)}
 										</li>
@@ -737,7 +739,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			players: {
 				with: {
 					rsvps: true,
-					userInvite: true,
+					userInvites: true,
 				},
 				orderBy: (players, { asc }) => asc(players.name),
 			},
@@ -759,7 +761,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
 
 	const player = user
-		? team.players.find((player) => player.userInvite?.userId === user.id)
+		? team.players.find((player) =>
+				player.userInvites.some((ui) => ui?.userId === user.id && ui.acceptedAt)
+		  )
 		: null
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)

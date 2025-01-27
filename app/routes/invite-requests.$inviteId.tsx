@@ -29,9 +29,11 @@ import Mailgun from 'mailgun.js'
 async function sendInviteRequestAcceptedEmail({
 	teamId,
 	email,
+	name,
 }: {
 	teamId: number
 	email: string
+	name: string
 }) {
 	invariant(process.env.MAILGUN_API_KEY, 'No MAILGUN_API_KEY')
 	invariant(process.env.MAILGUN_DOMAIN, 'No MAILGUN_DOMAIN')
@@ -61,7 +63,9 @@ async function sendInviteRequestAcceptedEmail({
 		from: 'TeamStats Invite Request <invite_requests@teamstats.tweeres.com>',
 		to: email,
 		subject: `TeamStats - Your request to join ${teamName} has been accepted!`,
-		text: `Check out stats here: ${process.env.BASE_URL}/${teamRecord.slug}
+		text: `Hi${name ? ` ${name}` : ''},
+		
+Check out stats here: ${process.env.BASE_URL}/${teamRecord.slug}
 		
 Check out games here: ${process.env.BASE_URL}/${teamRecord.slug}/games`,
 	})
@@ -164,7 +168,8 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 	sendInviteRequestAcceptedEmail({
 		teamId: team.id,
-		email: user.email,
+		email: userInviteRequest.user.email,
+		name: userInviteRequest.user.name,
 	})
 
 	const newUrl = new URL(request.url)

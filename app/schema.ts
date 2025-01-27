@@ -74,10 +74,7 @@ export const playersRelations = relations(players, ({ many, one }) => ({
 		fields: [players.teamId],
 		references: [teams.id],
 	}),
-	userInvite: one(userInvites, {
-		fields: [players.id],
-		references: [userInvites.playerId],
-	}),
+	userInvites: many(userInvites),
 	rsvps: many(rsvps),
 }))
 
@@ -94,7 +91,7 @@ export const userInvites = sqliteTable(
 		inviterId: integer('inviter_id').notNull(),
 	},
 	(table) => ({
-		idIdx: index('user_invites_id_idx').on(table.id),
+		idIdx: index('user_invites_id_idx').on(table.id), // TODO: I think this is unnecessary because there's a pk on this field
 		userIdIdx: index('user_invites_user_id_idx').on(table.userId),
 		playerIdIdx: index('user_invites_player_id_idx').on(table.playerId),
 		inviterIdIdx: index('user_invites_inviter_id_idx').on(table.inviterId),

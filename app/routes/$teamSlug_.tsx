@@ -200,7 +200,7 @@ export async function loader({
 		with: {
 			players: {
 				with: {
-					userInvite: true,
+					userInvites: true,
 					statEntries: season
 						? {
 								where: (statEntries, { and, gte, lte }) => {
@@ -281,7 +281,9 @@ export async function loader({
 	})
 
 	const player = user
-		? team.players.find((player) => player.userInvite?.userId === user.id)
+		? team.players.find((player) =>
+				player.userInvites.some((ui) => ui.userId === user.id && ui.acceptedAt)
+		  )
 		: null
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
@@ -320,7 +322,7 @@ function StatEditDialog({
 	closeDialog: () => void
 	data: StatEditDialogData
 }) {
-	const fetcher = useFetcher()
+	const fetcher = useFetcher<{ changes: number }>()
 
 	const isSubmitting =
 		fetcher.state === 'submitting' &&
@@ -405,7 +407,7 @@ function StatDeleteDialog({
 	closeDialog: () => void
 	data: StatDeleteDialogData
 }) {
-	const fetcher = useFetcher()
+	const fetcher = useFetcher<{ changes: number }>()
 
 	const isSubmitting =
 		fetcher.state === 'submitting' &&
@@ -452,13 +454,6 @@ function StatDeleteDialog({
 		</Dialog>
 	)
 }
-
-type OptimisticState =
-	| 'submittingGoal'
-	| 'removingGoal'
-	| 'submittingAssist'
-	| 'removingAssist'
-	| null
 
 function PlayerRow({
 	teamColor,
@@ -890,7 +885,7 @@ function SeasonDropdown({
 	season,
 }: {
 	seasons: { id: number; name: string }[]
-	season: Season
+	season: Season | null | undefined
 }) {
 	const path = useLocation().pathname
 	const navigate = useNavigate()

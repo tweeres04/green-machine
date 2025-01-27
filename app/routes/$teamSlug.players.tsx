@@ -78,7 +78,7 @@ export async function loader({
 				players: {
 					with: {
 						statEntries: true,
-						userInvite: true,
+						userInvites: true,
 					},
 					orderBy: (players, { asc }) => [asc(players.name)],
 				},
@@ -202,9 +202,9 @@ export default function EditTeam() {
 									>
 										Change image
 									</DropdownMenuItem>
-									{p.userInvite ? (
+									{p.userInvites.length > 0 ? (
 										<DropdownMenuItem disabled>
-											{p.userInvite.acceptedAt ? (
+											{p.userInvites.some((ui) => ui.acceptedAt) ? (
 												<>Invite accepted</>
 											) : (
 												<>Invite sent</>
