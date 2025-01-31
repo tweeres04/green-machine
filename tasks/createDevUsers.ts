@@ -48,6 +48,7 @@ async function main() {
 	console.log(`${user.name} has been added as a player to all teams.`)
 }
 
+// TODO disallow this running on production
 main().catch((e) => {
 	console.error(e)
 	process.exit(1)
