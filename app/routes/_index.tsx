@@ -15,7 +15,7 @@ import { players, statEntries, teams } from '~/schema'
 export const meta: MetaFunction = () => {
 	const price = 19
 	const appName = 'TeamStats'
-	const title = `${appName} - Straightforward Soccer Team Stats Tracking | $${price}/year`
+	const title = `${appName} - Straightforward Soccer Team Stats Tracking. $${price}/year`
 	const description = `Track your soccer team's stats with beautiful visualizations, shareable leaderboards, and AI-powered schedule import. $${price}/year.`
 	const author = 'Tyler Weeres'
 
