@@ -96,7 +96,10 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 		{ name: 'og:title', content: title },
 		{ name: 'og:type', content: 'website' },
 		{ name: 'og:description', content: description },
-		// { name: 'og:image', content: `` }, todo: add og:image
+		{
+			name: 'og:image',
+			content: 'https://teamstats.tweeres.com/games_opengraph.png',
+		},
 		{ name: 'og:url', content: url },
 		{ tagName: 'link', rel: 'canonical', href: url },
 	]
