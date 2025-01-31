@@ -27,6 +27,11 @@ export const meta: MetaFunction = () => {
 			name: 'description',
 			content: `${description}`,
 		},
+		{
+			tagName: 'link',
+			rel: 'canonical',
+			href: 'https://teamstats.tweeres.com',
+		},
 
 		// Open Graph tags
 		{
@@ -41,11 +46,9 @@ export const meta: MetaFunction = () => {
 			property: 'og:type',
 			content: 'website',
 		},
-
 		{
-			tagName: 'link',
-			rel: 'canonical',
-			href: 'https://teamstats.tweeres.com',
+			property: 'og:image',
+			content: 'https://teamstats.tweeres.com/opengraph.png',
 		},
 
 		// Structured Data
