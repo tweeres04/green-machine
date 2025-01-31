@@ -2,7 +2,13 @@ import Nav from '~/components/ui/nav'
 import { Button } from '~/components/ui/button'
 import { Link } from '@remix-run/react'
 
-export default function HomeLandingPage() {
+export default function HomeLandingPage({
+	teamCount,
+	statCount,
+}: {
+	teamCount: number
+	statCount: number
+}) {
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
 			<Nav title="TeamStats" />
@@ -15,10 +21,29 @@ export default function HomeLandingPage() {
 					one person who loves soccer.
 				</p>
 			</div>
-			<div className="flex justify-center">
-				<Link to="/teams/new" className="w-full">
-					<Button size="lg">Start tracking</Button>
-				</Link>
+			<div className="text-center space-y-3">
+				<div className="flex justify-center">
+					<Button size="lg" asChild>
+						<Link to="/teams/new" className="w-full">
+							Start tracking
+						</Link>
+					</Button>
+				</div>
+				<small className="block text-sm leading-none">
+					Join <strong>{teamCount}</strong> teams tracking{' '}
+					<strong>{statCount}</strong> stats
+				</small>
+			</div>
+			<div className="space-y-1">
+				<blockquote className="border-l-2 pl-6 italic">
+					"It's so fun to enter in the stats after a game. The team loves
+					following the story of the season."
+					<Button variant="link" asChild className="px-0">
+						<a href="https://teamstats.tweeres.com/green-machine">
+							- Green Machine
+						</a>
+					</Button>
+				</blockquote>
 			</div>
 			<div className="features space-y-3">
 				<h3 className="text-2xl">Why TeamStats?</h3>

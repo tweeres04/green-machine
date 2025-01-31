@@ -5,11 +5,12 @@ import { Suspense } from 'react'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
-import { sql } from 'drizzle-orm'
+import { count, eq, sql } from 'drizzle-orm'
 import { Badge } from '~/components/ui/badge'
 import { cn } from '~/lib/utils'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import HomeLandingPage from '~/components/home-landing-page'
+import { players, statEntries, teams } from '~/schema'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -26,11 +27,27 @@ export const meta: MetaFunction = () => {
 export async function loader({ request }: LoaderFunctionArgs) {
 	const user = await authenticator.isAuthenticated(request)
 
-	if (!user) {
-		return json({ user, teams: [], stats: [] })
-	}
-
 	const db = getDb()
+
+	if (!user) {
+		const allTeamsWithStatCounts = await db
+			.select({
+				id: teams.id,
+				statCount: count(statEntries.id),
+			})
+			.from(teams)
+			.innerJoin(players, eq(players.teamId, teams.id))
+			.innerJoin(statEntries, eq(statEntries.playerId, players.id))
+			.groupBy(teams.id)
+
+		const teamCount = allTeamsWithStatCounts.length
+		const statCount = allTeamsWithStatCounts.reduce(
+			(acc, t) => acc + t.statCount,
+			0
+		)
+
+		return json({ teamCount, statCount })
+	}
 
 	const sql_ = sql`
 		select distinct
@@ -77,13 +94,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-	const { user, teams, stats } = useLoaderData<typeof loader>()
+	const loaderData = useLoaderData<typeof loader>()
 
-	useMixpanelIdentify(user)
+	useMixpanelIdentify(loaderData.user)
 
-	if (!user) {
-		return <HomeLandingPage />
+	if (!loaderData.user) {
+		return <HomeLandingPage {...loaderData} />
 	}
+
+	const { user, teams, stats } = loaderData
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
