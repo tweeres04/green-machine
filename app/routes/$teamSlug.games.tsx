@@ -89,7 +89,7 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 		},
 		{ name: 'robots', context: 'noindex' },
 		{
-			taname: 'link',
+			tagName: 'link',
 			rel: 'canonical',
 			href: url,
 		},
