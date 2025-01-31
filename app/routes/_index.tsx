@@ -16,7 +16,7 @@ export const meta: MetaFunction = () => {
 	const price = 19
 	const appName = 'TeamStats'
 	const title = `${appName} - Straightforward soccer team stats tracking. $${price}/year`
-	const description = `Track your soccer team's stats with beautiful visualizations, shareable leaderboards, and AI-powered schedule import. $${price}/year.`
+	const description = `Track your soccer team's stats with beautiful visualizations, shareable leaderboards, and AI-powered schedule import.`
 	const author = 'Tyler Weeres'
 
 	return [
