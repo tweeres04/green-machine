@@ -1,6 +1,27 @@
+import type { ComponentProps } from 'react'
 import Nav from '~/components/ui/nav'
 import { Button } from '~/components/ui/button'
 import { Link } from '@remix-run/react'
+
+type HomeLandingPageProps = ComponentProps<typeof HomeLandingPage>
+
+function Cta({ teamCount, statCount }: HomeLandingPageProps) {
+	return (
+		<div className="text-center space-y-3 py-6">
+			<div className="flex justify-center">
+				<Button size="lg" asChild>
+					<Link to="/teams/new" className="w-full">
+						Start tracking
+					</Link>
+				</Button>
+			</div>
+			<small className="block text-sm leading-none">
+				Join <strong>{teamCount}</strong> teams tracking{' '}
+				<strong>{statCount}</strong> stats
+			</small>
+		</div>
+	)
+}
 
 export default function HomeLandingPage({
 	teamCount,
@@ -21,33 +42,20 @@ export default function HomeLandingPage({
 					one person who loves soccer.
 				</p>
 			</div>
-			<div className="text-center space-y-3">
-				<div className="flex justify-center">
-					<Button size="lg" asChild>
-						<Link to="/teams/new" className="w-full">
-							Start tracking
-						</Link>
-					</Button>
-				</div>
-				<small className="block text-sm leading-none">
-					Join <strong>{teamCount}</strong> teams tracking{' '}
-					<strong>{statCount}</strong> stats
-				</small>
-			</div>
-			<div className="space-y-1">
-				<blockquote className="border-l-2 pl-6 italic">
-					"It's so fun to enter in the stats after a game. The team loves
-					following the story of the season."
-					<Button variant="link" asChild className="px-0">
-						<a href="https://teamstats.tweeres.com/green-machine">
-							- Green Machine
-						</a>
-					</Button>
-				</blockquote>
-			</div>
-			<div className="features space-y-3">
+			<Cta {...{ teamCount, statCount }} />
+			<blockquote className="border-l-2 pl-6 italic relative pt-10">
+				<span className="text-[96px] block absolute -top-5 left-3">“</span>
+				It's so fun to enter in the stats after a game. We love following the
+				story of the season.{' '}
+				<Button variant="link" asChild className="px-0 py-0 h-auto">
+					<a href="https://teamstats.tweeres.com/green-machine">
+						- Green Machine
+					</a>
+				</Button>
+			</blockquote>
+			<div className="features space-y-10">
 				<h3 className="text-2xl">Why TeamStats?</h3>
-				<ul className="space-y-3 [&_li]:space-y-3">
+				<ul className="space-y-7 [&_li]:space-y-3">
 					<li>
 						<h4 className="text-xl">Easy to use</h4>
 						<p>
@@ -69,6 +77,8 @@ export default function HomeLandingPage({
 							chat.
 						</p>
 					</li>
+				</ul>
+				<ul className="space-y-7 [&_li]:space-y-3">
 					<li>
 						<h4 className="text-xl">Affordable</h4>
 						<p>Only $19 USD per year. I'm a one person team with low costs.</p>
@@ -87,6 +97,8 @@ export default function HomeLandingPage({
 							busy. I'm building just the features we need, and that's it.
 						</p>
 					</li>
+				</ul>
+				<ul className="space-y-7 [&_li]:space-y-3">
 					<li>
 						<h4 className="text-xl">Expert team</h4>
 						<p>
@@ -97,13 +109,11 @@ export default function HomeLandingPage({
 					</li>
 				</ul>
 			</div>
-			<div className="flex justify-center">
-				<Link to="/teams/new" className="w-full">
-					<Button size="lg">Start tracking</Button>
-				</Link>
-			</div>
-			<footer className="py-5">
-				By <a href="https://tweeres.ca/about">Tyler Weeres</a>
+			<Cta {...{ teamCount, statCount }} />
+			<footer className="py-16">
+				<Button variant="link" className="p-0">
+					<a href="https://tweeres.ca/about">By Tyler Weeres</a>
+				</Button>
 			</footer>
 		</div>
 	)
