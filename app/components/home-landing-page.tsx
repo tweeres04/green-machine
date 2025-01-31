@@ -46,10 +46,10 @@ export default function HomeLandingPage({
 			<blockquote className="border-l-2 pl-6 italic relative pt-10">
 				<span className="text-[96px] block absolute -top-5 left-3">“</span>
 				It's so fun to enter in the stats after a game. We love following the
-				story of the season.{' '}
-				<Button variant="link" asChild className="px-0 py-0 h-auto">
+				story of the season. -{' '}
+				<Button variant="link" asChild className="px-0 py-0 h-auto underline">
 					<a href="https://teamstats.tweeres.com/green-machine">
-						- Green Machine
+						Green Machine
 					</a>
 				</Button>
 			</blockquote>
