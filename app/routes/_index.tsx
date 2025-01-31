@@ -13,14 +13,62 @@ import HomeLandingPage from '~/components/home-landing-page'
 import { players, statEntries, teams } from '~/schema'
 
 export const meta: MetaFunction = () => {
+	const price = 19
+	const appName = 'TeamStats'
+	const title = `${appName} - Straightforward Soccer Team Stats Tracking | $${price}/year`
+	const description = `Track your soccer team's stats with beautiful visualizations, shareable leaderboards, and AI-powered schedule import. $${price}/year.`
+	const author = 'Tyler Weeres'
+
 	return [
-		{ title: 'TeamStats' },
+		{
+			title,
+		},
 		{
 			name: 'description',
-			content: 'Set up stats for your sports team',
+			content: `${description}`,
 		},
-		{ name: 'robots', context: 'noindex' },
-		{ taname: 'link', rel: 'canonical', href: 'https://teamstats.tweeres.com' },
+
+		// Open Graph tags
+		{
+			property: 'og:title',
+			content: title,
+		},
+		{
+			property: 'og:description',
+			content: description,
+		},
+		{
+			property: 'og:type',
+			content: 'website',
+		},
+
+		{
+			tagName: 'link',
+			rel: 'canonical',
+			href: 'https://teamstats.tweeres.com',
+		},
+
+		// Structured Data
+		{
+			'script:ld+json': {
+				'@context': 'https://schema.org',
+				'@type': 'SoftwareApplication',
+				name: appName,
+				description: description,
+				applicationCategory: 'SportsApplication',
+				operatingSystem: 'Any',
+				offers: {
+					'@type': 'Offer',
+					price,
+					priceCurrency: 'USD',
+					frequency: 'yearly',
+				},
+				author: {
+					'@type': 'Person',
+					name: author,
+				},
+			},
+		},
 	]
 }
 
