@@ -82,7 +82,7 @@ export default function HomeLandingPage({
 						</p>
 					</div>
 					<Cta {...{ teamCount, statCount }} />
-					<blockquote className="border-l-2 pl-6 italic relative pt-10">
+					<blockquote className="border-l-8 pl-4 italic relative pt-10">
 						<span className="text-[96px] block absolute -top-5 left-3">“</span>
 						It's so fun to enter in the stats after a game. We love following
 						the story of the season. -{' '}
