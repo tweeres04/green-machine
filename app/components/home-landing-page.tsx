@@ -12,6 +12,8 @@ import {
 	WandSparkles,
 } from 'lucide-react'
 import React from 'react'
+import { Instagram } from '~/components/ui/icons/instagram'
+import { TikTok } from './ui/icons/tiktok'
 
 type HomeLandingPageProps = ComponentProps<typeof HomeLandingPage>
 
@@ -158,15 +160,43 @@ export default function HomeLandingPage({
 					</FeatureList>
 				</div>
 				<Cta {...{ teamCount, statCount }} />
-				<footer className="py-16">
+				<footer className="py-16 space-y-5">
 					<div>
 						<Button variant="link" className="p-0" asChild>
-							<a href="https://tweeres.ca/about">By Tyler Weeres</a>
+							<Link to="https://tweeres.ca/about">
+								By Tyler Weeres ©{new Date().getFullYear()}
+							</Link>
 						</Button>
 					</div>
 					<div>
 						<Button variant="link" className="p-0 underline" asChild>
 							<Link to="/privacy-policy">Privacy policy</Link>
+						</Button>{' '}
+						·{' '}
+						<Button variant="link" className="p-0 underline" asChild>
+							<Link to="/terms-of-service">Terms of Service</Link>
+						</Button>{' '}
+						·{' '}
+						<Button variant="link" className="p-0 underline" asChild>
+							<Link to="/contact">Contact</Link>
+						</Button>
+					</div>
+					<div className="space-x-2">
+						<Button variant="ghost" size="icon" className="size-6" asChild>
+							<Link
+								to="https://www.instagram.com/teamstats.app"
+								aria-label="Instagram"
+							>
+								<Instagram />
+							</Link>
+						</Button>{' '}
+						<Button variant="ghost" size="icon" className="size-6" asChild>
+							<Link
+								to="https://www.tiktok.com/@teamstats.app"
+								aria-label="TikTok"
+							>
+								<TikTok />
+							</Link>
 						</Button>
 					</div>
 				</footer>

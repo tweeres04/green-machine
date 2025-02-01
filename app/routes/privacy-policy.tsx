@@ -1,8 +1,8 @@
-import '~/privacy-policy.css'
+import '~/resources.css'
 
 export default function PrivacyPolicy() {
 	return (
-		<article>
+		<article className="resources">
 			<h1>Privacy Policy</h1>
 
 			<section>
