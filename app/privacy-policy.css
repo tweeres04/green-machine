@@ -1,0 +1,15 @@
+h1 {
+	@apply text-3xl mb-20;
+}
+
+h2 {
+	@apply text-2xl mb-5;
+}
+
+section {
+	@apply mb-32;
+}
+
+ul {
+	@apply list-disc ml-5;
+}
