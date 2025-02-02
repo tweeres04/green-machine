@@ -13,7 +13,8 @@ import {
 } from 'lucide-react'
 import React from 'react'
 import { Instagram } from '~/components/ui/icons/instagram'
-import { TikTok } from './ui/icons/tiktok'
+import { TikTok } from '~/components/ui/icons/tiktok'
+import { Youtube } from '~/components/ui/icons/youtube'
 
 type HomeLandingPageProps = ComponentProps<typeof HomeLandingPage>
 
@@ -196,6 +197,14 @@ export default function HomeLandingPage({
 								aria-label="TikTok"
 							>
 								<TikTok />
+							</Link>
+						</Button>
+						<Button variant="ghost" size="icon" className="size-6" asChild>
+							<Link
+								to="https://www.youtube.com/@teamstatsapp"
+								aria-label="Youtube"
+							>
+								<Youtube />
 							</Link>
 						</Button>
 					</div>
