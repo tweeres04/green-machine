@@ -88,16 +88,19 @@ export default function HomeLandingPage({
 					<blockquote className="border-l-8 pl-4 italic relative pt-10">
 						<span className="text-[96px] block absolute -top-5 left-3">“</span>
 						It's so fun to enter in the stats after a game. We love following
-						the story of the season. -{' '}
-						<Button
-							variant="link"
-							asChild
-							className="px-0 py-0 h-auto underline"
-						>
-							<a href="https://teamstats.tweeres.com/green-machine">
-								Green Machine
-							</a>
-						</Button>
+						the golden boot race over the season.{' '}
+						<span className="whitespace-nowrap">
+							-{' '}
+							<Button
+								variant="link"
+								asChild
+								className="px-0 py-0 h-auto underline"
+							>
+								<a href="https://teamstats.tweeres.com/green-machine">
+									Green Machine
+								</a>
+							</Button>
+						</span>
 					</blockquote>
 				</div>
 				<div className="features space-y-10">
