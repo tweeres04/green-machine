@@ -28,7 +28,7 @@ function Cta({ teamCount, statCount }: HomeLandingPageProps) {
 					className="transition-all ease-linear hover:shadow-xl hover:scale-105 hover:bg-gray-800"
 				>
 					<Link to="/teams/new" className="w-full">
-						Start tracking
+						Set up your team
 					</Link>
 				</Button>
 			</div>
