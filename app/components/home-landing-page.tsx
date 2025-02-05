@@ -82,6 +82,7 @@ export default function HomeLandingPage({
 							and assists, compete for the golden boot, and build team spirit
 						</p>
 					</div>
+					<Cta {...{ teamCount, statCount }} />
 					<img
 						src="/leaderboard.webp"
 						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
@@ -90,7 +91,6 @@ export default function HomeLandingPage({
 						loading="lazy"
 						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
 					/>
-					<Cta {...{ teamCount, statCount }} />
 					<blockquote className="border-l-8 pl-4 italic relative pt-10">
 						<span className="text-[96px] block absolute -top-5 left-3">“</span>
 						It's so fun to enter in the stats after a game. We love following
@@ -137,6 +137,7 @@ export default function HomeLandingPage({
 							</p>
 						</FeatureListItem>
 					</FeatureList>
+					<Cta {...{ teamCount, statCount }} />
 					<FeatureList>
 						<FeatureListItem icon={<Wallet />} title="Affordable">
 							<p>
