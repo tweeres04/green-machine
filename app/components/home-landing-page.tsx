@@ -85,12 +85,12 @@ export default function HomeLandingPage({
 						</p>
 					</div>
 					<img
-						src="/leaderboard.png"
-						srcSet="/leaderboard-400.png 400w, /leaderboard.png 2532w"
+						src="/leaderboard.webp"
+						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
 						sizes="(max-width: 600px) 100vw, 800px"
 						alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
 						loading="lazy"
-						className="shadow-lg border-2 border-gray-100 rounded-xl p-1"
+						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
 					/>
 					<Cta {...{ teamCount, statCount }} />
 					<blockquote className="border-l-8 pl-4 italic relative pt-10">
