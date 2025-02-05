@@ -76,12 +76,10 @@ export default function HomeLandingPage({
 			<div className="space-y-20">
 				<div className="hero space-y-8">
 					<div className="space-y-3">
-						<h2 className="text-3xl">
-							Track your soccer team's stats. Straightforward and affordable.
-						</h2>
+						<h2 className="text-3xl">Make every game more fun</h2>
 						<p>
-							TeamStats is a small, focused soccer team stat tracking app. Built
-							by one person who loves soccer.
+							Give your social soccer team something to celebrate — track goals
+							and assists, compete for the golden boot, and build team spirit
 						</p>
 					</div>
 					<img
