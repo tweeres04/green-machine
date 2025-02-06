@@ -1,8 +1,8 @@
-import type { ComponentProps } from 'react'
 import Nav from '~/components/ui/nav'
 import { Button } from '~/components/ui/button'
 import { Link } from '@remix-run/react'
 import {
+	CalendarCheck,
 	ChartScatter,
 	Focus,
 	Hammer,
@@ -30,6 +30,7 @@ function Cta() {
 					</Link>
 				</Button>
 			</div>
+			<small className="block text-sm leading-none">Just $19 USD/year</small>
 		</div>
 	)
 }
@@ -67,7 +68,7 @@ export default function HomeLandingPage() {
 						<h2 className="text-3xl">Make every game more fun</h2>
 						<p>
 							Give your social soccer team something to celebrate — track goals
-							and assists, compete for the golden boot, and build team spirit
+							and assists, see who's playing next, and build team spirit
 						</p>
 					</div>
 					<Cta />
@@ -76,6 +77,14 @@ export default function HomeLandingPage() {
 						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
 						sizes="(max-width: 600px) 100vw, 800px"
 						alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
+						loading="lazy"
+						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
+					/>
+					<img
+						src="/next-game.webp"
+						srcSet="/next-game-400.webp 400w, /next-game-800.webp 800w, /next-game.webp 1170w"
+						sizes="(max-width: 600px) 100vw, 800px"
+						alt="A screenshot of the TeamStats next game schedule for the team Green Machine."
 						loading="lazy"
 						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
 					/>
@@ -99,11 +108,12 @@ export default function HomeLandingPage() {
 				</div>
 				<div className="features space-y-10">
 					<h3 className="text-2xl">Why TeamStats?</h3>
+					<Cta />
 					<FeatureList>
 						<FeatureListItem icon={<WandSparkles />} title="Easy to use">
 							<p>
 								Track your team's stats with a few clicks or taps. Import your
-								schedule from your league website using AI.
+								schedule from your league website.
 							</p>
 						</FeatureListItem>
 						<FeatureListItem
@@ -122,6 +132,12 @@ export default function HomeLandingPage() {
 							<p>
 								Quickly share the golden boot or assist race in the team group
 								chat.
+							</p>
+						</FeatureListItem>
+						<FeatureListItem icon={<CalendarCheck />} title="Never miss a game">
+							<p>
+								See your full season schedule, track who's playing, and import
+								games from your league website.
 							</p>
 						</FeatureListItem>
 					</FeatureList>
