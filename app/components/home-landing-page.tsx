@@ -16,9 +16,7 @@ import { Instagram } from '~/components/ui/icons/instagram'
 import { TikTok } from '~/components/ui/icons/tiktok'
 import { Youtube } from '~/components/ui/icons/youtube'
 
-type HomeLandingPageProps = ComponentProps<typeof HomeLandingPage>
-
-function Cta({ teamCount, statCount }: HomeLandingPageProps) {
+function Cta() {
 	return (
 		<div className="text-center space-y-3 py-6">
 			<div className="flex justify-center">
@@ -32,10 +30,6 @@ function Cta({ teamCount, statCount }: HomeLandingPageProps) {
 					</Link>
 				</Button>
 			</div>
-			<small className="block text-sm leading-none">
-				Join <strong>{teamCount}</strong> teams tracking{' '}
-				<strong>{statCount}</strong> stats
-			</small>
 		</div>
 	)
 }
@@ -63,13 +57,7 @@ function FeatureListItem({
 	)
 }
 
-export default function HomeLandingPage({
-	teamCount,
-	statCount,
-}: {
-	teamCount: number
-	statCount: number
-}) {
+export default function HomeLandingPage() {
 	return (
 		<>
 			<Nav title="TeamStats" />
@@ -82,7 +70,7 @@ export default function HomeLandingPage({
 							and assists, compete for the golden boot, and build team spirit
 						</p>
 					</div>
-					<Cta {...{ teamCount, statCount }} />
+					<Cta />
 					<img
 						src="/leaderboard.webp"
 						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
@@ -137,7 +125,7 @@ export default function HomeLandingPage({
 							</p>
 						</FeatureListItem>
 					</FeatureList>
-					<Cta {...{ teamCount, statCount }} />
+					<Cta />
 					<FeatureList>
 						<FeatureListItem icon={<Wallet />} title="Affordable">
 							<p>
@@ -170,7 +158,7 @@ export default function HomeLandingPage({
 						</FeatureListItem>
 					</FeatureList>
 				</div>
-				<Cta {...{ teamCount, statCount }} />
+				<Cta />
 				<footer className="py-16 space-y-5">
 					<div>
 						<Button variant="link" className="p-0" asChild>
