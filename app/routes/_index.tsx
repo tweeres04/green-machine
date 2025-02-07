@@ -1,22 +1,21 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Await, defer, json, Link, useLoaderData } from '@remix-run/react'
+import { Await, defer, Link, useLoaderData } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 import { Suspense } from 'react'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import Nav from '~/components/ui/nav'
-import { count, eq, sql } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { Badge } from '~/components/ui/badge'
 import { cn } from '~/lib/utils'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import HomeLandingPage from '~/components/home-landing-page'
-import { players, statEntries, teams } from '~/schema'
 
 export const meta: MetaFunction = () => {
 	const price = 19
 	const appName = 'TeamStats'
-	const title = `${appName} - Straightforward soccer team stats tracking. $${price}/year`
-	const description = `Track your soccer team's stats with beautiful visualizations, shareable leaderboards, and AI-powered schedule import.`
+	const title = `Soccer Team Stats & Schedules — Easy & Affordable at $${price}/year - ${appName}`
+	const description = `Celebrate every game with beautiful stats! Track goals, assists, and schedules effortlessly. Set up your team in 2 minutes!`
 	const author = 'Tyler Weeres'
 
 	return [
