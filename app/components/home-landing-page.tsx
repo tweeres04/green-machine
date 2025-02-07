@@ -26,11 +26,13 @@ function Cta() {
 					className="transition-all ease-linear hover:shadow-xl hover:scale-105 hover:bg-gray-800"
 				>
 					<Link to="/teams/new" className="w-full">
-						Set up your team
+						Set up your team in 2 minutes
 					</Link>
 				</Button>
 			</div>
-			<small className="block text-sm leading-none">Just $19 USD/year</small>
+			<small className="block text-sm leading-none font-light">
+				Just $19 USD/year for your whole team
+			</small>
 		</div>
 	)
 }
@@ -110,12 +112,6 @@ export default function HomeLandingPage() {
 					<h3 className="text-2xl">Why TeamStats?</h3>
 					<Cta />
 					<FeatureList>
-						<FeatureListItem icon={<WandSparkles />} title="Easy to use">
-							<p>
-								Track your team's stats with a few clicks or taps. Import your
-								schedule from your league website.
-							</p>
-						</FeatureListItem>
 						<FeatureListItem
 							icon={<ChartScatter />}
 							title="Beautiful stat visualizations"
@@ -138,6 +134,12 @@ export default function HomeLandingPage() {
 							<p>
 								See your full season schedule, track who's playing, and import
 								games from your league website.
+							</p>
+						</FeatureListItem>
+						<FeatureListItem icon={<WandSparkles />} title="Easy to use">
+							<p>
+								Track your team's stats with a few clicks or taps. Import your
+								schedule from your league website.
 							</p>
 						</FeatureListItem>
 					</FeatureList>

@@ -81,23 +81,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const db = getDb()
 
 	if (!user) {
-		const allTeamsWithStatCounts = await db
-			.select({
-				id: teams.id,
-				statCount: count(statEntries.id),
-			})
-			.from(teams)
-			.innerJoin(players, eq(players.teamId, teams.id))
-			.innerJoin(statEntries, eq(statEntries.playerId, players.id))
-			.groupBy(teams.id)
-
-		const teamCount = allTeamsWithStatCounts.length
-		const statCount = allTeamsWithStatCounts.reduce(
-			(acc, t) => acc + t.statCount,
-			0
-		)
-
-		return json({ teamCount, statCount })
+		return new Response()
 	}
 
 	const sql_ = sql`
@@ -150,7 +134,7 @@ export default function Index() {
 	useMixpanelIdentify(loaderData.user)
 
 	if (!loaderData.user) {
-		return <HomeLandingPage {...loaderData} />
+		return <HomeLandingPage />
 	}
 
 	const { user, teams, stats } = loaderData
