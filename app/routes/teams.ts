@@ -119,9 +119,11 @@ export const action: ActionFunction = async ({ request }) => {
 			'origin'
 		)}/canceled?checkout_session_id={CHECKOUT_SESSION_ID}`,
 		automatic_tax: { enabled: true },
-		customer_update: {
-			address: 'auto',
-		},
+		customer_update: user.stripeCustomerId
+			? {
+					address: 'auto',
+			  }
+			: undefined,
 	})
 
 	invariant(session.url, 'Missing session.url')
