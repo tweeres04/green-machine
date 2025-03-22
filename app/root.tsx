@@ -96,6 +96,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					async
 					src="https://scripts.simpleanalyticscdn.com/latest.js"
 				></script>
+				{/* Ahrefs analytics */}
+				<script
+					src="https://analytics.ahrefs.com/analytics.js"
+					data-key="OR25pSoDpycSw5Y6N2q99Q"
+					async
+				></script>
 			</body>
 		</html>
 	)
