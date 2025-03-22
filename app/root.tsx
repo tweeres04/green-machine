@@ -90,6 +90,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				</TeamColorContext.Provider>
 				<ScrollRestoration />
 				<Scripts />
+				{/* Simple analytics */}
+				<script
+					data-collect-dnt="true"
+					async
+					src="https://scripts.simpleanalyticscdn.com/latest.js"
+				></script>
 			</body>
 		</html>
 	)
