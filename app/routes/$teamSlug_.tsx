@@ -798,25 +798,42 @@ function AddStatsButton({
 								className="grid grid-cols-3 gap-3 items-center"
 							>
 								<div>{player.name}</div>
-								{(() => {
-									const existingStats = players.flatMap((p) =>
-										p.statEntries.filter(
-											(se) => se.gameId === Number(selectedGameId)
+								<div>
+									{(() => {
+										const existingStats = players.flatMap((p) =>
+											p.statEntries.filter(
+												(se) => se.gameId === Number(selectedGameId)
+											)
 										)
-									)
-									const goals = [...existingStats, ...stats].filter(
-										(s) => s.playerId === player.id && s.type === 'goal'
-									).length
-									const assists = [...existingStats, ...stats].filter(
-										(s) => s.playerId === player.id && s.type === 'assist'
-									).length
-									return (
-										<div className="flex gap-1">
-											{assists ? <span>{assists} 🍎</span> : null}
-											{goals ? <span>{goals} ⚽️</span> : null}
-										</div>
-									)
-								})()}
+										const goals = existingStats.filter(
+											(s) => s.playerId === player.id && s.type === 'goal'
+										).length
+										const assists = existingStats.filter(
+											(s) => s.playerId === player.id && s.type === 'assist'
+										).length
+										return (
+											<div className="text-[0.6rem]">
+												{goals ? <span>{goals}⚽️</span> : null}{' '}
+												{assists ? <span>{assists}🍎</span> : null}
+											</div>
+										)
+									})()}
+									{(() => {
+										const goals = stats.filter(
+											(s) => s.playerId === player.id && s.type === 'goal'
+										).length
+										const assists = stats.filter(
+											(s) => s.playerId === player.id && s.type === 'assist'
+										).length
+										return (
+											<div>
+												{goals || assists ? '+' : null}
+												{goals ? <span>{goals}⚽️</span> : null}{' '}
+												{assists ? <span>{assists}🍎</span> : null}
+											</div>
+										)
+									})()}
+								</div>
 								<div className="flex gap-1 justify-end">
 									<Button
 										type="button"
