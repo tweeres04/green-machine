@@ -799,10 +799,15 @@ function AddStatsButton({
 							>
 								<div>{player.name}</div>
 								{(() => {
-									const goals = stats.filter(
+									const existingStats = players.flatMap((p) =>
+										p.statEntries.filter(
+											(se) => se.gameId === Number(selectedGameId)
+										)
+									)
+									const goals = [...existingStats, ...stats].filter(
 										(s) => s.playerId === player.id && s.type === 'goal'
 									).length
-									const assists = stats.filter(
+									const assists = [...existingStats, ...stats].filter(
 										(s) => s.playerId === player.id && s.type === 'assist'
 									).length
 									return (
@@ -875,7 +880,11 @@ function AddStatsButton({
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button type="submit" onClick={submit} disabled={!selectedGameId}>
+						<Button
+							type="submit"
+							onClick={submit}
+							disabled={!selectedGameId || stats.length === 0}
+						>
 							Save
 						</Button>
 					</DialogFooter>
