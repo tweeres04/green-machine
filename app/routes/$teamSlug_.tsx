@@ -249,7 +249,9 @@ export async function loader({
 					: undefined,
 			},
 			subscription: true,
-			seasons: true,
+			seasons: {
+				orderBy: (seasons, { desc }) => [desc(seasons.startDate)],
+			},
 		},
 	})
 
