@@ -792,102 +792,104 @@ function AddStatsButton({
 					className="grow overflow-y-auto h-[9000px]" // flexbox auto calculates, but I need it higher than what flexbox will calculate
 				>
 					<ul className="py-1 space-y-1">
-						{players.map((player) => (
-							<li
-								key={player.id}
-								className="grid grid-cols-3 gap-3 items-center"
-							>
-								<div>{player.name}</div>
-								<div>
-									{(() => {
-										const existingStats = players.flatMap((p) =>
-											p.statEntries.filter(
-												(se) => se.gameId === Number(selectedGameId)
+						{players
+							.toSorted((a, b) => a.name.localeCompare(b.name))
+							.map((player) => (
+								<li
+									key={player.id}
+									className="grid grid-cols-3 gap-3 items-center"
+								>
+									<div>{player.name}</div>
+									<div>
+										{(() => {
+											const existingStats = players.flatMap((p) =>
+												p.statEntries.filter(
+													(se) => se.gameId === Number(selectedGameId)
+												)
 											)
-										)
-										const goals = existingStats.filter(
-											(s) => s.playerId === player.id && s.type === 'goal'
-										).length
-										const assists = existingStats.filter(
-											(s) => s.playerId === player.id && s.type === 'assist'
-										).length
-										return (
-											<div className="text-[0.6rem]">
-												{goals ? <span>{goals}⚽️</span> : null}{' '}
-												{assists ? <span>{assists}🍎</span> : null}
-											</div>
-										)
-									})()}
-									{(() => {
-										const goals = stats.filter(
-											(s) => s.playerId === player.id && s.type === 'goal'
-										).length
-										const assists = stats.filter(
-											(s) => s.playerId === player.id && s.type === 'assist'
-										).length
-										return (
-											<div>
-												{goals || assists ? '+' : null}
-												{goals ? <span>{goals}⚽️</span> : null}{' '}
-												{assists ? <span>{assists}🍎</span> : null}
-											</div>
-										)
-									})()}
-								</div>
-								<div className="flex gap-1 justify-end">
-									<Button
-										type="button"
-										size="icon"
-										variant="secondary"
-										className="relative"
-										onClick={() => {
-											setStats((stats) => {
-												return [
-													...stats,
-													{
-														playerId: player.id,
-														timestamp: timestampValue,
-														type: 'assist',
-														gameId:
-															selectedGameId === 'manual'
-																? null
-																: Number(selectedGameId),
-													},
-												]
-											})
-										}}
-									>
-										🍎
-										<Add className={cn('absolute top-0 right-0 size-4')} />
-									</Button>
-									<Button
-										type="button"
-										size="icon"
-										variant="secondary"
-										className="relative"
-										onClick={() => {
-											setStats((stats) => {
-												return [
-													...stats,
-													{
-														playerId: player.id,
-														timestamp: timestampValue,
-														type: 'goal',
-														gameId:
-															selectedGameId === 'manual'
-																? null
-																: Number(selectedGameId),
-													},
-												]
-											})
-										}}
-									>
-										⚽️
-										<Add className={cn('absolute top-0 right-0 size-4')} />
-									</Button>
-								</div>
-							</li>
-						))}
+											const goals = existingStats.filter(
+												(s) => s.playerId === player.id && s.type === 'goal'
+											).length
+											const assists = existingStats.filter(
+												(s) => s.playerId === player.id && s.type === 'assist'
+											).length
+											return (
+												<div className="text-[0.6rem]">
+													{goals ? <span>{goals}⚽️</span> : null}{' '}
+													{assists ? <span>{assists}🍎</span> : null}
+												</div>
+											)
+										})()}
+										{(() => {
+											const goals = stats.filter(
+												(s) => s.playerId === player.id && s.type === 'goal'
+											).length
+											const assists = stats.filter(
+												(s) => s.playerId === player.id && s.type === 'assist'
+											).length
+											return (
+												<div>
+													{goals || assists ? '+' : null}
+													{goals ? <span>{goals}⚽️</span> : null}{' '}
+													{assists ? <span>{assists}🍎</span> : null}
+												</div>
+											)
+										})()}
+									</div>
+									<div className="flex gap-1 justify-end">
+										<Button
+											type="button"
+											size="icon"
+											variant="secondary"
+											className="relative"
+											onClick={() => {
+												setStats((stats) => {
+													return [
+														...stats,
+														{
+															playerId: player.id,
+															timestamp: timestampValue,
+															type: 'assist',
+															gameId:
+																selectedGameId === 'manual'
+																	? null
+																	: Number(selectedGameId),
+														},
+													]
+												})
+											}}
+										>
+											🍎
+											<Add className={cn('absolute top-0 right-0 size-4')} />
+										</Button>
+										<Button
+											type="button"
+											size="icon"
+											variant="secondary"
+											className="relative"
+											onClick={() => {
+												setStats((stats) => {
+													return [
+														...stats,
+														{
+															playerId: player.id,
+															timestamp: timestampValue,
+															type: 'goal',
+															gameId:
+																selectedGameId === 'manual'
+																	? null
+																	: Number(selectedGameId),
+														},
+													]
+												})
+											}}
+										>
+											⚽️
+											<Add className={cn('absolute top-0 right-0 size-4')} />
+										</Button>
+									</div>
+								</li>
+							))}
 					</ul>
 				</fieldset>
 				<fieldset disabled={isSubmitting}>
