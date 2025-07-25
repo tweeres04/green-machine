@@ -50,7 +50,13 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
-import { ArrowRightCircle, ArrowUpDown, Calendar, Share } from 'lucide-react'
+import {
+	ArrowRightCircle,
+	ArrowUpDown,
+	Calendar,
+	ChevronsUpDown,
+	Share,
+} from 'lucide-react'
 import {
 	Select,
 	SelectContent,
@@ -63,6 +69,11 @@ import {
 } from '~/components/ui/select'
 import { getSession } from '~/lib/five-minute-session.server' // Add this import
 import { GameCard } from './$teamSlug.games'
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from '~/components/ui/collapsible'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -1045,16 +1056,23 @@ export default function Home() {
 	return (
 		<>
 			<Nav title={team.name} team={team} />
-			<div className="space-y-3">
-				<h2 className="text-2xl">Next game</h2>
-				<GameCard
-					game={nextGame}
-					team={team}
-					userHasAccessToTeam={userHasAccessToTeam}
-					player={player}
-					teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
-				/>
-			</div>
+			<Collapsible className="space-y-3" defaultOpen>
+				<CollapsibleTrigger className="flex w-full place-items-center">
+					<h2 className="text-2xl flex-grow text-left">Next game</h2>
+					<Button size="icon" variant="ghost">
+						<ChevronsUpDown />
+					</Button>
+				</CollapsibleTrigger>
+				<CollapsibleContent>
+					<GameCard
+						game={nextGame}
+						team={team}
+						userHasAccessToTeam={userHasAccessToTeam}
+						player={player}
+						teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
+					/>
+				</CollapsibleContent>
+			</Collapsible>
 			<div className="space-y-5">
 				<h2 className="text-2xl">Stats</h2>
 				<div className="flex gap-1 flex-row-reverse">
