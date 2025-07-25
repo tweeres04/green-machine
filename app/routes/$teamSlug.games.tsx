@@ -944,11 +944,10 @@ export function GameCard({
 					<GameDistanceToNow gameTime={game.timestamp} />
 				</CardTitle>
 				<CardDescription>
-					<div className="flex gap-2">
+					<div className="flex gap-5">
 						<span className="flex gap-2 place-items-center">
 							<Users /> {game.opponent}
 						</span>
-						<span>·</span>
 						<span className="flex gap-2 place-items-center">
 							<MapPin /> {game.location}
 						</span>
