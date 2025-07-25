@@ -908,12 +908,12 @@ type GameCardProps = {
 	game: Game
 	team: Team & { players: Player[] }
 	userHasAccessToTeam: boolean
-	player: Player
+	player: Player | null | undefined
 	teamHasActiveSubscription: boolean
 	nextGame?: boolean
 }
 
-function GameCard({
+export function GameCard({
 	game,
 	team,
 	userHasAccessToTeam,

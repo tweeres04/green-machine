@@ -60,7 +60,7 @@ export default function Nav({ title, team }: Props) {
 								<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
 								{pathname !== `/${team.slug}` ? (
 									<DropdownMenuItem asChild>
-										<Link to={`/${team.slug}`}>Stats</Link>
+										<Link to={`/${team.slug}`}>Home</Link>
 									</DropdownMenuItem>
 								) : null}
 								{pathname !== `/${team.slug}/games` ? (

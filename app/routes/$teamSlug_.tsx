@@ -21,7 +21,7 @@ import { Toaster } from '~/components/ui/toaster'
 import invariant from 'tiny-invariant'
 import { Game, Season, StatEntry, teams, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
-import { endOfDay, format, formatISO, parseISO } from 'date-fns'
+import { endOfDay, format, formatISO, isFuture, parseISO } from 'date-fns'
 import {
 	Popover,
 	PopoverContent,
@@ -62,6 +62,7 @@ import {
 	SelectValue,
 } from '~/components/ui/select'
 import { getSession } from '~/lib/five-minute-session.server' // Add this import
+import { GameCard } from './$teamSlug.games'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -204,6 +205,7 @@ export async function loader({
 			players: {
 				with: {
 					userInvites: true,
+					rsvps: true,
 					statEntries: season
 						? {
 								where: (statEntries, { and, gte, lte }) => {
@@ -247,6 +249,14 @@ export async function loader({
 							)
 					  }
 					: undefined,
+				with: {
+					rsvps: true,
+					statEntries: {
+						with: {
+							player: true,
+						},
+					},
+				},
 			},
 			subscription: true,
 			seasons: {
@@ -991,7 +1001,7 @@ function SortDropdown() {
 	)
 }
 
-export default function Stats() {
+export default function Home() {
 	const {
 		team,
 		userHasAccessToTeam,
@@ -1024,58 +1034,75 @@ export default function Stats() {
 		tableContainer.scrollLeft = tableContainer.scrollWidth
 	}, [])
 
+	const nextGame = team.games.filter(
+		(g) => g.timestamp && isFuture(g.timestamp)
+	)[0]
+
 	return (
 		<>
-			<Nav title="Stats" team={team} />
-			<div className="flex gap-1 flex-row-reverse">
-				<div className="hidden sm:block">
-					<ShareStandingsButton
-						slug={team.slug}
-						teamName={team.name}
-						players={players}
-						season={season}
-					/>{' '}
-					{userHasAccessToTeam ? (
-						<AddStatsButton
-							players={players}
-							disabled={!teamHasActiveSubscription}
-							games={team.games}
-						/>
-					) : null}
-				</div>
-				<SortDropdown />
-				{seasons.length > 0 && (
-					<SeasonDropdown seasons={seasons} season={season} />
-				)}
+			<Nav title={team.name} team={team} />
+			<div className="space-y-3">
+				<h2 className="text-2xl">Next game</h2>
+				<GameCard
+					game={nextGame}
+					team={team}
+					userHasAccessToTeam={userHasAccessToTeam}
+					player={player}
+					teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
+				/>
 			</div>
-			<div className="overflow-x-auto w-full" id="table_container">
-				<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
-					<thead>
-						<tr>
-							<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
-							{/* Avatar */}
-							<th className="hidden md:table-cell"></th> {/* Name */}
-							{days().map((day) => (
-								<th key={day} className="text-xs rotate-45 h-10">
-									{formatLocalIsoDateString(day)}
-								</th>
-							))}
-							{/* Totals */}
-							<th className={`sticky right-0 bg-${team.color}-50 z-10`}></th>
-						</tr>
-					</thead>
-					<tbody>
-						{players.map((p) => (
-							<PlayerRow
-								key={p.id}
-								teamColor={team.color}
-								userHasAccessToTeam={userHasAccessToTeam}
-								player={p}
-								days={days}
+			<div className="space-y-5">
+				<h2 className="text-2xl">Stats</h2>
+				<div className="flex gap-1 flex-row-reverse">
+					<div className="hidden sm:block">
+						<ShareStandingsButton
+							slug={team.slug}
+							teamName={team.name}
+							players={players}
+							season={season}
+						/>{' '}
+						{userHasAccessToTeam ? (
+							<AddStatsButton
+								players={players}
+								disabled={!teamHasActiveSubscription}
+								games={team.games}
 							/>
-						))}
-					</tbody>
-				</table>
+						) : null}
+					</div>
+					<SortDropdown />
+					{seasons.length > 0 && (
+						<SeasonDropdown seasons={seasons} season={season} />
+					)}
+				</div>
+				<div className="overflow-x-auto w-full" id="table_container">
+					<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
+						<thead>
+							<tr>
+								<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
+								{/* Avatar */}
+								<th className="hidden md:table-cell"></th> {/* Name */}
+								{days().map((day) => (
+									<th key={day} className="text-xs rotate-45 h-10">
+										{formatLocalIsoDateString(day)}
+									</th>
+								))}
+								{/* Totals */}
+								<th className={`sticky right-0 bg-${team.color}-50 z-10`}></th>
+							</tr>
+						</thead>
+						<tbody>
+							{players.map((p) => (
+								<PlayerRow
+									key={p.id}
+									teamColor={team.color}
+									userHasAccessToTeam={userHasAccessToTeam}
+									player={p}
+									days={days}
+								/>
+							))}
+						</tbody>
+					</table>
+				</div>
 			</div>
 			<div
 				className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 pl-6 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
