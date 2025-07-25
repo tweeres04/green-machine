@@ -50,23 +50,21 @@ export async function action({
 		throw new Response('Name is required', { status: 400 })
 	}
 
-	return db.transaction(async (tx) => {
-		const newPlayers = await tx
-			.insert(players)
-			.values({ name, teamId: Number(teamId) })
-			.returning()
-		const newPlayer = newPlayers[0]
+	const newPlayers = await db
+		.insert(players)
+		.values({ name, teamId: Number(teamId) })
+		.returning()
+	const newPlayer = newPlayers[0]
 
-		if (email && typeof email === 'string') {
-			inviteUser({
-				email,
-				playerId: newPlayer.id,
-				userId: user.id,
-				inviterName: user.name,
-				teamId: Number(teamId),
-			})
-		}
+	if (newPlayer && email && typeof email === 'string') {
+		inviteUser({
+			email,
+			playerId: newPlayer.id,
+			userId: user.id,
+			inviterName: user.name,
+			teamId: Number(teamId),
+		})
+	}
 
-		return null
-	})
+	return null
 }
