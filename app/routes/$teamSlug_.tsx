@@ -772,7 +772,11 @@ function AddStatsButton({
 								</SelectGroup>
 								<SelectSeparator />
 							</>
-						) : null}
+						) : (
+							<SelectItem disabled value="no-past-games">
+								No past games
+							</SelectItem>
+						)}
 						<SelectItem value="manual">Enter a date and time</SelectItem>
 					</SelectContent>
 				</Select>
