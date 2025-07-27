@@ -1056,23 +1056,25 @@ export default function Home() {
 	return (
 		<>
 			<Nav title={team.name} team={team} />
-			<Collapsible className="space-y-3" defaultOpen>
-				<CollapsibleTrigger className="flex w-full place-items-center">
-					<h2 className="text-2xl flex-grow text-left">Next game</h2>
-					<Button size="icon" variant="ghost">
-						<ChevronsUpDown />
-					</Button>
-				</CollapsibleTrigger>
-				<CollapsibleContent>
-					<GameCard
-						game={nextGame}
-						team={team}
-						userHasAccessToTeam={userHasAccessToTeam}
-						player={player}
-						teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
-					/>
-				</CollapsibleContent>
-			</Collapsible>
+			{nextGame ? (
+				<Collapsible className="space-y-3" defaultOpen>
+					<CollapsibleTrigger className="flex w-full place-items-center">
+						<h2 className="text-2xl flex-grow text-left">Next game</h2>
+						<Button size="icon" variant="ghost">
+							<ChevronsUpDown />
+						</Button>
+					</CollapsibleTrigger>
+					<CollapsibleContent>
+						<GameCard
+							game={nextGame}
+							team={team}
+							userHasAccessToTeam={userHasAccessToTeam}
+							player={player}
+							teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
+						/>
+					</CollapsibleContent>
+				</Collapsible>
+			) : null}
 			<div className="space-y-5">
 				<h2 className="text-2xl">Stats</h2>
 				<div className="flex gap-1 flex-row-reverse">
