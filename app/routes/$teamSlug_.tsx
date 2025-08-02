@@ -1071,6 +1071,7 @@ export default function Home() {
 							userHasAccessToTeam={userHasAccessToTeam}
 							player={player}
 							teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
+							nextGame
 						/>
 					</CollapsibleContent>
 				</Collapsible>
