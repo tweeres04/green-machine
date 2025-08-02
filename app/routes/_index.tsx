@@ -13,6 +13,12 @@ import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import HomeLandingPage from '~/components/home-landing-page'
 import { GameCard } from '~/routes/$teamSlug.games'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from '~/components/ui/collapsible'
+import { ChevronsUpDown } from 'lucide-react'
 
 export const meta: MetaFunction = () => {
 	const price = 19
@@ -189,62 +195,75 @@ export default function Index() {
 							p.userInvites.some((ui) => ui.userId === user.id)
 						)
 						return (
-							<GameCard
-								game={nextGame}
-								team={nextGame.team}
-								teamHasActiveSubscription={teamHasActiveSubscription_}
-								userHasAccessToTeam={false}
-								player={player}
-								nextGame
-								linkToTeamPage
-							/>
+							<Collapsible className="space-y-3" defaultOpen>
+								<CollapsibleTrigger className="flex w-full place-items-center">
+									<h2 className="text-2xl flex-grow text-left">Next game</h2>
+									<Button size="icon" variant="ghost">
+										<ChevronsUpDown />
+									</Button>
+								</CollapsibleTrigger>
+								<CollapsibleContent>
+									<GameCard
+										game={nextGame}
+										team={nextGame.team}
+										teamHasActiveSubscription={teamHasActiveSubscription_}
+										userHasAccessToTeam={false}
+										player={player}
+										nextGame
+										linkToTeamPage
+									/>
+								</CollapsibleContent>
+							</Collapsible>
 						)
 					}}
 				</Await>
 			</Suspense>
 			{teams.length > 0 ? (
-				<ul className="space-y-3">
-					{teams.map((t) => {
-						// Need to move this into the helper function at some point
-						const noSubscription =
-							!t.subscriptionStatus ||
-							t.subscriptionStatus === 'canceled' ||
-							t.subscriptionStatus === 'unpaid'
-						return (
-							<li key={t.id}>
-								<Button
-									asChild
-									variant="link"
-									className={cn('pl-0 gap-1', {
-										'text-red-900': noSubscription,
-									})}
-								>
-									<a href={`/${t.slug}`} className="text-xl">
-										{t.name}{' '}
-										{noSubscription ? (
-											<Badge variant="secondary">No subscription</Badge>
-										) : null}
-									</a>
-								</Button>
-								<Suspense>
-									<Await resolve={stats}>
-										{(stats) => {
-											const statsForTeam = stats.find((s) => s.id === t.id)
-											return (
-												<p>
-													{statsForTeam?.playerCount ?? '0'} player
-													{statsForTeam?.playerCount !== 1 && 's'},{' '}
-													{statsForTeam?.statCount ?? '0'} stat
-													{statsForTeam?.statCount !== 1 && 's'} recorded
-												</p>
-											)
-										}}
-									</Await>
-								</Suspense>
-							</li>
-						)
-					})}
-				</ul>
+				<div className="space-y-3">
+					<h2 className="text-2xl">My teams</h2>
+					<ul className="space-y-3">
+						{teams.map((t) => {
+							// Need to move this into the helper function at some point
+							const noSubscription =
+								!t.subscriptionStatus ||
+								t.subscriptionStatus === 'canceled' ||
+								t.subscriptionStatus === 'unpaid'
+							return (
+								<li key={t.id}>
+									<Button
+										asChild
+										variant="link"
+										className={cn('pl-0 gap-1', {
+											'text-red-900': noSubscription,
+										})}
+									>
+										<a href={`/${t.slug}`} className="text-xl">
+											{t.name}{' '}
+											{noSubscription ? (
+												<Badge variant="secondary">No subscription</Badge>
+											) : null}
+										</a>
+									</Button>
+									<Suspense>
+										<Await resolve={stats}>
+											{(stats) => {
+												const statsForTeam = stats.find((s) => s.id === t.id)
+												return (
+													<p>
+														{statsForTeam?.playerCount ?? '0'} player
+														{statsForTeam?.playerCount !== 1 && 's'},{' '}
+														{statsForTeam?.statCount ?? '0'} stat
+														{statsForTeam?.statCount !== 1 && 's'} recorded
+													</p>
+												)
+											}}
+										</Await>
+									</Suspense>
+								</li>
+							)
+						})}
+					</ul>
+				</div>
 			) : (
 				<p>No teams yet. Create one to get started.</p>
 			)}
