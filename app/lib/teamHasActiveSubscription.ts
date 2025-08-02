@@ -10,7 +10,8 @@ export function activeSubscription(
 	teamSubscription: TeamSubscription | null | undefined
 ) {
 	return (
-		teamSubscription &&
+		teamSubscription !== null &&
+		teamSubscription !== undefined &&
 		teamSubscription.subscriptionStatus !== 'canceled' &&
 		teamSubscription.subscriptionStatus !== 'unpaid'
 	)

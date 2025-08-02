@@ -11,6 +11,8 @@ import { Badge } from '~/components/ui/badge'
 import { cn } from '~/lib/utils'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import HomeLandingPage from '~/components/home-landing-page'
+import { GameCard } from '~/routes/$teamSlug.games'
+import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 export const meta: MetaFunction = () => {
 	const price = 19
@@ -129,7 +131,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		)
 		.execute()
 
-	return defer({ user, teams: teams_, stats: statsPromise })
+	const nextGamePromise = db.query.games
+		.findFirst({
+			where: (games, { and, gte, inArray, sql }) =>
+				and(
+					inArray(games.teamId, teamIds),
+					gte(games.timestamp, sql`datetime('now')`)
+				),
+			orderBy: (games, { asc }) => asc(games.timestamp),
+			with: {
+				team: {
+					with: {
+						players: {
+							with: {
+								userInvites: true,
+								rsvps: true,
+							},
+						},
+						subscription: true,
+					},
+				},
+				rsvps: true,
+				statEntries: true,
+			},
+		})
+		.execute()
+
+	return defer({
+		user,
+		teams: teams_,
+		stats: statsPromise,
+		nextGame: nextGamePromise,
+	})
 }
 
 export default function Index() {
@@ -141,11 +174,33 @@ export default function Index() {
 		return <HomeLandingPage />
 	}
 
-	const { user, teams, stats } = loaderData
+	const { user, teams, stats, nextGame } = loaderData
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
 			<Nav title="My Teams" />
+			<Suspense>
+				<Await resolve={nextGame}>
+					{(nextGame) => {
+						const teamHasActiveSubscription_ = teamHasActiveSubscription(
+							nextGame.team
+						)
+						const player = nextGame.team.players.find((p) =>
+							p.userInvites.some((ui) => ui.userId === user.id)
+						)
+						return (
+							<GameCard
+								game={nextGame}
+								team={nextGame.team}
+								teamHasActiveSubscription={teamHasActiveSubscription_}
+								userHasAccessToTeam={false}
+								player={player}
+								nextGame
+							/>
+						)
+					}}
+				</Await>
+			</Suspense>
 			{teams.length > 0 ? (
 				<ul className="space-y-3">
 					{teams.map((t) => {
