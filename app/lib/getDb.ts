@@ -1,8 +1,11 @@
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { drizzle } from 'drizzle-orm/libsql'
+import { createClient } from '@libsql/client'
 import * as schema from '../schema'
 
+const client = createClient({
+	url: 'file:./database.db',
+})
+
 export function getDb() {
-	const sqlite = new Database('./database.db')
-	return drizzle(sqlite, { schema, logger: true })
+	return drizzle(client, { schema, logger: true })
 }

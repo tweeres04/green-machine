@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
-import { Await, defer, Link, useLoaderData } from '@remix-run/react'
+import { defer } from '@remix-run/node'
+import { Await, Link, useLoaderData } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
 import { Suspense } from 'react'
 import { authenticator } from '~/lib/auth.server'
@@ -103,7 +104,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	const teamIds = teams_.map((t) => t.id)
 
-	const statsPromise = db.all(sql`
+	const statsPromise = db
+		.all(
+			sql`
 		select
 			teams.id,
 			teams.name,
@@ -122,7 +125,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			inner join players on teams.id = players.team_id
 		where
 			teams.id in ${teamIds}
-	`)
+	`
+		)
+		.execute()
 
 	return defer({ user, teams: teams_, stats: statsPromise })
 }
