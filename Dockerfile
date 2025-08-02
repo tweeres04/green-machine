@@ -3,8 +3,8 @@ FROM node:lts-alpine
 EXPOSE 3000
 WORKDIR /app
 
-COPY ./package.json .
-RUN npm install
+COPY ./package.json ./package-lock.json ./
+RUN npm ci
 
 COPY . .
 
