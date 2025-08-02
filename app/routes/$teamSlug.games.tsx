@@ -911,6 +911,7 @@ type GameCardProps = {
 	player: Player | null | undefined
 	teamHasActiveSubscription: boolean
 	nextGame?: boolean
+	linkToTeamPage?: boolean
 }
 
 export function GameCard({
@@ -920,8 +921,10 @@ export function GameCard({
 	player,
 	teamHasActiveSubscription,
 	nextGame = false,
+	linkToTeamPage = false,
 }: GameCardProps) {
 	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
+	const location = useLocation()
 
 	return (
 		<Card
@@ -934,26 +937,36 @@ export function GameCard({
 			<div className="flex flex-row-reverse pt-3 pr-3">
 				{nextGame ? <Badge variant="secondary">Next game</Badge> : null}
 			</div>
-			<CardHeader>
-				<CardTitle>
-					<div>
-						{game.timestamp
-							? format(game.timestamp, 'E MMM d - h:mma')
-							: 'Date and time TBD'}
-					</div>
-					<GameDistanceToNow gameTime={game.timestamp} />
-				</CardTitle>
-				<CardDescription>
-					<div className="flex gap-5">
-						<span className="flex gap-2 place-items-center">
-							<Users /> {game.opponent}
-						</span>
-						<span className="flex gap-2 place-items-center">
-							<MapPin /> {game.location}
-						</span>
-					</div>
-				</CardDescription>
-			</CardHeader>
+			{(() => {
+				const content = (
+					<CardHeader>
+						<CardTitle>
+							<div>
+								{game.timestamp
+									? format(game.timestamp, 'E MMM d - h:mma')
+									: 'Date and time TBD'}
+							</div>
+							<GameDistanceToNow gameTime={game.timestamp} />
+						</CardTitle>
+						<CardDescription>
+							<div className="flex gap-5">
+								<span className="flex gap-2 place-items-center">
+									<Users /> {game.opponent}
+								</span>
+								<span className="flex gap-2 place-items-center">
+									<MapPin /> {game.location}
+								</span>
+							</div>
+						</CardDescription>
+					</CardHeader>
+				)
+
+				return linkToTeamPage ? (
+					<a href={`/${team.slug}`}>{content}</a>
+				) : (
+					content
+				)
+			})()}
 
 			<CardContent className="space-x-1">
 				<RsvpDialog rsvps={game.rsvps} players={team.players}>

@@ -196,6 +196,7 @@ export default function Index() {
 								userHasAccessToTeam={false}
 								player={player}
 								nextGame
+								linkToTeamPage
 							/>
 						)
 					}}
