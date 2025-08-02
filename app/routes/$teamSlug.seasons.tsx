@@ -192,7 +192,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		where: (teams, { eq }) => eq(teams.slug, teamSlug),
 		with: {
 			seasons: {
-				orderBy: (seasons, { asc }) => asc(seasons.startDate),
+				orderBy: (seasons, { desc }) => desc(seasons.startDate),
 			},
 			subscription: true,
 		},
