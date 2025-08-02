@@ -91,7 +91,7 @@ export default function Nav({ title, team }: Props) {
 								<DropdownMenuLabel>{user.name}</DropdownMenuLabel>
 								{pathname !== '/' ? (
 									<DropdownMenuItem asChild>
-										<a href="/">Teams</a>
+										<a href="/">Home</a>
 									</DropdownMenuItem>
 								) : null}
 								<DropdownMenuItem asChild>

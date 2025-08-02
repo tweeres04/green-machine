@@ -178,7 +178,7 @@ export default function Index() {
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
-			<Nav title="My Teams" />
+			<Nav title="TeamStats" />
 			<Suspense>
 				<Await resolve={nextGame}>
 					{(nextGame) => {
