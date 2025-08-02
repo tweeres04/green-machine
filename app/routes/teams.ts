@@ -4,7 +4,7 @@ import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { teams, teamsUsers } from '~/schema'
 import Stripe from 'stripe'
-import { SqliteError } from 'better-sqlite3'
+import { LibsqlError } from '@libsql/client'
 import { mixpanelServer } from '~/lib/mixpanel.server'
 
 export const action: ActionFunction = async ({ request }) => {
@@ -56,10 +56,10 @@ export const action: ActionFunction = async ({ request }) => {
 		})
 	} catch (error) {
 		if (
-			error instanceof SqliteError &&
+			error instanceof LibsqlError &&
 			error.code === 'SQLITE_CONSTRAINT_UNIQUE'
 		) {
-			throw new Response('Team URL already taken', { status: 400 })
+			throw new Response('Team URL already taken', { status: 409 })
 		}
 		throw error
 	}

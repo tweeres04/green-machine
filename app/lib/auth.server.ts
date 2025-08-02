@@ -6,7 +6,7 @@ import { getDb } from './getDb'
 import { User, users } from '~/schema'
 import invariant from 'tiny-invariant'
 import { mixpanelServer } from './mixpanel.server'
-import { SqliteError } from 'better-sqlite3'
+import { LibsqlError } from '@libsql/client'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
 	if (!user) {
@@ -56,7 +56,7 @@ async function signUp(
 			.returning()
 	} catch (error) {
 		if (
-			error instanceof SqliteError &&
+			error instanceof LibsqlError &&
 			error.code === 'SQLITE_CONSTRAINT_UNIQUE'
 		) {
 			throw new Error('Email already taken')
