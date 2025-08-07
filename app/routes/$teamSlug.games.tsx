@@ -250,15 +250,15 @@ function CancelForm({
 	closeModal: () => void
 	game: Game
 }) {
-	const fetcher = useFetcher<{ changes: number }>()
+	const fetcher = useFetcher<{ rowsAffected: number }>()
 
 	const saving = fetcher.state !== 'idle'
 
 	useEffect(() => {
-		if (fetcher.data?.changes === 1 && fetcher.state !== 'submitting') {
+		if (fetcher.data?.rowsAffected === 1 && fetcher.state !== 'submitting') {
 			closeModal()
 		}
-	}, [closeModal, fetcher.data?.changes, fetcher.state])
+	}, [closeModal, fetcher.data?.rowsAffected, fetcher.state])
 
 	return (
 		<fieldset disabled={saving}>

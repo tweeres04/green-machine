@@ -348,7 +348,7 @@ function StatEditDialog({
 	closeDialog: () => void
 	data: StatEditDialogData
 }) {
-	const fetcher = useFetcher<{ changes: number }>()
+	const fetcher = useFetcher<{ rowsAffected: number }>()
 
 	const isSubmitting =
 		fetcher.state === 'submitting' &&
@@ -360,10 +360,10 @@ function StatEditDialog({
 		: undefined
 
 	useEffect(() => {
-		if (fetcher.state === 'loading' && fetcher.data?.changes === 1) {
+		if (fetcher.state === 'loading' && fetcher.data?.rowsAffected === 1) {
 			closeDialog()
 		}
-	}, [closeDialog, fetcher.data?.changes, fetcher.state])
+	}, [closeDialog, fetcher.data?.rowsAffected, fetcher.state])
 
 	return (
 		<Dialog
@@ -433,17 +433,17 @@ function StatDeleteDialog({
 	closeDialog: () => void
 	data: StatDeleteDialogData
 }) {
-	const fetcher = useFetcher<{ changes: number }>()
+	const fetcher = useFetcher<{ rowsAffected: number }>()
 
 	const isSubmitting =
 		fetcher.state === 'submitting' &&
 		fetcher.formAction === `/stats/${data?.id}`
 
 	useEffect(() => {
-		if (fetcher.state === 'loading' && fetcher.data?.changes === 1) {
+		if (fetcher.state === 'loading' && fetcher.data?.rowsAffected === 1) {
 			closeDialog()
 		}
-	}, [closeDialog, fetcher.data?.changes, fetcher.state])
+	}, [closeDialog, fetcher.data?.rowsAffected, fetcher.state])
 
 	return (
 		<Dialog
@@ -650,7 +650,7 @@ function AddStatsButton({
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
 	const [dialogOpen, setDialogOpen] = useState(false)
-	const fetcher = useFetcher<{ changes: number }>()
+	const fetcher = useFetcher<{ rowsAffected: number }>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
 	const [selectedGameId, setSelectedGameId] = useState<string | null>(() =>
 		games.length === 0 ? 'manual' : null
@@ -679,11 +679,11 @@ function AddStatsButton({
 		if (
 			fetcher.state === 'loading' &&
 			fetcher?.data &&
-			fetcher.data?.changes > 0
+			fetcher.data?.rowsAffected > 0
 		) {
 			setDialogOpen(false)
 		}
-	}, [fetcher.data, fetcher.data?.changes, fetcher.state])
+	}, [fetcher.data, fetcher.data?.rowsAffected, fetcher.state])
 
 	function handleGameSelection(gameIdString: string) {
 		setSelectedGameId(gameIdString)
