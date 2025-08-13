@@ -162,6 +162,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			},
 		})
 		.execute()
+		.then((nextGame) => nextGame ?? null)
 
 	return defer({
 		user,
@@ -188,6 +189,9 @@ export default function Index() {
 			<Suspense>
 				<Await resolve={nextGame}>
 					{(nextGame) => {
+						if (!nextGame) {
+							return null
+						}
 						const teamHasActiveSubscription_ = teamHasActiveSubscription(
 							nextGame.team
 						)
