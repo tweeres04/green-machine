@@ -1059,7 +1059,7 @@ export default function Home() {
 			{nextGame ? (
 				<Collapsible className="space-y-3" defaultOpen>
 					<CollapsibleTrigger asChild>
-						<div className="flex w-full place-items-center">
+						<div className="flex w-full place-items-center cursor-pointer">
 							<h2 className="text-2xl flex-grow text-left">Next game</h2>
 							<Button size="icon" variant="ghost">
 								<ChevronsUpDown />
