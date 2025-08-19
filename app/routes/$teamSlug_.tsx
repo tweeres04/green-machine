@@ -951,7 +951,7 @@ function SeasonDropdown({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="secondary" className="flex items-center gap-1">
+				<Button variant="secondary">
 					<Calendar />
 					<span>{season?.name ?? 'All seasons'}</span>
 				</Button>
@@ -994,7 +994,7 @@ function SortDropdown() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="secondary" className="flex items-center gap-1">
+				<Button variant="secondary">
 					<ArrowUpDown />
 					<span>{sortLabel}</span>
 				</Button>

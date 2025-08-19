@@ -30,6 +30,8 @@ import {
 	Calendar,
 	MailCheck,
 	MailX,
+	Plus,
+	Import,
 } from 'lucide-react'
 
 import {
@@ -802,8 +804,8 @@ function SeasonDropdown({
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="secondary" className="flex items-center gap-1">
-					<span>{season?.name ?? 'All seasons'}</span>
 					<Calendar />
+					<span>{season?.name ?? 'All seasons'}</span>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
@@ -1093,7 +1095,55 @@ export default function Games() {
 				player={!!player}
 				dismissed={guestUserAlertDismissed}
 			/>
-			<div className="flex flex-row-reverse">
+			<div className="flex flex-col sm:flex-row-reverse gap-1">
+				{userHasAccessToTeam ? (
+					<>
+						<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
+							<DialogTrigger asChild>
+								<Button
+									className="w-full sm:w-auto"
+									disabled={!teamHasActiveSubscription}
+								>
+									<Plus /> Add game
+								</Button>
+							</DialogTrigger>
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>Add game</DialogTitle>
+								</DialogHeader>
+								<GameForm
+									closeModal={() => setNewGameModal(false)}
+									teamId={team.id}
+								/>
+							</DialogContent>
+						</Dialog>{' '}
+						{userIsTylerOrMelissa ? (
+							<Dialog
+								open={importScheduleModal}
+								onOpenChange={setImportScheduleModal}
+							>
+								<DialogTrigger asChild>
+									<Button
+										variant="secondary"
+										className="w-full sm:w-auto"
+										disabled={!teamHasActiveSubscription}
+									>
+										<Import /> Import schedule
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="max-h-dvh overflow-y-scroll">
+									<DialogHeader>
+										<DialogTitle>Import schedule</DialogTitle>
+									</DialogHeader>
+									<ImportScheduleForm
+										closeModal={() => setImportScheduleModal(false)}
+										teamId={team.id}
+									/>
+								</DialogContent>
+							</Dialog>
+						) : null}
+					</>
+				) : null}
 				{seasons.length > 0 && (
 					<SeasonDropdown seasons={seasons} season={season} />
 				)}
@@ -1158,53 +1208,6 @@ export default function Games() {
 			) : (
 				<p>No games yet</p>
 			)}
-			{userHasAccessToTeam ? (
-				<div className="space-y-1">
-					<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
-						<DialogTrigger asChild>
-							<Button
-								className="w-full sm:w-auto"
-								disabled={!teamHasActiveSubscription}
-							>
-								Add game
-							</Button>
-						</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Add game</DialogTitle>
-							</DialogHeader>
-							<GameForm
-								closeModal={() => setNewGameModal(false)}
-								teamId={team.id}
-							/>
-						</DialogContent>
-					</Dialog>{' '}
-					{userIsTylerOrMelissa ? (
-						<Dialog
-							open={importScheduleModal}
-							onOpenChange={setImportScheduleModal}
-						>
-							<DialogTrigger asChild>
-								<Button
-									className="w-full sm:w-auto"
-									disabled={!teamHasActiveSubscription}
-								>
-									Import schedule
-								</Button>
-							</DialogTrigger>
-							<DialogContent className="max-h-dvh overflow-y-scroll">
-								<DialogHeader>
-									<DialogTitle>Import schedule</DialogTitle>
-								</DialogHeader>
-								<ImportScheduleForm
-									closeModal={() => setImportScheduleModal(false)}
-									teamId={team.id}
-								/>
-							</DialogContent>
-						</Dialog>
-					) : null}
-				</div>
-			) : null}
 		</>
 	)
 }
