@@ -924,7 +924,6 @@ export function GameCard({
 	linkToTeamPage = false,
 }: GameCardProps) {
 	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
-	const location = useLocation()
 
 	return (
 		<Card

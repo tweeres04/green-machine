@@ -200,11 +200,13 @@ export default function Index() {
 						)
 						return (
 							<Collapsible className="space-y-3" defaultOpen>
-								<CollapsibleTrigger className="flex w-full place-items-center">
-									<h2 className="text-2xl flex-grow text-left">Next game</h2>
-									<Button size="icon" variant="ghost">
-										<ChevronsUpDown />
-									</Button>
+								<CollapsibleTrigger asChild>
+									<div className="flex w-full place-items-center">
+										<h2 className="text-2xl flex-grow text-left">Next game</h2>
+										<Button size="icon" variant="ghost">
+											<ChevronsUpDown />
+										</Button>
+									</div>
 								</CollapsibleTrigger>
 								<CollapsibleContent>
 									<GameCard
