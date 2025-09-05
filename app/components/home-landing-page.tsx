@@ -107,10 +107,20 @@ export default function HomeLandingPage() {
 							</Button>
 						</span>
 					</blockquote>
+					<blockquote className="border-l-8 pl-4 italic relative pt-10">
+						<span className="text-[96px] block absolute -top-5 left-3">“</span>
+						TeamStats is SICK. It's a dopamine hit to look at your stats.{' '}
+						<span className="whitespace-nowrap">- Lucas W., on two teams</span>
+					</blockquote>
+					<blockquote className="border-l-8 pl-4 italic relative pt-10">
+						<span className="text-[96px] block absolute -top-5 left-3">“</span>I
+						just randomly go to it sometimes and look at stats{' '}
+						<span className="whitespace-nowrap">- Jeremy W., on two teams</span>
+					</blockquote>
 				</div>
+				<Cta />
 				<div className="features space-y-10">
 					<h3 className="text-2xl">Why TeamStats?</h3>
-					<Cta />
 					<FeatureList>
 						<FeatureListItem
 							icon={<ChartScatter />}
@@ -145,9 +155,22 @@ export default function HomeLandingPage() {
 					</FeatureList>
 					<Cta />
 					<FeatureList>
+						<FeatureListItem icon={<Focus />} title="Small and focused">
+							<p>
+								Other apps need to keep building to satisfy investors and keep
+								busy. I'm building just the features we need, and that's it.
+							</p>
+						</FeatureListItem>
 						<FeatureListItem icon={<Wallet />} title="Affordable">
 							<p>
 								Only $19 USD per year. I'm a one person team with low costs.
+							</p>
+						</FeatureListItem>
+						<FeatureListItem icon={<Hammer />} title="Expert team">
+							<p>
+								I've been designing and building software professionally for
+								over 15 years. I create new features quickly and thoughtfully. I
+								ship way fewer bugs than the rest.
 							</p>
 						</FeatureListItem>
 						<FeatureListItem
@@ -155,23 +178,8 @@ export default function HomeLandingPage() {
 							title="Works everywhere"
 						>
 							<p>
-								Easily installable on any device — phone, computer, tablet.
+								Easily installable on any device. Phone, computer, tablet.
 								Anything with a web browser.
-							</p>
-						</FeatureListItem>
-						<FeatureListItem icon={<Focus />} title="Small and focused">
-							<p>
-								Other apps need to keep building to satisfy investors and keep
-								busy. I'm building just the features we need, and that's it.
-							</p>
-						</FeatureListItem>
-					</FeatureList>
-					<FeatureList>
-						<FeatureListItem icon={<Hammer />} title="Expert team">
-							<p>
-								I've been designing and building software professionally for
-								over 15 years. I create new features quickly and thoughtfully. I
-								ship way fewer bugs than the rest.
 							</p>
 						</FeatureListItem>
 					</FeatureList>
