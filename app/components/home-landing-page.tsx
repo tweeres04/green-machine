@@ -163,7 +163,8 @@ export default function HomeLandingPage() {
 						</FeatureListItem>
 						<FeatureListItem icon={<Wallet />} title="Affordable">
 							<p>
-								Only $19 USD per year. I'm a one person team with low costs.
+								Only $19 USD per year. I'm a one person team with low costs and
+								no investors.
 							</p>
 						</FeatureListItem>
 						<FeatureListItem icon={<Hammer />} title="Expert team">
