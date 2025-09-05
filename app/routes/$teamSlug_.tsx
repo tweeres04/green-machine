@@ -74,6 +74,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from '~/components/ui/collapsible'
+import mixpanel from 'mixpanel-browser'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -708,6 +709,10 @@ function AddStatsButton({
 			action: '/stats',
 			method: 'post',
 		})
+		mixpanel.track('add stats', {
+			goals: stats.filter((s) => s.type === 'goal').length,
+			assists: stats.filter((s) => s.type === 'assist').length,
+		})
 	}
 
 	let pastGames = games
@@ -740,6 +745,7 @@ function AddStatsButton({
 				size="icon"
 				onClick={() => {
 					setDialogOpen(true)
+					mixpanel.track('open add stats dialog')
 				}}
 				disabled={disabled}
 			>
