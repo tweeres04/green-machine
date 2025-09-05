@@ -9,6 +9,7 @@ import { commitSession, getSession } from '~/lib/session.server'
 import { userInviteRequests } from '~/schema'
 import Nav from '~/components/ui/nav'
 import { useLoaderData } from '@remix-run/react'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 async function sendInviteRequestEmail({
 	teamId,
@@ -109,6 +110,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		email: teamUser.user.email,
 		inviteRequestId,
 		randomToken,
+	})
+
+	mixpanelServer.track('request to be a player sent', {
+		distinct_id: user.id,
+		teamId: team.id,
 	})
 
 	return json({ teamName: team.name })

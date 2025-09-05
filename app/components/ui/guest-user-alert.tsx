@@ -11,6 +11,7 @@ import {
 import { Button } from '~/components/ui/button'
 import { TeamColorContext } from '~/lib/teamColorContext'
 import { Link, useFetcher } from '@remix-run/react'
+import mixpanel from 'mixpanel-browser'
 
 export function GuestUserAlert({
 	teamId,
@@ -66,7 +67,14 @@ export function GuestUserAlert({
 			</CardContent>
 			<CardFooter>
 				<Button asChild>
-					<Link to={`/request-invite?team_id=${teamId}`}>
+					<Link
+						to={`/request-invite?team_id=${teamId}`}
+						onClick={() => {
+							mixpanel.track('click request to be a player button', {
+								teamId,
+							})
+						}}
+					>
 						Request to be a player
 					</Link>
 				</Button>
