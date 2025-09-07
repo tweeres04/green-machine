@@ -104,7 +104,6 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 			content: 'https://teamstats.tweeres.com/games_opengraph.png',
 		},
 		{ name: 'og:url', content: url },
-		{ tagName: 'link', rel: 'canonical', href: url },
 	]
 }
 
@@ -153,13 +152,32 @@ function RsvpForm({
 				</Button>{' '}
 				<fetcher.Form action={action} method={method}>
 					<input type="hidden" name="value" value="no" />
-					<Button variant="destructive" className="w-full sm:w-auto">
+					<Button
+						variant="destructive"
+						className="w-full sm:w-auto"
+						onClick={() => {
+							mixpanel.track('click rsvp response', {
+								gameId: game.id,
+								response: 'no',
+							})
+						}}
+					>
 						No
 					</Button>
 				</fetcher.Form>{' '}
 				<fetcher.Form action={action} method={method}>
 					<input type="hidden" name="value" value="yes" />
-					<Button className="w-full sm:w-auto">Yes</Button>
+					<Button
+						className="w-full sm:w-auto"
+						onClick={() => {
+							mixpanel.track('click rsvp response', {
+								gameId: game.id,
+								response: 'yes',
+							})
+						}}
+					>
+						Yes
+					</Button>
 				</fetcher.Form>
 			</DialogFooter>
 		</fieldset>
@@ -1010,6 +1028,11 @@ export function GameCard({
 												disabled={!teamHasActiveSubscription}
 												size="icon"
 												variant={rsvp ? 'secondary' : 'default'}
+												onClick={() => {
+													mixpanel.track('open rsvp dialog', {
+														gameId: game.id,
+													})
+												}}
 											>
 												{rsvp ? (
 													rsvp.rsvp === 'yes' ? (
