@@ -73,6 +73,7 @@ import { Separator } from '~/components/ui/separator'
 import { GuestUserAlert } from '~/components/ui/guest-user-alert'
 import { getSession } from '~/lib/five-minute-session.server'
 import { TeamColorContext } from '~/lib/teamColorContext'
+import mixpanel from 'mixpanel-browser'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -860,6 +861,7 @@ function ShareNextGameButton({
 			size="icon"
 			onClick={async () => {
 				if (shareAvailable) {
+					mixpanel.track('share next game')
 					await navigator.share({
 						title,
 						text: gameDetails,
@@ -874,6 +876,7 @@ ${url}`)
 					toast({
 						description: 'Next game details copied to clipboard',
 					})
+					mixpanel.track('copy next game')
 				}
 			}}
 		>
