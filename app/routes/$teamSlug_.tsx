@@ -147,16 +147,17 @@ function ShareStandingsButton({
 
 	return (
 		<Button
-			title="Copy standings"
+			title="Share standings"
 			variant="secondary"
 			size="icon"
 			onClick={async () => {
 				if (shareAvailable) {
-					await navigator.share({
+					navigator.share({
 						title,
 						text: standingsText,
 						url,
 					})
+					mixpanel.track('share stats')
 				} else {
 					await window.navigator.clipboard.writeText(`${title}:
 
@@ -166,6 +167,7 @@ ${url}`)
 					toast({
 						description: 'Standings copied to clipboard',
 					})
+					mixpanel.track('copy stats to clipboard')
 				}
 			}}
 		>
