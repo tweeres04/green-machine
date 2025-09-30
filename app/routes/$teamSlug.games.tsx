@@ -331,7 +331,12 @@ function ImportScheduleForm({
 	const saving = fetcher.state !== 'idle'
 
 	const parseResult = GameResultSchema.safeParse(fetcher.data)
-	const games = parseResult.success ? parseResult.data.games : null
+	const games = parseResult.success
+		? parseResult.data.games.map((g) => ({
+				...g,
+				timestamp: g.timestamp ? formatISO(g.timestamp) : g.timestamp, // This adds the timezone offset from the client side
+		  }))
+		: null
 
 	return games ? (
 		games.length > 0 ? (
@@ -402,7 +407,7 @@ function ImportScheduleForm({
 					return fetcher.state === 'submitting' ? (
 						<div className="flex items-center">
 							<div className="flex flex-grow items-center">
-								Importing with AI
+								Importing
 								<LoaderCircle className="ml-2 animate-spin" />
 							</div>
 							{footer}
