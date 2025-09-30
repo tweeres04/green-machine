@@ -6,6 +6,7 @@ import {
 	statEntrySchema,
 	teams,
 	teamsUsers,
+	games,
 } from '../schema'
 import { eq, inArray, and } from 'drizzle-orm'
 
@@ -84,7 +85,23 @@ export async function action({ request }: ActionFunctionArgs) {
 		})
 	}
 
-	return db.insert(statEntries).values(newEntries)
+	return db.transaction(async (tx) => {
+		let newGameId = null
+		if (newEntries.some((e) => !e.gameId)) {
+			const timestamp = newEntries[0].timestamp
+			const teamId = accessiblePlayerTeamIds[0].teamId
+			const [game] = await tx
+				.insert(games)
+				.values({ teamId, timestamp })
+				.returning({ id: games.id })
+			newEntries.forEach((entry) => {
+				entry.gameId = game.id
+			})
+			newGameId = game.id
+		}
+		await tx.insert(statEntries).values(newEntries)
+		return newGameId
+	})
 }
 
 export async function loader() {

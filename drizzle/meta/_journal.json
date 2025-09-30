@@ -99,6 +99,13 @@
       "when": 1737846371704,
       "tag": "0013_light_roughhouse",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1759249655145,
+      "tag": "0014_closed_swordsman",
+      "breakpoints": true
     }
   ]
 }

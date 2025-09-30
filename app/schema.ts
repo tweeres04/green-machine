@@ -150,7 +150,7 @@ export const games = sqliteTable(
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		teamId: integer('team_id').notNull(),
-		opponent: text('opponent').notNull(),
+		opponent: text('opponent'),
 		timestamp: text('timestamp'),
 		location: text('location'),
 		cancelledAt: text('cancelled_at'),

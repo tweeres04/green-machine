@@ -158,7 +158,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					},
 				},
 				rsvps: true,
-				statEntries: true,
+				statEntries: {
+					with: {
+						player: true,
+					},
+				},
 			},
 		})
 		.execute()

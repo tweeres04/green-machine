@@ -337,7 +337,7 @@ function ImportScheduleForm({
 		games.length > 0 ? (
 			<>
 				<p>We found these games:</p>
-				<table className="w-full">
+				<table className="w-full [&_td]:py-1 [&_td]:px-2">
 					<thead>
 						<tr>
 							<th>Date and time</th>
@@ -461,7 +461,9 @@ function MoreButton({
 						<DropdownMenuItem
 							className="hidden sm:block"
 							onClick={() => {
-								setDialogTitle(`RSVP to game against ${game.opponent}`)
+								setDialogTitle(
+									`RSVP to game against ${game.opponent ?? 'unknown opponent'}`
+								)
 								setDialogDescription(
 									`${game.location ?? 'Location TBD'}, ${
 										game.timestamp
@@ -485,7 +487,9 @@ function MoreButton({
 					{userHasAccessToTeam ? (
 						<DropdownMenuItem
 							onClick={() => {
-								setDialogTitle(`Edit game against ${game.opponent}`)
+								setDialogTitle(
+									`Edit game against ${game.opponent ?? 'unknown opponent'}`
+								)
 								setDialogContent(
 									<GameForm game={game} closeModal={closeModal} />
 								)
@@ -500,7 +504,7 @@ function MoreButton({
 								onClick={() => {
 									setDialogTitle(
 										`${game.cancelledAt ? 'Uncancel' : 'Cancel'} game against ${
-											game.opponent
+											game.opponent ?? 'unknown opponent'
 										}?`
 									)
 									setDialogContent(
@@ -661,7 +665,8 @@ function StatsDialog({
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>
-						{game.opponent} - {formattedDate} at {formattedTime}
+						{game.opponent ?? 'Unknown opponent'} - {formattedDate} at{' '}
+						{formattedTime}
 					</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-1">
@@ -973,10 +978,10 @@ export function GameCard({
 						<CardDescription>
 							<div className="flex gap-5">
 								<span className="flex gap-2 place-items-center">
-									<Users /> {game.opponent}
+									<Users /> {game.opponent ?? 'No opponent'}
 								</span>
 								<span className="flex gap-2 place-items-center">
-									<MapPin /> {game.location}
+									<MapPin /> {game.location ?? 'No location'}
 								</span>
 							</div>
 						</CardDescription>
@@ -1000,7 +1005,10 @@ export function GameCard({
 				{game.statEntries.some((se) => se.type === 'goal') && (
 					<StatsDialog game={game} statEntries={game.statEntries}>
 						<Badge variant="secondary">
-							{game.statEntries.filter((se) => se.type === 'goal').length} goals
+							{game.statEntries.filter((se) => se.type === 'goal').length} goal
+							{game.statEntries.filter((se) => se.type === 'goal').length === 1
+								? ''
+								: 's'}
 						</Badge>
 					</StatsDialog>
 				)}
@@ -1008,7 +1016,11 @@ export function GameCard({
 					<StatsDialog game={game} statEntries={game.statEntries}>
 						<Badge variant="secondary">
 							{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
-							assists
+							assist
+							{game.statEntries.filter((se) => se.type === 'assist').length ===
+							1
+								? ''
+								: 's'}
 						</Badge>
 					</StatsDialog>
 				)}
@@ -1051,7 +1063,7 @@ export function GameCard({
 							<DialogContent>
 								<DialogHeader>
 									<DialogTitle>
-										RSVP to game against {game.opponent}
+										RSVP to game against {game.opponent ?? 'unknown opponent'}
 									</DialogTitle>
 									<DialogDescription>
 										{game.location ?? 'Location TBD'},{' '}

@@ -653,7 +653,7 @@ function AddStatsButton({
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
 	const [dialogOpen, setDialogOpen] = useState(false)
-	const fetcher = useFetcher<{ rowsAffected: number }>()
+	const fetcher = useFetcher<number>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
 	const [selectedGameId, setSelectedGameId] = useState<string | null>(() =>
 		games.length === 0 ? 'manual' : null
@@ -679,14 +679,17 @@ function AddStatsButton({
 	}, [dialogOpen])
 
 	useEffect(() => {
-		if (
-			fetcher.state === 'loading' &&
-			fetcher?.data &&
-			fetcher.data?.rowsAffected > 0
-		) {
+		if (fetcher.state === 'loading' && fetcher?.data) {
 			setDialogOpen(false)
+			if (selectedGameId === 'manual') {
+				invariant(
+					typeof fetcher.data === 'number',
+					'Fetcher data is not the game ID'
+				)
+				setSelectedGameId(fetcher.data.toString())
+			}
 		}
-	}, [fetcher.data, fetcher.data?.rowsAffected, fetcher.state])
+	}, [fetcher.data, fetcher.state, selectedGameId])
 
 	function handleGameSelection(gameIdString: string) {
 		setSelectedGameId(gameIdString)
@@ -736,7 +739,7 @@ function AddStatsButton({
 				{game.timestamp
 					? format(parseISO(game.timestamp), 'EEE MMM d h:mm a')
 					: 'TBD'}{' '}
-				vs {game.opponent}
+				{game.opponent ? `vs ${game.opponent}` : null}
 			</SelectItem>
 		)
 	}
