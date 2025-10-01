@@ -54,7 +54,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 
 import More from '~/components/ui/icons/more'
-import { ReactNode, useContext, useEffect, useState } from 'react'
+import { ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
@@ -74,6 +74,7 @@ import { GuestUserAlert } from '~/components/ui/guest-user-alert'
 import { getSession } from '~/lib/five-minute-session.server'
 import { TeamColorContext } from '~/lib/teamColorContext'
 import mixpanel from 'mixpanel-browser'
+import { Checkbox } from '~/components/ui/checkbox'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -330,21 +331,43 @@ function ImportScheduleForm({
 	const fetcher = useFetcher()
 	const saving = fetcher.state !== 'idle'
 
-	const parseResult = GameResultSchema.safeParse(fetcher.data)
-	const games = parseResult.success
-		? parseResult.data.games.map((g) => ({
-				...g,
-				timestamp: g.timestamp ? formatISO(g.timestamp) : g.timestamp, // This adds the timezone offset from the client side
-		  }))
-		: null
+	const games = useMemo(() => {
+		const parseResult = GameResultSchema.safeParse(fetcher.data)
+		return parseResult.success
+			? parseResult.data.games.map((g) => ({
+					...g,
+					timestamp: g.timestamp ? formatISO(g.timestamp) : g.timestamp, // This adds the timezone offset from the client side
+			  }))
+			: null
+	}, [fetcher.data])
+
+	const [selectedTimestamps, setSelectedTimestamps] = useState<string[]>([])
+
+	useEffect(() => {
+		if (games) {
+			setSelectedTimestamps(games.map((g) => g.timestamp))
+		}
+	}, [games])
 
 	return games ? (
 		games.length > 0 ? (
 			<>
-				<p>We found these games:</p>
+				<p>Select which games to add:</p>
 				<table className="w-full [&_td]:py-1 [&_td]:px-2">
 					<thead>
 						<tr>
+							<th>
+								<Checkbox
+									onCheckedChange={(checked) => {
+										checked
+											? setSelectedTimestamps(games.map((g) => g.timestamp))
+											: setSelectedTimestamps([])
+									}}
+									checked={games
+										.map((g) => g.timestamp)
+										.every((ts) => selectedTimestamps.includes(ts))}
+								/>
+							</th>
 							<th>Date and time</th>
 							<th>Opponent</th>
 							<th>Location</th>
@@ -353,6 +376,20 @@ function ImportScheduleForm({
 					<tbody>
 						{games.map((game) => (
 							<tr key={game.timestamp}>
+								<td>
+									<Checkbox
+										onCheckedChange={(checked) => {
+											setSelectedTimestamps((selectedTimestamps) =>
+												checked
+													? [...selectedTimestamps, game.timestamp]
+													: selectedTimestamps?.filter(
+															(st) => st !== game.timestamp
+													  )
+											)
+										}}
+										checked={selectedTimestamps?.includes(game.timestamp)}
+									/>
+								</td>
 								<td>
 									{game.timestamp
 										? format(game.timestamp, "E MMM d 'at' h:mma")
@@ -369,7 +406,13 @@ function ImportScheduleForm({
 						Cancel
 					</Button>
 					<fetcher.Form action="/import-schedule/confirm" method="post">
-						<input type="hidden" name="games" value={JSON.stringify(games)} />
+						<input
+							type="hidden"
+							name="games"
+							value={JSON.stringify(
+								games.filter((g) => selectedTimestamps.includes(g.timestamp))
+							)}
+						/>
 						<input type="hidden" name="team_id" value={teamId} />
 						<Button type="submit" onClick={closeModal}>
 							Import games
@@ -407,7 +450,7 @@ function ImportScheduleForm({
 					return fetcher.state === 'submitting' ? (
 						<div className="flex items-center">
 							<div className="flex flex-grow items-center">
-								Importing
+								Looking for games
 								<LoaderCircle className="ml-2 animate-spin" />
 							</div>
 							{footer}
