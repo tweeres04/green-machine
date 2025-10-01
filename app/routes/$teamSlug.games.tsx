@@ -1203,31 +1203,29 @@ export default function Games() {
 								/>
 							</DialogContent>
 						</Dialog>{' '}
-						{userIsTylerOrMelissa ? (
-							<Dialog
-								open={importScheduleModal}
-								onOpenChange={setImportScheduleModal}
-							>
-								<DialogTrigger asChild>
-									<Button
-										variant="secondary"
-										className="w-full sm:w-auto"
-										disabled={!teamHasActiveSubscription}
-									>
-										<Import /> Import schedule
-									</Button>
-								</DialogTrigger>
-								<DialogContent className="max-h-dvh overflow-y-scroll">
-									<DialogHeader>
-										<DialogTitle>Import schedule</DialogTitle>
-									</DialogHeader>
-									<ImportScheduleForm
-										closeModal={() => setImportScheduleModal(false)}
-										teamId={team.id}
-									/>
-								</DialogContent>
-							</Dialog>
-						) : null}
+						<Dialog
+							open={importScheduleModal}
+							onOpenChange={setImportScheduleModal}
+						>
+							<DialogTrigger asChild>
+								<Button
+									variant="secondary"
+									className="w-full sm:w-auto"
+									disabled={!teamHasActiveSubscription}
+								>
+									<Import /> Import schedule
+								</Button>
+							</DialogTrigger>
+							<DialogContent className="max-h-dvh overflow-y-scroll">
+								<DialogHeader>
+									<DialogTitle>Import schedule</DialogTitle>
+								</DialogHeader>
+								<ImportScheduleForm
+									closeModal={() => setImportScheduleModal(false)}
+									teamId={team.id}
+								/>
+							</DialogContent>
+						</Dialog>
 					</>
 				) : null}
 				{seasons.length > 0 && (
