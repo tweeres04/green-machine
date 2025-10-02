@@ -142,7 +142,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			where: (games, { and, gte, inArray, sql }) =>
 				and(
 					inArray(games.teamId, teamIds),
-					gte(games.timestamp, sql`datetime('now')`)
+					gte(sql`datetime(${games.timestamp})`, sql`datetime('now')`)
 				),
 			orderBy: (games, { asc }) => asc(games.timestamp),
 			with: {
