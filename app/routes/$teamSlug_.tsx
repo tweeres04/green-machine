@@ -679,8 +679,10 @@ function AddStatsButton({
 	}, [dialogOpen])
 
 	useEffect(() => {
-		if (fetcher.state === 'loading' && fetcher?.data) {
-			setDialogOpen(false)
+		if (fetcher.state === 'loading') {
+			if (fetcher.data !== undefined) {
+				setDialogOpen(false)
+			}
 			if (selectedGameId === 'manual') {
 				invariant(
 					typeof fetcher.data === 'number',
