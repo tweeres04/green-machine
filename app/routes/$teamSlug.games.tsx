@@ -467,12 +467,10 @@ function ImportScheduleForm({
 function MoreButton({
 	userHasAccessToTeam,
 	game,
-	player,
 	teamHasActiveSubscription,
 }: {
 	userHasAccessToTeam: boolean
 	game: Game
-	player?: Player
 	teamHasActiveSubscription: boolean
 }) {
 	const fetcher = useFetcher()
@@ -481,6 +479,10 @@ function MoreButton({
 		null
 	)
 	const [dialogContent, setDialogContent] = useState<ReactNode | null>(null)
+
+	if (!userHasAccessToTeam) {
+		return null
+	}
 
 	const dialogOpen = Boolean(dialogTitle && dialogContent)
 
@@ -505,33 +507,6 @@ function MoreButton({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
-					{player ? (
-						<DropdownMenuItem
-							className="hidden sm:block"
-							onClick={() => {
-								setDialogTitle(
-									`RSVP to game against ${game.opponent ?? 'unknown opponent'}`
-								)
-								setDialogDescription(
-									`${game.location ?? 'Location TBD'}, ${
-										game.timestamp
-											? format(game.timestamp, "E MMM d 'at' h:mma")
-											: 'date and time TBD'
-									}`
-								)
-								setDialogContent(
-									<RsvpForm
-										player={player}
-										game={game}
-										closeModal={closeModal}
-									/>
-								)
-							}}
-							disabled={!teamHasActiveSubscription}
-						>
-							RSVP
-						</DropdownMenuItem>
-					) : null}
 					{userHasAccessToTeam ? (
 						<DropdownMenuItem
 							onClick={() => {
@@ -928,7 +903,6 @@ function ShareNextGameButton({
 	return (
 		<Button
 			title="Share next game"
-			variant="secondary"
 			size="icon"
 			onClick={async () => {
 				if (shareAvailable) {
@@ -994,13 +968,10 @@ export function GameCard({
 	game,
 	team,
 	userHasAccessToTeam,
-	player,
 	teamHasActiveSubscription,
 	nextGame = false,
 	linkToTeamPage = false,
 }: GameCardProps) {
-	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
-
 	return (
 		<Card
 			className={
@@ -1043,115 +1014,58 @@ export function GameCard({
 				)
 			})()}
 
-			<CardContent className="space-x-1">
-				<RsvpDialog rsvps={game.rsvps} players={team.players}>
-					<Badge>
-						{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
-						{team.players.length} attending
-					</Badge>
-				</RsvpDialog>
-				{game.statEntries.some((se) => se.type === 'goal') && (
-					<StatsDialog game={game} statEntries={game.statEntries}>
-						<Badge variant="secondary">
-							{game.statEntries.filter((se) => se.type === 'goal').length} goal
-							{game.statEntries.filter((se) => se.type === 'goal').length === 1
-								? ''
-								: 's'}
-						</Badge>
-					</StatsDialog>
-				)}
-				{game.statEntries.some((se) => se.type === 'assist') && (
-					<StatsDialog game={game} statEntries={game.statEntries}>
-						<Badge variant="secondary">
-							{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
-							assist
-							{game.statEntries.filter((se) => se.type === 'assist').length ===
-							1
-								? ''
-								: 's'}
-						</Badge>
-					</StatsDialog>
-				)}
-			</CardContent>
-			{userHasAccessToTeam || player ? (
-				<CardFooter className="justify-end gap-1">
-					<>
-						<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
-							{player ? (
-								<DialogTrigger asChild>
-									{(() => {
-										const rsvp = game.rsvps.find(
-											(rsvp) => rsvp.playerId === player.id
-										)
-										return (
-											<Button
-												disabled={!teamHasActiveSubscription}
-												size="icon"
-												variant={rsvp ? 'secondary' : 'default'}
-												onClick={() => {
-													mixpanel.track('open rsvp dialog', {
-														gameId: game.id,
-													})
-												}}
-											>
-												{rsvp ? (
-													rsvp.rsvp === 'yes' ? (
-														<MailCheck />
-													) : (
-														<MailX />
-													)
-												) : (
-													<Mail />
-												)}
-											</Button>
-										)
-									})()}
-								</DialogTrigger>
-							) : null}
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>
-										RSVP to game against {game.opponent ?? 'unknown opponent'}
-									</DialogTitle>
-									<DialogDescription>
-										{game.location ?? 'Location TBD'},{' '}
-										{game.timestamp
-											? format(game.timestamp, "E MMM d 'at' h:mma")
-											: 'date and time TBD'}
-									</DialogDescription>
-								</DialogHeader>
-								<RsvpForm
-									player={player}
-									game={game}
-									closeModal={() => setRsvpDialogOpen(false)}
-								/>
-							</DialogContent>
-						</Dialog>
-						{nextGame ? (
-							<ShareNextGameButton
-								teamName={team.name}
-								slug={team.slug}
-								nextGame={game}
-							/>
-						) : null}
-						{userHasAccessToTeam ? (
-							<MoreButton
-								userHasAccessToTeam={userHasAccessToTeam}
-								game={game}
-								player={player}
-								teamHasActiveSubscription={teamHasActiveSubscription}
-							/>
-						) : null}
-					</>
-				</CardFooter>
+			{game.statEntries.length > 0 ? (
+				<CardContent className="space-x-1">
+					{game.statEntries.some((se) => se.type === 'goal') && (
+						<StatsDialog game={game} statEntries={game.statEntries}>
+							<Badge variant="secondary">
+								{game.statEntries.filter((se) => se.type === 'goal').length}{' '}
+								goal
+								{game.statEntries.filter((se) => se.type === 'goal').length ===
+								1
+									? ''
+									: 's'}
+							</Badge>
+						</StatsDialog>
+					)}
+					{game.statEntries.some((se) => se.type === 'assist') && (
+						<StatsDialog game={game} statEntries={game.statEntries}>
+							<Badge variant="secondary">
+								{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
+								assist
+								{game.statEntries.filter((se) => se.type === 'assist')
+									.length === 1
+									? ''
+									: 's'}
+							</Badge>
+						</StatsDialog>
+					)}
+				</CardContent>
 			) : null}
+			<CardFooter className="justify-end gap-1">
+				<>
+					{nextGame ? (
+						<ShareNextGameButton
+							teamName={team.name}
+							slug={team.slug}
+							nextGame={game}
+						/>
+					) : null}
+					{userHasAccessToTeam ? (
+						<MoreButton
+							userHasAccessToTeam={userHasAccessToTeam}
+							game={game}
+							teamHasActiveSubscription={teamHasActiveSubscription}
+						/>
+					) : null}
+				</>
+			</CardFooter>
 		</Card>
 	)
 }
 
 export default function Games() {
 	const {
-		userIsTylerOrMelissa,
 		team,
 		userHasAccessToTeam,
 		player,
