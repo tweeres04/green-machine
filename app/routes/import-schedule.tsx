@@ -12,15 +12,15 @@ export const action: ActionFunction = async ({ request }) => {
 	const scheduleResponse = await fetch(scheduleUrl as string)
 	const scheduleHtml = await scheduleResponse.text()
 
-	const response = await fetch('https://api.perplexity.ai/chat/completions', {
+	const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
 		method: 'POST',
 		headers: {
 			accept: 'application/json',
 			'content-type': 'application/json',
-			Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+			Authorization: `Bearer ${process.env.GOOGLE_AI_API_KEY}`,
 		},
 		body: JSON.stringify({
-			model: 'sonar-pro',
+			model: 'gemini-2.5-flash-lite',
 			messages: [
 				{
 					role: 'system',
