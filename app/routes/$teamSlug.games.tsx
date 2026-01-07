@@ -1161,14 +1161,12 @@ export default function Games() {
 								/>
 							</div>
 						) : null}
-						{nextGame && pastGames.length > 0 ? (
-							<Separator className="w-10/12 mx-auto" />
-						) : null}
-						{pastGames.length > 0 ? (
+						{upcomingGames.length > 0 ? (
 							<>
-								<div className="font-bold">Previous games</div>
+								{nextGame ? <Separator className="w-10/12 mx-auto" /> : null}
+								<div className="font-bold">Upcoming games</div>
 								<div className="my-3 space-y-3">
-									{pastGames.map((pg) => (
+									{upcomingGames.map((pg) => (
 										<GameCard
 											key={pg.id}
 											game={pg}
@@ -1181,14 +1179,14 @@ export default function Games() {
 								</div>
 							</>
 						) : null}
-						{(upcomingGames.length > 0 && nextGame) || pastGames.length > 0 ? (
-							<Separator className="w-10/12 mx-auto" />
-						) : null}
-						{upcomingGames.length > 0 ? (
+						{pastGames.length > 0 ? (
 							<>
-								<div className="font-bold">Upcoming games</div>
+								{upcomingGames.length > 0 || nextGame ? (
+									<Separator className="w-10/12 mx-auto" />
+								) : null}
+								<div className="font-bold">Previous games</div>
 								<div className="my-3 space-y-3">
-									{upcomingGames.map((pg) => (
+									{pastGames.map((pg) => (
 										<GameCard
 											key={pg.id}
 											game={pg}
