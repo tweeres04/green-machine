@@ -26,12 +26,10 @@ import {
 	Share,
 	MapPin,
 	Users,
-	Mail,
 	Calendar,
-	MailCheck,
-	MailX,
 	Plus,
 	Import,
+	ChevronsUpDown,
 } from 'lucide-react'
 
 import {
@@ -71,6 +69,11 @@ import {
 } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
 import { GuestUserAlert } from '~/components/ui/guest-user-alert'
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from '~/components/ui/collapsible'
 import { getSession } from '~/lib/five-minute-session.server'
 import { TeamColorContext } from '~/lib/teamColorContext'
 import mixpanel from 'mixpanel-browser'
@@ -1164,19 +1167,32 @@ export default function Games() {
 						{upcomingGames.length > 0 ? (
 							<>
 								{nextGame ? <Separator className="w-10/12 mx-auto" /> : null}
-								<div className="font-bold">Upcoming games</div>
-								<div className="my-3 space-y-3">
-									{upcomingGames.map((pg) => (
-										<GameCard
-											key={pg.id}
-											game={pg}
-											team={team}
-											userHasAccessToTeam={userHasAccessToTeam}
-											player={player}
-											teamHasActiveSubscription={teamHasActiveSubscription}
-										/>
-									))}
-								</div>
+								<Collapsible className="space-y-3" defaultOpen>
+									<CollapsibleTrigger asChild>
+										<div className="flex w-full place-items-center cursor-pointer">
+											<h2 className="text-2xl flex-grow text-left">
+												Upcoming games
+											</h2>
+											<Button size="icon" variant="ghost">
+												<ChevronsUpDown />
+											</Button>
+										</div>
+									</CollapsibleTrigger>
+									<CollapsibleContent>
+										<div className="my-3 space-y-3">
+											{upcomingGames.map((pg) => (
+												<GameCard
+													key={pg.id}
+													game={pg}
+													team={team}
+													userHasAccessToTeam={userHasAccessToTeam}
+													player={player}
+													teamHasActiveSubscription={teamHasActiveSubscription}
+												/>
+											))}
+										</div>
+									</CollapsibleContent>
+								</Collapsible>
 							</>
 						) : null}
 						{pastGames.length > 0 ? (
@@ -1184,19 +1200,32 @@ export default function Games() {
 								{upcomingGames.length > 0 || nextGame ? (
 									<Separator className="w-10/12 mx-auto" />
 								) : null}
-								<div className="font-bold">Previous games</div>
-								<div className="my-3 space-y-3">
-									{pastGames.map((pg) => (
-										<GameCard
-											key={pg.id}
-											game={pg}
-											team={team}
-											userHasAccessToTeam={userHasAccessToTeam}
-											player={player}
-											teamHasActiveSubscription={teamHasActiveSubscription}
-										/>
-									))}
-								</div>
+								<Collapsible className="space-y-3">
+									<CollapsibleTrigger asChild>
+										<div className="flex w-full place-items-center cursor-pointer">
+											<h2 className="text-2xl flex-grow text-left">
+												Previous games
+											</h2>
+											<Button size="icon" variant="ghost">
+												<ChevronsUpDown />
+											</Button>
+										</div>
+									</CollapsibleTrigger>
+									<CollapsibleContent>
+										<div className="my-3 space-y-3">
+											{pastGames.map((pg) => (
+												<GameCard
+													key={pg.id}
+													game={pg}
+													team={team}
+													userHasAccessToTeam={userHasAccessToTeam}
+													player={player}
+													teamHasActiveSubscription={teamHasActiveSubscription}
+												/>
+											))}
+										</div>
+									</CollapsibleContent>
+								</Collapsible>
 							</>
 						) : null}
 					</div>
