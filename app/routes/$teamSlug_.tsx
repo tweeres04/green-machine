@@ -846,59 +846,65 @@ function AddStatsButton({
 				)}
 
 				<Collapsible open={aiInputOpen} onOpenChange={setAiInputOpen}>
-			<CollapsibleTrigger asChild>
-				<Button
-					type="button"
-					variant="outline"
-					className="w-full justify-start"
-					disabled={!selectedGameId || isSubmitting || aiFetcher.state === 'submitting'}
-				>
-					<WandSparkles className="mr-2 h-4 w-4" />
-					Describe stats
-				</Button>
-			</CollapsibleTrigger>
-			
-			<CollapsibleContent className="space-y-2 mt-2">
-				<Textarea
-					ref={textareaRef}
-					placeholder="Describe who scored (e.g., 'John scored 2 goals, Sarah had 1 assist')"
-					value={textInput}
-					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-						setTextInput(e.target.value)
-					}
-					disabled={isSubmitting || aiFetcher.state === 'submitting'}
-				/>
-				<Button
-					type="button"
-					variant="secondary"
-					onClick={() => {
-						if (!textInput.trim() || !selectedGameId) return
-
-						aiFetcher.submit(
-							{
-								text: textInput,
-								players: players.map((p) => ({ id: p.id, name: p.name })),
-								gameId: selectedGameId === 'manual' ? null : selectedGameId,
-								timestamp: timestampValue,
-							},
-							{
-								action: '/parse-stats',
-								method: 'post',
-								encType: 'application/json',
+					<CollapsibleTrigger asChild>
+						<Button
+							type="button"
+							variant="secondary"
+							disabled={
+								!selectedGameId ||
+								isSubmitting ||
+								aiFetcher.state === 'submitting'
 							}
-						)
-					}}
-					disabled={
-						!textInput.trim() ||
-						!selectedGameId ||
-						isSubmitting ||
-						aiFetcher.state === 'submitting'
-					}
-				>
-					{aiFetcher.state === 'submitting' ? 'Parsing...' : 'Parse with AI'}
-				</Button>
-			</CollapsibleContent>
-		</Collapsible>
+						>
+							Describe stats
+							<WandSparkles className="size-4" />
+						</Button>
+					</CollapsibleTrigger>
+
+					<CollapsibleContent className="space-y-2 mt-2">
+						<Textarea
+							ref={textareaRef}
+							placeholder="Describe who scored (e.g., 'John scored 2 goals, Sarah had 1 assist')"
+							value={textInput}
+							onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+								setTextInput(e.target.value)
+							}
+							disabled={isSubmitting || aiFetcher.state === 'submitting'}
+						/>
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={() => {
+								if (!textInput.trim() || !selectedGameId) return
+
+								aiFetcher.submit(
+									{
+										text: textInput,
+										players: players.map((p) => ({ id: p.id, name: p.name })),
+										gameId: selectedGameId === 'manual' ? null : selectedGameId,
+										timestamp: timestampValue,
+									},
+									{
+										action: '/parse-stats',
+										method: 'post',
+										encType: 'application/json',
+									}
+								)
+							}}
+							disabled={
+								!textInput.trim() ||
+								!selectedGameId ||
+								isSubmitting ||
+								aiFetcher.state === 'submitting'
+							}
+						>
+							{aiFetcher.state === 'submitting'
+								? 'Parsing...'
+								: 'Parse with AI'}
+							<WandSparkles className="size-4" />
+						</Button>
+					</CollapsibleContent>
+				</Collapsible>
 
 				<fieldset
 					disabled={isSubmitting}
