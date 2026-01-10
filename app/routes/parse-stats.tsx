@@ -42,7 +42,7 @@ export const action: ActionFunction = async ({ request }) => {
 					Authorization: `Bearer ${process.env.GOOGLE_AI_API_KEY}`,
 				},
 				body: JSON.stringify({
-					model: 'gemini-2.5-flash-lite',
+					model: 'gemini-2.0-flash-lite',
 					messages: [
 						{
 							role: 'system',
@@ -69,6 +69,10 @@ Examples:
 				}),
 			}
 		)
+
+		if (response.status === 429) {
+			return json({ error: 'Daily limit reached' }, { status: 429 })
+		}
 
 		const data = await response.json()
 

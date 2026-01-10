@@ -55,9 +55,11 @@ import {
 	ArrowRightCircle,
 	ArrowUpDown,
 	Calendar,
+	ChevronDown,
 	ChevronsUpDown,
+	LoaderCircle,
 	Share,
-	WandSparkles,
+	Sparkles,
 } from 'lucide-react'
 import {
 	Select,
@@ -707,6 +709,10 @@ function AddStatsButton({
 
 	useEffect(() => {
 		if (aiFetcher.state === 'idle' && aiFetcher.data) {
+			// Handle daily limit error
+			if (typeof aiFetcher.data === 'object' && 'error' in aiFetcher.data) {
+				return
+			}
 			setStats(aiFetcher.data)
 			setTextInput('')
 			setAiInputOpen(false)
@@ -846,63 +852,80 @@ function AddStatsButton({
 				)}
 
 				<Collapsible open={aiInputOpen} onOpenChange={setAiInputOpen}>
-					<CollapsibleTrigger asChild>
-						<Button
-							type="button"
-							variant="secondary"
-							disabled={
-								!selectedGameId ||
-								isSubmitting ||
-								aiFetcher.state === 'submitting'
-							}
-						>
-							Describe stats
-							<WandSparkles className="size-4" />
-						</Button>
-					</CollapsibleTrigger>
+					<div className="sm:flex sm:flex-row-reverse">
+						<CollapsibleTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								disabled={
+									!selectedGameId ||
+									isSubmitting ||
+									aiFetcher.state === 'submitting'
+								}
+							>
+								Describe stats
+								<ChevronDown
+									className={cn(
+										'size-4 transition-transform duration-200',
+										aiInputOpen ? '' : 'rotate-90'
+									)}
+								/>
+							</Button>
+						</CollapsibleTrigger>
+					</div>
 
 					<CollapsibleContent className="space-y-2 mt-2">
 						<Textarea
 							ref={textareaRef}
-							placeholder="Describe who scored (e.g., 'John scored 2 goals, Sarah had 1 assist')"
+							placeholder="Describe who scored (e.g., 'Mario scored 2 goals, Luigi had 1 assist')"
 							value={textInput}
 							onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
 								setTextInput(e.target.value)
 							}
 							disabled={isSubmitting || aiFetcher.state === 'submitting'}
 						/>
-						<Button
-							type="button"
-							variant="secondary"
-							onClick={() => {
-								if (!textInput.trim() || !selectedGameId) return
+						{typeof aiFetcher.data === 'object' && 'error' in aiFetcher.data ? (
+							<p className="text-sm text-red-600 mb-2 sm:text-right">
+								Rate limit was hit. Try again later.
+							</p>
+						) : null}
+						<div className="sm:flex sm:flex-row-reverse">
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={() => {
+									if (!textInput.trim() || !selectedGameId) return
 
-								aiFetcher.submit(
-									{
-										text: textInput,
-										players: players.map((p) => ({ id: p.id, name: p.name })),
-										gameId: selectedGameId === 'manual' ? null : selectedGameId,
-										timestamp: timestampValue,
-									},
-									{
-										action: '/parse-stats',
-										method: 'post',
-										encType: 'application/json',
-									}
-								)
-							}}
-							disabled={
-								!textInput.trim() ||
-								!selectedGameId ||
-								isSubmitting ||
-								aiFetcher.state === 'submitting'
-							}
-						>
-							{aiFetcher.state === 'submitting'
-								? 'Parsing...'
-								: 'Parse with AI'}
-							<WandSparkles className="size-4" />
-						</Button>
+									aiFetcher.submit(
+										{
+											text: textInput,
+											players: players.map((p) => ({ id: p.id, name: p.name })),
+											gameId:
+												selectedGameId === 'manual' ? null : selectedGameId,
+											timestamp: timestampValue,
+										},
+										{
+											action: '/parse-stats',
+											method: 'post',
+											encType: 'application/json',
+										}
+									)
+								}}
+								disabled={
+									!textInput.trim() ||
+									!selectedGameId ||
+									isSubmitting ||
+									aiFetcher.state === 'submitting'
+								}
+							>
+								Parse
+								{aiFetcher.state === 'submitting' ? (
+									<LoaderCircle className="size-4 animate-spin" />
+								) : (
+									<Sparkles className="size-4" />
+								)}
+							</Button>
+						</div>
 					</CollapsibleContent>
 				</Collapsible>
 
