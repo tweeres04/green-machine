@@ -39,10 +39,11 @@ import { capitalize } from 'lodash-es'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Trash from '~/components/ui/icons/trash'
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import { Textarea } from '~/components/ui/textarea'
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -56,6 +57,7 @@ import {
 	Calendar,
 	ChevronsUpDown,
 	Share,
+	WandSparkles,
 } from 'lucide-react'
 import {
 	Select,
@@ -654,7 +656,9 @@ function AddStatsButton({
 
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const fetcher = useFetcher<number>()
+	const aiFetcher = useFetcher<Omit<StatEntry, 'id'>[]>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
+	const [textInput, setTextInput] = useState('')
 	const [selectedGameId, setSelectedGameId] = useState<string | null>(() =>
 		games.length === 0 ? 'manual' : null
 	)
@@ -665,8 +669,16 @@ function AddStatsButton({
 	const [timestampValue, setTimestampValue] = useState(() =>
 		formatISO(parseISO(datepickerTimestampString()))
 	)
+	const [aiInputOpen, setAiInputOpen] = useState(false)
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
 
 	const isSubmitting = fetcher.state === 'submitting'
+
+	useEffect(() => {
+		if (aiInputOpen && textareaRef.current) {
+			textareaRef.current.focus()
+		}
+	}, [aiInputOpen])
 
 	useEffect(() => {
 		if (dialogOpen) {
@@ -692,6 +704,14 @@ function AddStatsButton({
 			}
 		}
 	}, [fetcher.data, fetcher.state, selectedGameId])
+
+	useEffect(() => {
+		if (aiFetcher.state === 'idle' && aiFetcher.data) {
+			setStats(aiFetcher.data)
+			setTextInput('')
+			setAiInputOpen(false)
+		}
+	}, [aiFetcher.data, aiFetcher.state])
 
 	function handleGameSelection(gameIdString: string) {
 		setSelectedGameId(gameIdString)
@@ -824,6 +844,61 @@ function AddStatsButton({
 						}}
 					/>
 				)}
+
+				<Collapsible open={aiInputOpen} onOpenChange={setAiInputOpen}>
+			<CollapsibleTrigger asChild>
+				<Button
+					type="button"
+					variant="outline"
+					className="w-full justify-start"
+					disabled={!selectedGameId || isSubmitting || aiFetcher.state === 'submitting'}
+				>
+					<WandSparkles className="mr-2 h-4 w-4" />
+					Describe stats
+				</Button>
+			</CollapsibleTrigger>
+			
+			<CollapsibleContent className="space-y-2 mt-2">
+				<Textarea
+					ref={textareaRef}
+					placeholder="Describe who scored (e.g., 'John scored 2 goals, Sarah had 1 assist')"
+					value={textInput}
+					onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+						setTextInput(e.target.value)
+					}
+					disabled={isSubmitting || aiFetcher.state === 'submitting'}
+				/>
+				<Button
+					type="button"
+					variant="secondary"
+					onClick={() => {
+						if (!textInput.trim() || !selectedGameId) return
+
+						aiFetcher.submit(
+							{
+								text: textInput,
+								players: players.map((p) => ({ id: p.id, name: p.name })),
+								gameId: selectedGameId === 'manual' ? null : selectedGameId,
+								timestamp: timestampValue,
+							},
+							{
+								action: '/parse-stats',
+								method: 'post',
+								encType: 'application/json',
+							}
+						)
+					}}
+					disabled={
+						!textInput.trim() ||
+						!selectedGameId ||
+						isSubmitting ||
+						aiFetcher.state === 'submitting'
+					}
+				>
+					{aiFetcher.state === 'submitting' ? 'Parsing...' : 'Parse with AI'}
+				</Button>
+			</CollapsibleContent>
+		</Collapsible>
 
 				<fieldset
 					disabled={isSubmitting}
