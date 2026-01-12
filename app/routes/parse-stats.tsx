@@ -1,4 +1,8 @@
 import { ActionFunction, json } from '@remix-run/node'
+import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { getDb } from '~/lib/getDb'
+import { eq } from 'drizzle-orm'
+import { games } from '~/schema'
 
 interface Player {
 	id: number
@@ -19,13 +23,38 @@ interface ParsedStat {
 	gameId: number | null
 }
 
-// Todo: need to secure this, ie: ensure the user is an admin for this team
 export const action: ActionFunction = async ({ request }) => {
 	try {
+		// Authenticate user
+		const user = await authenticator.isAuthenticated(request)
+		if (!user) {
+			return json({ error: 'Not authenticated' }, { status: 401 })
+		}
+
 		const body: ParseRequest = await request.json()
 
 		if (!body.text || !body.players || body.players.length === 0) {
 			return json({ error: 'Missing required fields' }, { status: 400 })
+		}
+
+		// Validate team access via gameId
+		if (!body.gameId) {
+			return json({ error: 'Game ID required' }, { status: 400 })
+		}
+
+		const db = getDb()
+		const game = await db.query.games.findFirst({
+			where: eq(games.id, Number(body.gameId)),
+			columns: { teamId: true },
+		})
+
+		if (!game || !game.teamId) {
+			return json({ error: 'Invalid game' }, { status: 400 })
+		}
+
+		const userHasAccessToTeam = await hasAccessToTeam(user, game.teamId)
+		if (!userHasAccessToTeam) {
+			return json({ error: 'Not authorized' }, { status: 403 })
 		}
 
 		const playersList = body.players
