@@ -3,6 +3,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { eq } from 'drizzle-orm'
 import { games } from '~/schema'
+import invariant from 'tiny-invariant'
 
 interface Player {
 	id: number
@@ -25,6 +26,7 @@ interface ParsedStat {
 
 export const action: ActionFunction = async ({ request }) => {
 	try {
+		invariant(process.env.GOOGLE_AI_API_KEY, 'No GOOGLE_AI_API_KEY')
 		// Authenticate user
 		const user = await authenticator.isAuthenticated(request)
 		if (!user) {
@@ -127,11 +129,10 @@ Examples:
 			// Validate each stat entry
 			parsedStats = parsedStats.filter(
 				(stat) =>
-					(stat.playerId &&
-						(stat.type === 'goal' || stat.type === 'assist') &&
-						stat.timestamp &&
-						typeof stat.gameId === 'number') ||
-					stat.gameId === null
+					stat.playerId &&
+					(stat.type === 'goal' || stat.type === 'assist') &&
+					stat.timestamp &&
+					(typeof stat.gameId === 'number' || stat.gameId === null)
 			)
 		} catch (e) {
 			console.error('Failed to parse AI response:', e, cleanedString)
