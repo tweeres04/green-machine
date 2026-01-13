@@ -83,7 +83,7 @@ export const action: ActionFunction = async ({ request }) => {
 					Authorization: `Bearer ${process.env.GOOGLE_AI_API_KEY}`,
 				},
 				body: JSON.stringify({
-					model: 'gemini-2.0-flash-lite',
+					model: 'gemini-2.5-flash-lite',
 					messages: [
 						{
 							role: 'system',
@@ -93,7 +93,7 @@ IMPORTANT: Pay close attention to numbers and quantities!
 - "5 goals" means 5 separate goal entries for that player  
 - "2 goals and 1 assist" means 2 goal entries + 1 assist entry
 
-Return ONLY a JSON array. Each stat item should have: playerId (number), type ("goal" or "assist"), timestamp (use provided timestamp), gameId (use provided gameId or null). 
+Return ONLY a JSON array. Each stat item should have: playerId (number), type ("goal" or "assist"). 
 
 Available players: ${playersList}. If a player name doesn't match exactly, try to find the closest match. If no matches found, return empty array. Only respond with JSON array, no other text.
 
@@ -104,7 +104,7 @@ Examples:
 						},
 						{
 							role: 'user',
-							content: `Game description: "${body.text}". Game ID: ${body.gameId}. Timestamp: ${body.timestamp}`,
+							content: `Game description: "${body.text}".`,
 						},
 					],
 				}),
@@ -112,6 +112,8 @@ Examples:
 		)
 
 		if (response.status === 429) {
+			const responseDetail = await response.json()
+			console.error(responseDetail)
 			return json({ error: 'Daily limit reached' }, { status: 429 })
 		}
 
@@ -129,7 +131,13 @@ Examples:
 		let parsedStats: ParsedStat[]
 
 		try {
-			parsedStats = JSON.parse(cleanedString)
+			parsedStats = JSON.parse(cleanedString).map(
+				(s: Omit<ParsedStat, 'timestamp' | 'gameId'>) => ({
+					...s,
+					timestamp: body.timestamp,
+					gameId: Number(body.gameId),
+				})
+			)
 
 			// Validate the structure
 			if (!Array.isArray(parsedStats)) {
