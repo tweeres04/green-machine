@@ -856,7 +856,7 @@ function AddStatsButton({
 						<CollapsibleTrigger asChild>
 							<Button
 								type="button"
-								variant="ghost"
+								variant="secondary"
 								disabled={
 									!selectedGameId ||
 									isSubmitting ||
