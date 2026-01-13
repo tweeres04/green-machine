@@ -59,9 +59,19 @@ export const action: ActionFunction = async ({ request }) => {
 			return json({ error: 'Not authorized' }, { status: 403 })
 		}
 
+		// Create whitelist of allowed player IDs for this team
+		const allowedPlayerIds = new Set(body.players.map((p) => p.id))
+
 		const playersList = body.players
 			.map((p) => `${p.name} (ID: ${p.id})`)
 			.join(', ')
+
+		console.log('Parse request:', {
+			teamId: game.teamId,
+			userId: user?.id,
+			allowedPlayerIds: Array.from(allowedPlayerIds),
+			playerCount: body.players.length,
+		})
 
 		const response = await fetch(
 			'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
@@ -126,13 +136,13 @@ Examples:
 				throw new Error('Response is not an array')
 			}
 
-			// Validate each stat entry
 			parsedStats = parsedStats.filter(
 				(stat) =>
 					stat.playerId &&
 					(stat.type === 'goal' || stat.type === 'assist') &&
 					stat.timestamp &&
-					(typeof stat.gameId === 'number' || stat.gameId === null)
+					(typeof stat.gameId === 'number' || stat.gameId === null) &&
+					allowedPlayerIds.has(stat.playerId)
 			)
 		} catch (e) {
 			console.error('Failed to parse AI response:', e, cleanedString)
