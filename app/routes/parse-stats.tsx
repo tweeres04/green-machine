@@ -114,7 +114,7 @@ Examples:
 		if (response.status === 429) {
 			const responseDetail = await response.json()
 			console.error(responseDetail)
-			return json({ error: 'Daily limit reached' }, { status: 429 })
+			return json({ error: 'Rate limit reached' }, { status: 429 })
 		}
 
 		const data = await response.json()
