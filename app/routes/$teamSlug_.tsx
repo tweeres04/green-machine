@@ -883,6 +883,7 @@ function AddStatsButton({
 								setTextInput(e.target.value)
 							}
 							disabled={isSubmitting || aiFetcher.state === 'submitting'}
+							aria-label="Describe game statistics"
 						/>
 						{typeof aiFetcher.data === 'object' && 'error' in aiFetcher.data ? (
 							<p className="text-sm text-red-600 mb-2 sm:text-right">
