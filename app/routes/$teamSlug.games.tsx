@@ -68,7 +68,7 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
-import { GuestUserAlert } from '~/components/ui/guest-user-alert'
+
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -825,8 +825,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const userIsTylerOrMelissa = [1, 2].includes(user?.id ?? -1)
 
-	const guestUserAlertDismissed =
-		session.get('guestUserAlertDismissed') === 'true'
+	
 
 	return json({
 		userIsTylerOrMelissa,
@@ -836,7 +835,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		teamHasActiveSubscription: teamHasActiveSubscription_,
 		seasons: team.seasons,
 		season,
-		guestUserAlertDismissed,
 	})
 }
 
@@ -1075,7 +1073,6 @@ export default function Games() {
 		teamHasActiveSubscription,
 		season,
 		seasons,
-		guestUserAlertDismissed,
 	} = useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
@@ -1092,12 +1089,7 @@ export default function Games() {
 	return (
 		<>
 			<Nav title="Games" team={team} />
-			<GuestUserAlert
-				teamId={team.id}
-				userHasAccessToTeam={userHasAccessToTeam}
-				player={!!player}
-				dismissed={guestUserAlertDismissed}
-			/>
+			
 			<div className="flex flex-col sm:flex-row-reverse gap-1">
 				{userHasAccessToTeam ? (
 					<>

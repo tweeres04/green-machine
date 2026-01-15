@@ -11,7 +11,7 @@ import {
 	useNavigate,
 } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
-import { GuestUserAlert } from '~/components/ui/guest-user-alert'
+
 
 import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
@@ -321,9 +321,7 @@ export async function loader({
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
-	const session = await getSession(request.headers.get('Cookie'))
-	const guestUserAlertDismissed =
-		session.get('guestUserAlertDismissed') === 'true'
+	
 
 	return {
 		team,
@@ -332,7 +330,6 @@ export async function loader({
 		seasons: team.seasons,
 		season,
 		player,
-		guestUserAlertDismissed,
 	}
 }
 
@@ -1142,7 +1139,6 @@ export default function Home() {
 		season,
 		seasons,
 		player,
-		guestUserAlertDismissed,
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
@@ -1290,12 +1286,7 @@ export default function Home() {
 					/>
 				) : null}
 			</div>
-			<GuestUserAlert
-				userHasAccessToTeam={userHasAccessToTeam}
-				player={Boolean(player)}
-				dismissed={guestUserAlertDismissed}
-				teamId={team.id}
-			/>
+			
 			<Toaster />
 		</>
 	)
