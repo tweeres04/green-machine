@@ -5,6 +5,7 @@ import {
 	Scripts,
 	ScrollRestoration,
 	useLoaderData,
+	useRouteError,
 } from '@remix-run/react'
 
 import '@fontsource-variable/nunito-sans'
@@ -109,4 +110,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
 	return <Outlet />
+}
+
+export function ErrorBoundary() {
+	const error = useRouteError()
+	console.error(error)
+	return (
+		<html lang="en">
+			<head>
+				<title>There was an unexpected error</title>
+				<Meta />
+				<Links />
+			</head>
+			<body>
+				Whoops, there was an unexpected error
+				<Scripts />
+			</body>
+		</html>
+	)
 }
