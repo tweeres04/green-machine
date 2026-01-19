@@ -136,6 +136,12 @@ Only respond with json, do not include any other text. Use the following JSON fo
 			? JSON.parse(result.text.replace(/^```json/, '').replace(/```$/, ''))
 			: null
 
+		const badValues = ['N/A', 'unknown']
+		weatherData.windSpeed =
+			weatherData.windSpeed && badValues.includes(weatherData.windSpeed)
+				? undefined
+				: weatherData.windSpeed
+
 		cacheForecast(weatherData, gameId).then(() => {
 			console.log(`cached weather data for ${gameId}`)
 		})
