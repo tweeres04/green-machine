@@ -21,6 +21,7 @@ import {
 } from 'date-fns'
 import invariant from 'tiny-invariant'
 import { Button } from '~/components/ui/button'
+import { Skeleton } from '~/components/ui/skeleton'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { Badge } from '~/components/ui/badge'
@@ -38,7 +39,6 @@ import {
 	Cloud,
 	Thermometer,
 	Wind,
-	Droplets,
 } from 'lucide-react'
 
 import {
@@ -995,12 +995,6 @@ function WeatherDisplay({ weatherData }: { weatherData: WeatherData }) {
 				<Cloud />
 				{weatherData.conditions}
 			</span>
-			{weatherData.humidity && (
-				<span>
-					<Droplets />
-					{weatherData.humidity}
-				</span>
-			)}
 			{weatherData.windSpeed && (
 				<span>
 					<Wind />
@@ -1066,9 +1060,19 @@ export function GameCard({
 								{weatherData && (
 									<Suspense
 										fallback={
-											<div className="flex gap-2 place-items-center text-sm text-muted-foreground">
-												<LoaderCircle className="h-4 w-4 animate-spin" />
-												Loading weather forecast...
+											<div className="flex gap-5 [&>div]:flex [&>div]:gap-2 [&>div]:place-items-center">
+												<div>
+													<Skeleton className="size-5" />
+													<Skeleton className="h-5 w-8" />
+												</div>
+												<div>
+													<Skeleton className="size-5" />
+													<Skeleton className="h-5 w-24" />
+												</div>
+												<div>
+													<Skeleton className="size-5" />
+													<Skeleton className="h-5 w-8" />
+												</div>
 											</div>
 										}
 									>
