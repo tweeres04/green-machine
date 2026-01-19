@@ -2,19 +2,23 @@ import type {
 	LoaderFunctionArgs,
 	MetaArgs,
 	MetaFunction,
+	ActionFunction,
 } from '@remix-run/node'
 import { Form, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
 
 import { getDb } from '~/lib/getDb'
 import { useEffect, useRef, useState } from 'react'
+import { useDebouncedCallback } from 'use-debounce'
 import invariant from 'tiny-invariant'
-import { type Team } from '~/schema'
+import { type Team, teams } from '~/schema'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { upperFirst } from 'lodash-es'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import { Checkbox } from '~/components/ui/checkbox'
+import { eq } from 'drizzle-orm'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -81,6 +85,59 @@ export async function loader({
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
 	return { team, teamHasActiveSubscription: teamHasActiveSubscription_ }
+}
+
+export const action: ActionFunction = async ({ request, params }) => {
+	const db = getDb()
+	const { teamSlug } = params
+	invariant(teamSlug, 'Missing teamSlug parameter')
+
+	const [team, user] = await Promise.all([
+		db.query.teams.findFirst({
+			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		}),
+		authenticator.isAuthenticated(request),
+	])
+
+	if (!team) {
+		throw new Response('Team not found', { status: 404 })
+	}
+
+	if (!user) {
+		throw new Response(null, { status: 401 })
+	}
+
+	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
+
+	if (!userHasAccessToTeam) {
+		throw new Response(null, { status: 401 })
+	}
+
+	const formData = await request.formData()
+	const location = formData.get('location')
+	const nextGameForecast = formData.get('nextGameForecast')
+
+	if (
+		(location !== null && typeof location !== 'string') ||
+		(nextGameForecast !== null && typeof nextGameForecast !== 'string')
+	) {
+		throw new Response('Invalid form data', { status: 400 })
+	}
+
+	await db
+		.update(teams)
+		.set({
+			location: location || null,
+			nextGameForecast:
+				nextGameForecast === 'true'
+					? true
+					: nextGameForecast === 'false'
+					? false
+					: undefined,
+		})
+		.where(eq(teams.id, team.id))
+
+	return null
 }
 
 function useClearNewPlayerForm(
@@ -170,6 +227,35 @@ export default function EditTeam() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
 
+	// Weather-specific fetcher for debounced location submission
+	const weatherFetcher = useFetcher()
+	const [locationValue, setLocationValue] = useState(team.location || '')
+	const [nextGameForecast, setNextGameForecast] = useState(
+		team.nextGameForecast ?? false
+	)
+	const [isSavingWeather, setIsSavingWeather] = useState(false)
+
+	// Debounced submission when location or forecast changes
+	const debouncedWeatherSubmit = useDebouncedCallback(
+		(location: string, nextGameForecast: boolean) => {
+			setIsSavingWeather(true)
+			weatherFetcher.submit({ location, nextGameForecast }, { method: 'post' })
+		},
+		1000
+	)
+
+	// Auto-submit when location or forecast changes
+	useEffect(() => {
+		debouncedWeatherSubmit(locationValue, nextGameForecast)
+	}, [debouncedWeatherSubmit, locationValue, nextGameForecast])
+
+	// Handle weather fetcher completion
+	useEffect(() => {
+		if (weatherFetcher.state === 'idle' && isSavingWeather) {
+			setIsSavingWeather(false)
+		}
+	}, [weatherFetcher.state, isSavingWeather])
+
 	useClearNewPlayerForm(formRef)
 
 	// Include uploading a new logo here at some point
@@ -210,6 +296,44 @@ export default function EditTeam() {
 						<option value="pink">Pink</option>
 					</select>
 				</fetcher.Form>
+				<h3 className="text-xl">Weather Forecast</h3>
+				<weatherFetcher.Form
+					method="post"
+					action={`/teams/${id}/weather`}
+					className="space-y-3"
+				>
+					<div>
+						<label htmlFor="location">Location</label>
+						<Input
+							type="text"
+							name="location"
+							id="location"
+							value={locationValue}
+							onChange={(e) => setLocationValue(e.target.value)}
+							placeholder="e.g., San Francisco, CA"
+						/>
+						<p className="text-sm text-muted-foreground">
+							City, state or general area where your team plays
+						</p>
+					</div>
+					<div className="flex items-center space-x-2">
+						<Checkbox
+							id="nextGameForecast"
+							name="nextGameForecast"
+							checked={nextGameForecast}
+							disabled={!locationValue}
+							onCheckedChange={(checked) => {
+								setNextGameForecast(checked)
+							}}
+						/>
+						<label
+							htmlFor="nextGameForecast"
+							className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+						>
+							Show weather forecast on next game card (requires location)
+						</label>
+					</div>
+				</weatherFetcher.Form>
 			</div>
 			<fieldset
 				className="space-y-3"

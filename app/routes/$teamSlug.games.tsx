@@ -1,11 +1,16 @@
-import { LoaderFunctionArgs, MetaArgs, MetaFunction } from '@remix-run/node'
+import {
+	LoaderFunctionArgs,
+	MetaArgs,
+	MetaFunction,
+	defer,
+} from '@remix-run/node'
 import { eq } from 'drizzle-orm'
 import {
-	json,
 	useFetcher,
 	useLoaderData,
 	useLocation,
 	useNavigate,
+	Await,
 } from '@remix-run/react'
 import {
 	endOfDay,
@@ -30,6 +35,10 @@ import {
 	Plus,
 	Import,
 	ChevronsUpDown,
+	Cloud,
+	Thermometer,
+	Wind,
+	Droplets,
 } from 'lucide-react'
 
 import {
@@ -52,7 +61,14 @@ import {
 } from '~/components/ui/dropdown-menu'
 
 import More from '~/components/ui/icons/more'
-import { ReactNode, useContext, useEffect, useMemo, useState } from 'react'
+import {
+	ReactNode,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+	Suspense,
+} from 'react'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
@@ -78,6 +94,7 @@ import { getSession } from '~/lib/five-minute-session.server'
 import { TeamColorContext } from '~/lib/teamColorContext'
 import mixpanel from 'mixpanel-browser'
 import { Checkbox } from '~/components/ui/checkbox'
+import { getGameForecast, WeatherData } from '~/lib/weather-service'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -825,9 +842,20 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 	const userIsTylerOrMelissa = [1, 2].includes(user?.id ?? -1)
 
-	
+	// Get next game for weather forecast
+	const now = new Date()
+	const upcomingGames = team.games.filter(
+		(game) => game.timestamp && new Date(game.timestamp) > now
+	)
+	const nextGame = upcomingGames[0]
 
-	return json({
+	// Create weather data promise if forecast is enabled
+	const weatherDataPromise =
+		nextGame && team.nextGameForecast && team.location && nextGame.timestamp
+			? getGameForecast(nextGame.id)
+			: Promise.resolve(null)
+
+	return defer({
 		userIsTylerOrMelissa,
 		team,
 		userHasAccessToTeam,
@@ -835,6 +863,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		teamHasActiveSubscription: teamHasActiveSubscription_,
 		seasons: team.seasons,
 		season,
+		weatherData: weatherDataPromise,
 	})
 }
 
@@ -955,6 +984,33 @@ function GameDistanceToNow({ gameTime }: { gameTime: string | null }) {
 	) : null
 }
 
+function WeatherDisplay({ weatherData }: { weatherData: WeatherData }) {
+	return (
+		<div className="flex gap-5 [&>span]:flex [&>span]:gap-2 [&>span]:place-items-center">
+			<span>
+				<Thermometer />
+				{weatherData.temperature}
+			</span>
+			<span>
+				<Cloud />
+				{weatherData.conditions}
+			</span>
+			{weatherData.humidity && (
+				<span>
+					<Droplets />
+					{weatherData.humidity}
+				</span>
+			)}
+			{weatherData.windSpeed && (
+				<span>
+					<Wind />
+					{weatherData.windSpeed}
+				</span>
+			)}
+		</div>
+	)
+}
+
 type GameCardProps = {
 	game: Game
 	team: Team & { players: Player[] }
@@ -963,6 +1019,7 @@ type GameCardProps = {
 	teamHasActiveSubscription: boolean
 	nextGame?: boolean
 	linkToTeamPage?: boolean
+	weatherData?: Promise<WeatherData | null>
 }
 
 export function GameCard({
@@ -972,6 +1029,7 @@ export function GameCard({
 	teamHasActiveSubscription,
 	nextGame = false,
 	linkToTeamPage = false,
+	weatherData,
 }: GameCardProps) {
 	return (
 		<Card
@@ -996,13 +1054,35 @@ export function GameCard({
 							<GameDistanceToNow gameTime={game.timestamp} />
 						</CardTitle>
 						<CardDescription>
-							<div className="flex gap-5">
-								<span className="flex gap-2 place-items-center">
-									<Users /> {game.opponent ?? 'No opponent'}
-								</span>
-								<span className="flex gap-2 place-items-center">
-									<MapPin /> {game.location ?? 'No location'}
-								</span>
+							<div className="space-y-3">
+								<div className="flex gap-5">
+									<span className="flex gap-2 place-items-center">
+										<Users /> {game.opponent ?? 'No opponent'}
+									</span>
+									<span className="flex gap-2 place-items-center">
+										<MapPin /> {game.location ?? 'No location'}
+									</span>
+								</div>
+								{weatherData && (
+									<Suspense
+										fallback={
+											<div className="flex gap-2 place-items-center text-sm text-muted-foreground">
+												<LoaderCircle className="h-4 w-4 animate-spin" />
+												Loading weather forecast...
+											</div>
+										}
+									>
+										<Await resolve={weatherData}>
+											{(weatherData) =>
+												weatherData && (
+													<WeatherDisplay
+														weatherData={weatherData as WeatherData}
+													/>
+												)
+											}
+										</Await>
+									</Suspense>
+								)}
 							</div>
 						</CardDescription>
 					</CardHeader>
@@ -1073,6 +1153,7 @@ export default function Games() {
 		teamHasActiveSubscription,
 		season,
 		seasons,
+		weatherData,
 	} = useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
@@ -1089,7 +1170,6 @@ export default function Games() {
 	return (
 		<>
 			<Nav title="Games" team={team} />
-			
 			<div className="flex flex-col sm:flex-row-reverse gap-1">
 				{userHasAccessToTeam ? (
 					<>
@@ -1153,6 +1233,7 @@ export default function Games() {
 									player={player}
 									teamHasActiveSubscription={teamHasActiveSubscription}
 									nextGame
+									weatherData={weatherData}
 								/>
 							</div>
 						) : null}

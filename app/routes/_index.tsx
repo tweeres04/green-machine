@@ -19,6 +19,7 @@ import {
 	CollapsibleTrigger,
 } from '~/components/ui/collapsible'
 import { ChevronsUpDown } from 'lucide-react'
+import { getGameForecast } from '~/lib/weather-service'
 
 export const meta: MetaFunction = () => {
 	const price = 19
@@ -89,7 +90,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const db = getDb()
 
 	if (!user) {
-		return new Response()
+		return new Response(null, { status: 401 })
 	}
 
 	const sql_ = sql`
@@ -168,11 +169,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		.execute()
 		.then((nextGame) => nextGame ?? null)
 
+	// Create weather data promise if forecast is enabled
+	const weatherDataPromise = nextGamePromise.then((nextGame) => {
+		return nextGame &&
+			nextGame.team.nextGameForecast &&
+			nextGame.team.location &&
+			nextGame.timestamp
+			? getGameForecast(nextGame.id)
+			: Promise.resolve(null)
+	})
+
 	return defer({
 		user,
 		teams: teams_,
 		stats: statsPromise,
 		nextGame: nextGamePromise,
+		weatherData: weatherDataPromise,
 	})
 }
 
@@ -185,7 +197,7 @@ export default function Index() {
 		return <HomeLandingPage />
 	}
 
-	const { user, teams, stats, nextGame } = loaderData
+	const { user, teams, stats, nextGame, weatherData } = loaderData
 
 	return (
 		<div className="max-w-[700px] mx-auto space-y-8 p-2">
@@ -221,6 +233,7 @@ export default function Index() {
 										player={player}
 										nextGame
 										linkToTeamPage
+										weatherData={weatherData}
 									/>
 								</CollapsibleContent>
 							</Collapsible>

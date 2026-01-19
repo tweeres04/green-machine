@@ -10,6 +10,10 @@ export const teams = sqliteTable('teams', {
 	name: text('name').notNull(),
 	slug: text('slug').notNull().unique(),
 	color: text('color').notNull().default('gray'),
+	location: text('location'),
+	nextGameForecast: integer('next_game_forecast', { mode: 'boolean' })
+		.notNull()
+		.default(false),
 })
 
 export type Team = typeof teams.$inferSelect
@@ -22,6 +26,32 @@ export const teamRelations = relations(teams, ({ many, one }) => ({
 	seasons: many(seasons),
 	userInviteRequests: many(userInviteRequests),
 }))
+
+export const weatherForecasts = sqliteTable(
+	'weather_forecasts',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		gameId: integer('game_id'),
+		forecastData: text('forecast_data').notNull(), // JSON string
+		createdAt: text('created_at').notNull(),
+	},
+	(table) => ({
+		gameIdIdx: index('weather_forecasts_game_id_idx').on(table.gameId),
+		createdAtIdx: index('weather_forecasts_created_at_idx').on(table.gameId),
+	})
+)
+
+export type WeatherForecast = typeof weatherForecasts.$inferSelect
+
+export const weatherForecastsRelations = relations(
+	weatherForecasts,
+	({ one }) => ({
+		game: one(games, {
+			fields: [weatherForecasts.gameId],
+			references: [games.id],
+		}),
+	})
+)
 
 export const teamSubscriptions = sqliteTable(
 	'team_subscriptions',

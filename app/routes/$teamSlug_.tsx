@@ -5,13 +5,13 @@ import type {
 } from '@remix-run/node'
 import { eq } from 'drizzle-orm'
 import {
+	defer,
 	useFetcher,
 	useLoaderData,
 	useLocation,
 	useNavigate,
 } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
-
 
 import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
@@ -71,7 +71,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '~/components/ui/select'
-import { getSession } from '~/lib/five-minute-session.server' // Add this import
 import { GameCard } from './$teamSlug.games'
 import {
 	Collapsible,
@@ -79,6 +78,7 @@ import {
 	CollapsibleTrigger,
 } from '~/components/ui/collapsible'
 import mixpanel from 'mixpanel-browser'
+import { getGameForecast } from '~/lib/weather-service'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -321,16 +321,28 @@ export async function loader({
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
-	
+	// Get next game for weather forecast
+	const now = new Date()
+	const upcomingGames = team.games.filter(
+		(game) => game.timestamp && new Date(game.timestamp) > now
+	)
+	const nextGame = upcomingGames[0]
 
-	return {
+	// Create weather data promise if forecast is enabled
+	const weatherDataPromise =
+		nextGame && team.nextGameForecast && team.location && nextGame.timestamp
+			? getGameForecast(nextGame.id)
+			: Promise.resolve(null)
+
+	return defer({
 		team,
 		userHasAccessToTeam,
 		teamHasActiveSubscription: teamHasActiveSubscription_,
 		seasons: team.seasons,
 		season,
 		player,
-	}
+		weatherData: weatherDataPromise,
+	})
 }
 
 const dateFormat = 'MMM d'
@@ -1139,6 +1151,7 @@ export default function Home() {
 		season,
 		seasons,
 		player,
+		weatherData,
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
@@ -1188,6 +1201,7 @@ export default function Home() {
 							player={player}
 							teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
 							nextGame
+							weatherData={weatherData}
 						/>
 					</CollapsibleContent>
 				</Collapsible>
@@ -1286,7 +1300,6 @@ export default function Home() {
 					/>
 				) : null}
 			</div>
-			
 			<Toaster />
 		</>
 	)
