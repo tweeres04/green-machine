@@ -9,6 +9,7 @@ database.db
 database.*.db
 database.db-shm
 database.db-wal
+database*.tar.gz
 photos_backup
 
 *.afdesign~lock~
