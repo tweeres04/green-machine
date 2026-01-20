@@ -4,6 +4,7 @@ node_modules
 /build
 .env
 
+database/
 database.db
 database.*.db
 database.db-shm

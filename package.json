@@ -16,9 +16,9 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:migrate:bears": "drizzle-kit migrate --config=drizzle.config.bears.ts",
 		"db:studio": "drizzle-kit studio",
-		"db:dev:reset": "rm database.db; npm run db:migrate",
-		"db:download": "scp server:~/green-machine/database.db server:~/green-machine/database.db-wal server:~/green-machine/database.db-shm ./",
-		"db:download:dev-players": "scp server:~/green-machine/database.db server:~/green-machine/database.db-wal server:~/green-machine/database.db-shm ./ && npx tsx tasks/createDevUsers.ts",
+		"db:dev:reset": "rm database/*; npm run db:migrate",
+		"db:download": "scp server:~/green-machine/database/database.db server:~/green-machine/database/database.db-wal server:~/green-machine/database/database.db-shm ./",
+		"db:download:dev-players": "scp server:~/green-machine/database/database.db server:~/green-machine/database/database.db-wal server:~/green-machine/database/database.db-shm ./ && npx tsx tasks/createDevUsers.ts",
 		"hash_password": "npx tsx tasks/makePasswordHash.ts",
 		"add_my_timezone_to_stat_entries": "npx tsx tasks/addMyTimezoneToStatEntries.ts"
 	},
