@@ -2,6 +2,18 @@
 
 This document provides coding standards and conventions for the green-machine project, a team stats tracking application built with Remix.
 
+## What is TeamStats?
+
+TeamStats is a simple app for recreational soccer teams to track player stats (goals, assists) and manage game schedules. Target users are adult "beer league" players who want:
+
+- Leaderboards showing the "golden boot" race throughout the season
+- Easy schedule management
+- Shareable stats and game details for group chats
+- AI-powered features (natural language stat entry, schedule imports)
+- Weather forecasts for upcoming games
+
+The product is positioned as **small, focused, and affordable** ($19/year) vs. bloated competitors. Simplicity is a feature, not a limitation. Users describe checking stats as a "dopamine hit" - the app makes recreational soccer more fun by giving teams something to celebrate together.
+
 ## Project Overview
 
 - **Framework**: Remix v2.13 with Vite
