@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, MetaFunction } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { json, useLoaderData } from '@remix-run/react'
 import {
 	statEntries,
 	players,
@@ -8,12 +8,13 @@ import {
 	teamsUsers,
 	games,
 } from '../schema'
-import { eq, inArray, and } from 'drizzle-orm'
+import { eq, inArray, and, isNotNull } from 'drizzle-orm'
 
 import { getDb } from '~/lib/getDb'
 import { authenticator } from '~/lib/auth.server'
 import { z, ZodError } from 'zod'
-import { activeSubscription } from '~/lib/teamHasActiveSubscription'
+import { canAddStatsToGame } from '~/lib/teamHasActiveSubscription'
+import { getGamesWithStatsCount } from '~/lib/getGamesWithStatsCount'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -71,18 +72,44 @@ export async function action({ request }: ActionFunctionArgs) {
 		throw new Response(null, { status: 403 })
 	}
 
+	// Check if user can add stats based on subscription and free trial
 	const teamIds = accessiblePlayerTeamIds.map(({ teamId }) => teamId)
-	const teamsWithActiveSubscription = await db.query.teamSubscriptions.findMany(
-		{
-			where: (teamSubscription, { inArray }) =>
-				inArray(teamSubscription.teamId, teamIds),
-		}
-	)
-
-	if (!teamsWithActiveSubscription.every(activeSubscription)) {
-		throw new Response(null, {
-			status: 402,
-		})
+	
+	// For simplicity, we'll check the first team (multi-team stat entries are rare)
+	const teamId = teamIds[0]
+	
+	// Get team subscription
+	const teamSubscription = await db.query.teamSubscriptions.findFirst({
+		where: (ts, { eq }) => eq(ts.teamId, teamId),
+	})
+	
+	// Get the gameId we're adding stats to
+	const targetGameId = newEntries[0]?.gameId ?? null
+	
+	// Check if this game already has stats
+	let gameAlreadyHasStats = false
+	if (targetGameId) {
+		const existingStats = await db
+			.select({ id: statEntries.id })
+			.from(statEntries)
+			.where(and(eq(statEntries.gameId, targetGameId), isNotNull(statEntries.gameId)))
+			.limit(1)
+		gameAlreadyHasStats = existingStats.length > 0
+	}
+	
+	// Count games with stats for this team
+	const gamesWithStatsCount = await getGamesWithStatsCount(teamId)
+	
+	// Check if team can add stats
+	if (!canAddStatsToGame(teamSubscription, gamesWithStatsCount, gameAlreadyHasStats)) {
+		return json(
+			{
+				error: "You've tracked stats for 3 games, the max for free teams. Subscribe to track unlimited games.",
+			},
+			{
+				status: 402,
+			}
+		)
 	}
 
 	return db.transaction(async (tx) => {

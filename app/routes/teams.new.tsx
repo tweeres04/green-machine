@@ -1,22 +1,13 @@
-import { Form, useFetcher, useLoaderData } from '@remix-run/react'
+import { Form, useFetcher } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { kebabCase } from 'lodash-es'
 import React from 'react'
 import Nav from '~/components/ui/nav'
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardContent,
-	CardFooter,
-} from '~/components/ui/card'
-import invariant from 'tiny-invariant'
 import { useDebouncedCallback } from 'use-debounce'
-import { json, LoaderFunctionArgs } from '@remix-run/node'
+import { LoaderFunctionArgs } from '@remix-run/node'
 import { useDelayedLoading } from '~/lib/useDelayedLoading'
 import { cn } from '~/lib/utils'
-import Stripe from 'stripe'
 import { authenticator } from '~/lib/auth.server'
 
 interface SlugCheckResponse {
@@ -90,28 +81,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		failureRedirect: '/signup',
 	})
 
-	invariant(process.env.STRIPE_SECRET_KEY, 'STRIPE_SECRET_KEY must be set')
-	invariant(
-		process.env.STRIPE_YEARLY_PRICE_ID,
-		'STRIPE_YEARLY_PRICE_ID must be set'
-	)
-
-	const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-		apiVersion: '2024-10-28.acacia',
-	})
-	const priceData = await stripe.prices.retrieve(
-		process.env.STRIPE_YEARLY_PRICE_ID
-	)
-
-	invariant(priceData.unit_amount, 'Price data not found')
-
-	const price = priceData.unit_amount / 100 // Convert to dollars
-
-	return json({ price })
+	return null
 }
 
 export default function NewTeamForm() {
-	const { price } = useLoaderData<typeof loader>()
 	const nameRef = React.useRef<HTMLInputElement>(null)
 	const slugRef = React.useRef<HTMLInputElement>(null)
 	const { slugExample, needsCheck, slugIsAvailable, isChecking } = useAutoSlug(
@@ -123,12 +96,25 @@ export default function NewTeamForm() {
 	return (
 		<>
 			<Nav title="Create team" />
+			<div className="mb-6 space-y-2">
+				<p className="text-lg font-medium">No credit card required</p>
+				<p className="text-sm">
+					Track stats for 3 games free. If you love it, subscribe for $19/year
+					to unlock unlimited games.
+				</p>
+			</div>
 			<Form action="/teams" method="post">
-				<input type="hidden" name="plan" id="plan_input" />
-				<div className="space-y-4">
+				<div className="space-y-4 mx-auto max-w-xs">
 					<div>
 						<label htmlFor="name">Team Name</label>
-						<Input type="text" name="name" id="name" required ref={nameRef} />
+						<Input
+							type="text"
+							name="name"
+							id="name"
+							required
+							ref={nameRef}
+							className="!w-full"
+						/>
 					</div>
 					<div>
 						<label htmlFor="slug">Slug</label>
@@ -146,6 +132,7 @@ export default function NewTeamForm() {
 									slugIsAvailable === false &&
 									'border-red-500 text-red-900 bg-red-50'
 							)}
+							style={{ width: '100%' }}
 						/>
 						<p className="text-sm">
 							ex: teamstats.tweeres.com/
@@ -162,37 +149,9 @@ export default function NewTeamForm() {
 						</p>
 					</div>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>${price} USD/yr</CardTitle>
-						</CardHeader>
-						<CardContent className="text-xs">
-							<p className="mb-3">Includes everything your team needs:</p>
-							<ul className="list-disc pl-5">
-								<li>Team stats timeline for goals and assists</li>
-								<li>Goal and assist streaks</li>
-								<li>Game RSVPs</li>
-								<li>Team logo</li>
-								<li>Player pictures</li>
-							</ul>
-						</CardContent>
-						<CardFooter>
-							<Button
-								type="submit"
-								onClick={() => {
-									const planInput = document.getElementById('plan_input')
-									invariant(
-										planInput instanceof HTMLInputElement,
-										'plan input not found'
-									)
-									planInput.value = 'yearly'
-								}}
-								disabled={!slugIsAvailable}
-							>
-								Create Team
-							</Button>
-						</CardFooter>
-					</Card>
+					<Button type="submit" disabled={!slugIsAvailable}>
+						Create Team
+					</Button>
 				</div>
 			</Form>
 		</>

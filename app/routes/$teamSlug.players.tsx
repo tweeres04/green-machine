@@ -102,9 +102,7 @@ export async function loader({
 		throw new Response(null, { status: 401 })
 	}
 
-	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
-
-	return { team, teamHasActiveSubscription: teamHasActiveSubscription_ }
+	return { team }
 }
 
 function useClearNewPlayerForm(
@@ -126,7 +124,7 @@ function useClearNewPlayerForm(
 }
 
 export default function EditTeam() {
-	const { team, teamHasActiveSubscription } = useLoaderData<typeof loader>()
+	const { team } = useLoaderData<typeof loader>()
 	const { id, players } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
@@ -198,7 +196,6 @@ export default function EditTeam() {
 										onClick={() => {
 											setChangeImageDialog(p)
 										}}
-										disabled={!teamHasActiveSubscription}
 									>
 										Change image
 									</DropdownMenuItem>
@@ -243,7 +240,6 @@ export default function EditTeam() {
 													),
 												}))
 											}}
-											disabled={!teamHasActiveSubscription}
 										>
 											Send invite
 										</DropdownMenuItem>
@@ -308,12 +304,7 @@ export default function EditTeam() {
 			</Dialog>
 			<Dialog>
 				<DialogTrigger asChild>
-					<Button
-						className="w-full sm:w-auto"
-						disabled={!teamHasActiveSubscription}
-					>
-						Add player
-					</Button>
+					<Button className="w-full sm:w-auto">Add player</Button>
 				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>
