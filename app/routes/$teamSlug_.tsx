@@ -662,10 +662,12 @@ function PlayerRow({
 }
 
 function AddStatsButton({
+	teamId,
 	players,
 	disabled,
 	games,
 }: {
+	teamId: number
 	players: PlayerWithStats[]
 	disabled?: boolean
 	games: Game[]
@@ -824,7 +826,7 @@ function AddStatsButton({
 						<AlertDescription className="space-y-2">
 							<p>{paywallError}</p>
 							<Button asChild size="sm">
-								<a href="/">Subscribe for $19/year</a>
+								<a href={`/teams/${teamId}/subscribe`}>Subscribe for $19/year</a>
 							</Button>
 						</AlertDescription>
 					</Alert>
@@ -1217,6 +1219,7 @@ export default function Home() {
 		<>
 			<Nav title={team.name} team={team} />
 			<TrialStatus
+				teamId={team.id}
 				gamesWithStatsCount={gamesWithStatsCount}
 				hasActiveSubscription={Boolean(teamHasActiveSubscription)}
 			/>
@@ -1255,6 +1258,7 @@ export default function Home() {
 						/>{' '}
 						{userHasAccessToTeam ? (
 							<AddStatsButton
+								teamId={team.id}
 								players={players}
 								disabled={!teamHasActiveSubscription}
 								games={team.games}
@@ -1330,7 +1334,7 @@ export default function Home() {
 					season={season}
 				/>{' '}
 				{userHasAccessToTeam ? (
-					<AddStatsButton players={players} games={team.games} />
+					<AddStatsButton teamId={team.id} players={players} games={team.games} />
 				) : null}
 			</div>
 			<Toaster />

@@ -3,11 +3,13 @@ import { FREE_GAMES_LIMIT } from '~/lib/teamHasActiveSubscription'
 import { Button } from './button'
 
 interface TrialStatusProps {
+	teamId: number
 	gamesWithStatsCount: number
 	hasActiveSubscription: boolean
 }
 
 export function TrialStatus({
+	teamId,
 	gamesWithStatsCount,
 	hasActiveSubscription,
 }: TrialStatusProps) {
@@ -36,10 +38,7 @@ export function TrialStatus({
 				<p>{getMessage()}</p>
 				<div className="space-y-1">
 					<Button asChild variant={atLimit ? 'default' : 'secondary'}>
-						<a
-							href="/" // TODO: Replace with actual Stripe checkout URL
-							className="underline font-medium"
-						>
+						<a href={`/teams/${teamId}/subscribe`} className="underline font-medium">
 							{buttonText}
 						</a>
 					</Button>
