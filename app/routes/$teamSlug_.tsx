@@ -18,6 +18,7 @@ import { Add } from '~/components/ui/icons/add'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { useToast } from '~/components/ui/use-toast'
 import { Toaster } from '~/components/ui/toaster'
+import { Alert, AlertDescription } from '~/components/ui/alert'
 import invariant from 'tiny-invariant'
 import { Game, Season, StatEntry, teams, type Team } from '~/schema'
 import { cn } from '~/lib/utils'
@@ -43,6 +44,7 @@ import { useEffect, useState, useRef } from 'react'
 import Trash from '~/components/ui/icons/trash'
 import { DialogDescription } from '@radix-ui/react-dialog'
 import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import { getGamesWithStatsCount } from '~/lib/getGamesWithStatsCount'
 import { Textarea } from '~/components/ui/textarea'
 import {
 	DropdownMenu,
@@ -79,6 +81,7 @@ import {
 } from '~/components/ui/collapsible'
 import mixpanel from 'mixpanel-browser'
 import { getGameForecast } from '~/lib/weather-service'
+import { TrialStatus } from '~/components/ui/trial-status'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -321,6 +324,9 @@ export async function loader({
 
 	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
+	// Get games with stats count for free trial
+	const gamesWithStatsCount = await getGamesWithStatsCount(team.id)
+
 	// Get next game for weather forecast
 	const now = new Date()
 	const upcomingGames = team.games.filter(
@@ -338,6 +344,7 @@ export async function loader({
 		team,
 		userHasAccessToTeam,
 		teamHasActiveSubscription: teamHasActiveSubscription_,
+		gamesWithStatsCount,
 		seasons: team.seasons,
 		season,
 		player,
@@ -655,12 +662,14 @@ function PlayerRow({
 }
 
 function AddStatsButton({
+	teamId,
 	players,
 	disabled,
 	games,
 }: {
+	teamId: number
 	players: PlayerWithStats[]
-	disabled: boolean
+	disabled?: boolean
 	games: Game[]
 }) {
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
@@ -685,6 +694,15 @@ function AddStatsButton({
 
 	const isSubmitting = fetcher.state === 'submitting'
 
+	// Check if we hit the paywall (402 error response with error field)
+	const paywallError =
+		fetcher.state === 'idle' &&
+		fetcher.data &&
+		typeof fetcher.data === 'object' &&
+		'error' in fetcher.data
+			? (fetcher.data as { error: string }).error
+			: null
+
 	useEffect(() => {
 		if (aiInputOpen && textareaRef.current) {
 			textareaRef.current.focus()
@@ -703,7 +721,12 @@ function AddStatsButton({
 
 	useEffect(() => {
 		if (fetcher.state === 'loading') {
-			if (fetcher.data !== undefined) {
+			// Only close dialog on success (no error in response)
+			const hasError =
+				fetcher.data &&
+				typeof fetcher.data === 'object' &&
+				'error' in fetcher.data
+			if (fetcher.data !== undefined && !hasError) {
 				setDialogOpen(false)
 			}
 			if (selectedGameId === 'manual') {
@@ -797,6 +820,17 @@ function AddStatsButton({
 				<DialogHeader>
 					<DialogTitle>Add stats</DialogTitle>
 				</DialogHeader>
+
+				{paywallError && (
+					<Alert variant="destructive">
+						<AlertDescription className="space-y-2">
+							<p>{paywallError}</p>
+							<Button asChild size="sm">
+								<a href={`/teams/${teamId}/subscribe`}>Subscribe for $19/year</a>
+							</Button>
+						</AlertDescription>
+					</Alert>
+				)}
 
 				<Select
 					disabled={isSubmitting}
@@ -1148,6 +1182,7 @@ export default function Home() {
 		team,
 		userHasAccessToTeam,
 		teamHasActiveSubscription,
+		gamesWithStatsCount,
 		season,
 		seasons,
 		player,
@@ -1183,6 +1218,11 @@ export default function Home() {
 	return (
 		<>
 			<Nav title={team.name} team={team} />
+			<TrialStatus
+				teamId={team.id}
+				gamesWithStatsCount={gamesWithStatsCount}
+				hasActiveSubscription={Boolean(teamHasActiveSubscription)}
+			/>
 			{nextGame ? (
 				<Collapsible className="space-y-3" defaultOpen>
 					<CollapsibleTrigger asChild>
@@ -1218,6 +1258,7 @@ export default function Home() {
 						/>{' '}
 						{userHasAccessToTeam ? (
 							<AddStatsButton
+								teamId={team.id}
 								players={players}
 								disabled={!teamHasActiveSubscription}
 								games={team.games}
@@ -1293,11 +1334,7 @@ export default function Home() {
 					season={season}
 				/>{' '}
 				{userHasAccessToTeam ? (
-					<AddStatsButton
-						players={players}
-						disabled={!teamHasActiveSubscription}
-						games={team.games}
-					/>
+					<AddStatsButton teamId={team.id} players={players} games={team.games} />
 				) : null}
 			</div>
 			<Toaster />

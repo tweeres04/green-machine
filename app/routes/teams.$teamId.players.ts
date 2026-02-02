@@ -4,7 +4,6 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { players } from '~/schema'
 import { inviteUser } from '~/lib/inviteUser'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 export async function action({
 	request,
@@ -20,26 +19,10 @@ export async function action({
 
 	const db = getDb()
 
-	const [team, userHasAccessToTeam] = await Promise.all([
-		db.query.teams.findFirst({
-			where: (teams, { eq }) => eq(teams.id, Number(teamId)),
-			with: {
-				subscription: true,
-			},
-		}),
-		hasAccessToTeam(user, Number(teamId)),
-	])
-
-	if (!team) {
-		throw new Response(null, { status: 404 })
-	}
+	const userHasAccessToTeam = await hasAccessToTeam(user, Number(teamId))
 
 	if (!userHasAccessToTeam) {
 		throw new Response(null, { status: 403 })
-	}
-
-	if (!teamHasActiveSubscription(team)) {
-		throw new Response('Subscription required', { status: 402 })
 	}
 
 	const formData = await request.formData()

@@ -70,7 +70,6 @@ import {
 	Suspense,
 } from 'react'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { createInsertSchema } from 'drizzle-zod'
 import { games, Team, teams } from '~/schema'
 import _ from 'lodash'
@@ -90,7 +89,6 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from '~/components/ui/collapsible'
-import { getSession } from '~/lib/five-minute-session.server'
 import { TeamColorContext } from '~/lib/teamColorContext'
 import mixpanel from 'mixpanel-browser'
 import { Checkbox } from '~/components/ui/checkbox'
@@ -487,11 +485,9 @@ function ImportScheduleForm({
 function MoreButton({
 	userHasAccessToTeam,
 	game,
-	teamHasActiveSubscription,
 }: {
 	userHasAccessToTeam: boolean
 	game: Game
-	teamHasActiveSubscription: boolean
 }) {
 	const fetcher = useFetcher()
 	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
@@ -554,7 +550,6 @@ function MoreButton({
 										<CancelForm closeModal={closeModal} game={game} />
 									)
 								}}
-								disabled={!teamHasActiveSubscription}
 							>
 								{game.cancelledAt ? 'Uncancel' : 'Cancel'}
 							</DropdownMenuItem>
@@ -586,7 +581,6 @@ function MoreButton({
 									</DialogFooter>
 								)
 							}}
-							disabled={!teamHasActiveSubscription}
 						>
 							Remove game
 						</DropdownMenuItem>
@@ -820,11 +814,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		},
 	})
 
-	const [user, team, session] = await Promise.all([
-		userPromise,
-		teamPromise,
-		getSession(request.headers.get('Cookie')),
-	])
+	const [user, team] = await Promise.all([userPromise, teamPromise])
 
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
@@ -837,8 +827,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 				player.userInvites.some((ui) => ui?.userId === user.id && ui.acceptedAt)
 		  )
 		: null
-
-	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
 	const userIsTylerOrMelissa = [1, 2].includes(user?.id ?? -1)
 
@@ -860,7 +848,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		team,
 		userHasAccessToTeam,
 		player,
-		teamHasActiveSubscription: teamHasActiveSubscription_,
 		seasons: team.seasons,
 		season,
 		weatherData: weatherDataPromise,
@@ -1010,7 +997,6 @@ type GameCardProps = {
 	team: Team & { players: Player[] }
 	userHasAccessToTeam: boolean
 	player: Player | null | undefined
-	teamHasActiveSubscription: boolean
 	nextGame?: boolean
 	linkToTeamPage?: boolean
 	weatherData?: Promise<WeatherData | null>
@@ -1020,7 +1006,6 @@ export function GameCard({
 	game,
 	team,
 	userHasAccessToTeam,
-	teamHasActiveSubscription,
 	nextGame = false,
 	linkToTeamPage = false,
 	weatherData,
@@ -1137,11 +1122,7 @@ export function GameCard({
 						/>
 					) : null}
 					{userHasAccessToTeam ? (
-						<MoreButton
-							userHasAccessToTeam={userHasAccessToTeam}
-							game={game}
-							teamHasActiveSubscription={teamHasActiveSubscription}
-						/>
+						<MoreButton userHasAccessToTeam={userHasAccessToTeam} game={game} />
 					) : null}
 				</>
 			</CardFooter>
@@ -1150,15 +1131,8 @@ export function GameCard({
 }
 
 export default function Games() {
-	const {
-		team,
-		userHasAccessToTeam,
-		player,
-		teamHasActiveSubscription,
-		season,
-		seasons,
-		weatherData,
-	} = useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam, player, season, seasons, weatherData } =
+		useLoaderData<typeof loader>()
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
 
@@ -1179,10 +1153,7 @@ export default function Games() {
 					<>
 						<Dialog open={newGameModal} onOpenChange={setNewGameModal}>
 							<DialogTrigger asChild>
-								<Button
-									className="w-full sm:w-auto"
-									disabled={!teamHasActiveSubscription}
-								>
+								<Button className="w-full sm:w-auto">
 									<Plus /> Add game
 								</Button>
 							</DialogTrigger>
@@ -1201,11 +1172,7 @@ export default function Games() {
 							onOpenChange={setImportScheduleModal}
 						>
 							<DialogTrigger asChild>
-								<Button
-									variant="secondary"
-									className="w-full sm:w-auto"
-									disabled={!teamHasActiveSubscription}
-								>
+								<Button variant="secondary" className="w-full sm:w-auto">
 									<Import /> Import schedule
 								</Button>
 							</DialogTrigger>
@@ -1235,7 +1202,6 @@ export default function Games() {
 									team={team}
 									userHasAccessToTeam={userHasAccessToTeam}
 									player={player}
-									teamHasActiveSubscription={teamHasActiveSubscription}
 									nextGame
 									weatherData={weatherData}
 								/>
@@ -1264,7 +1230,6 @@ export default function Games() {
 													team={team}
 													userHasAccessToTeam={userHasAccessToTeam}
 													player={player}
-													teamHasActiveSubscription={teamHasActiveSubscription}
 												/>
 											))}
 										</div>
@@ -1297,7 +1262,6 @@ export default function Games() {
 													team={team}
 													userHasAccessToTeam={userHasAccessToTeam}
 													player={player}
-													teamHasActiveSubscription={teamHasActiveSubscription}
 												/>
 											))}
 										</div>
