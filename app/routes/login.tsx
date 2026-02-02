@@ -1,6 +1,7 @@
 // app/routes/login.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
-import { Form, json, Link, useActionData } from '@remix-run/react'
+import { json } from '@remix-run/node'
+import { Form, Link, useActionData } from '@remix-run/react'
 import { AuthorizationError } from 'remix-auth'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'

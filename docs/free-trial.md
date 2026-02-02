@@ -114,9 +114,11 @@ Determines if a team can add stats to a game.
 
 ## Checkout Flow
 
-**Placeholder:** Stripe checkout URL will be added later.
+When users click "Subscribe" from the trial status alert or paywall message:
 
-When users click "Subscribe" from the trial status alert or paywall message, they should be directed to a Stripe hosted checkout page.
+1. The "Subscribe" buttons link to the team-specific subscribe route: `/teams/:teamId/subscribe`
+2. That route calls `createStripeCheckoutSession.server.ts` to create a Stripe Checkout Session with the correct price and success/cancel URLs
+3. The user is redirected to the Stripe-hosted checkout page, and after completion is sent back to the app via the configured return URLs (`/thankyou` or `/canceled`)
 
 ## Future Considerations
 

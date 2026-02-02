@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs, MetaFunction } from '@remix-run/node'
-import { json, useLoaderData } from '@remix-run/react'
+import { json } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
 import {
 	statEntries,
 	players,
