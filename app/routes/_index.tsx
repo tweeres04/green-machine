@@ -90,7 +90,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const db = getDb()
 
 	if (!user) {
-		return new Response(null, { status: 401 })
+		return { user: null, teams: [], stats: null, nextGame: null, weatherData: null }
 	}
 
 	const sql_ = sql`
