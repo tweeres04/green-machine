@@ -3,8 +3,7 @@ import { eq } from 'drizzle-orm'
 import invariant from 'tiny-invariant'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
-import { games, TeamSubscription } from '~/schema'
-import { activeSubscription } from '~/lib/teamHasActiveSubscription'
+import { games } from '~/schema'
 
 async function handlePut(gameId: string, formData: FormData) {
 	const db = getDb()
@@ -27,17 +26,8 @@ async function handlePut(gameId: string, formData: FormData) {
 		.where(eq(games.id, Number(gameId)))
 }
 
-async function handlePatch(
-	gameId: string,
-	formData: FormData,
-	subscription: TeamSubscription | null
-) {
+async function handlePatch(gameId: string, formData: FormData) {
 	const db = getDb()
-
-	// Only subscribed teams can cancel games
-	if (!activeSubscription(subscription)) {
-		throw new Response('Subscription required', { status: 402 })
-	}
 
 	const cancelledAt = formData.get('cancelledAt')
 
@@ -64,13 +54,6 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 	const game = await db.query.games.findFirst({
 		where: (games, { eq }) => eq(games.id, Number(gameId)),
-		with: {
-			team: {
-				with: {
-					subscription: true,
-				},
-			},
-		},
 	})
 
 	if (!game) {
@@ -88,7 +71,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		return handlePut(gameId, formData)
 	} else if (request.method.toLowerCase() === 'patch') {
 		const formData = await request.formData()
-		return handlePatch(gameId, formData, game.team?.subscription)
+		return handlePatch(gameId, formData)
 	}
 	throw new Response(null, { status: 404 })
 }

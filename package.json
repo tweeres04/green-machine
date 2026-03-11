@@ -11,6 +11,12 @@
 		"deploy": "./deploy.sh",
 		"deploy:bears": "./deploy.bears.sh",
 		"typecheck": "tsc",
+		"test:e2e": "npm run db:test:reset && npm run test:e2e:kill-server && playwright test",
+		"test:e2e:ui": "npm run db:test:reset && npm run test:e2e:kill-server && playwright test --ui",
+		"test:e2e:debug": "npm run db:test:reset && npm run test:e2e:kill-server && playwright test --debug",
+		"test:e2e:kill-server": "lsof -ti :3456 | xargs kill -9 2>/dev/null || true",
+		"dev:test": "vite dev --port 3456 --mode test",
+		"db:test:reset": "rm -f test.db test.db-shm test.db-wal && dotenvx run --overload -f .env.test.local -- drizzle-kit push",
 		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
@@ -68,6 +74,7 @@
 		"zod": "^3.23.8"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.58.1",
 		"@remix-run/dev": "^2.13.1",
 		"@types/js-yaml": "^4.0.9",
 		"@types/lodash-es": "^4.17.12",

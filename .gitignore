@@ -3,6 +3,7 @@ node_modules
 /.cache
 /build
 .env
+.env*.local
 
 database/
 database.db
@@ -12,5 +13,15 @@ database.db-wal
 database*.tar.gz
 photos_backup
 
+# Test database
+test.db
+test.db-shm
+test.db-wal
+
 *.afdesign~lock~
 .DS_Store
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/

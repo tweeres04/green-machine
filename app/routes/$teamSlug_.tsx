@@ -664,12 +664,10 @@ function PlayerRow({
 function AddStatsButton({
 	teamId,
 	players,
-	disabled,
 	games,
 }: {
 	teamId: number
 	players: PlayerWithStats[]
-	disabled?: boolean
 	games: Game[]
 }) {
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
@@ -808,11 +806,11 @@ function AddStatsButton({
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 			<Button
 				size="icon"
+				aria-label="Add stats"
 				onClick={() => {
 					setDialogOpen(true)
 					mixpanel.track('open add stats dialog')
 				}}
-				disabled={disabled}
 			>
 				<Add />
 			</Button>
@@ -1239,7 +1237,6 @@ export default function Home() {
 							team={team}
 							userHasAccessToTeam={userHasAccessToTeam}
 							player={player}
-							teamHasActiveSubscription={Boolean(teamHasActiveSubscription)}
 							nextGame
 							weatherData={weatherData}
 						/>
@@ -1260,7 +1257,6 @@ export default function Home() {
 							<AddStatsButton
 								teamId={team.id}
 								players={players}
-								disabled={!teamHasActiveSubscription}
 								games={team.games}
 							/>
 						) : null}

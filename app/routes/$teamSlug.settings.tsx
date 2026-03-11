@@ -16,7 +16,6 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { upperFirst } from 'lodash-es'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 import { Checkbox } from '~/components/ui/checkbox'
 import { eq } from 'drizzle-orm'
 
@@ -82,9 +81,7 @@ export async function loader({
 		throw new Response(null, { status: 401 })
 	}
 
-	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
-
-	return { team, teamHasActiveSubscription: teamHasActiveSubscription_ }
+	return { team }
 }
 
 export const action: ActionFunction = async ({ request, params }) => {
@@ -222,7 +219,7 @@ export default function EditTeam() {
 		Math.random()
 	)
 
-	const { team, teamHasActiveSubscription } = useLoaderData<typeof loader>()
+	const { team } = useLoaderData<typeof loader>()
 	const { id, slug, color } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
@@ -280,12 +277,11 @@ export default function EditTeam() {
 				>
 					<input type="hidden" name="slug" value={slug} />
 					{/* shadcn select box at some point */}
-					<select
-						name="color"
-						className="w-full p-2 border rounded bg-white"
-						defaultValue={color}
-						disabled={!teamHasActiveSubscription}
-					>
+				<select
+					name="color"
+					className="w-full p-2 border rounded bg-white"
+					defaultValue={color}
+				>
 						<option value="gray">Gray</option>
 						<option value="red">Red</option>
 						<option value="orange">Orange</option>
@@ -337,7 +333,7 @@ export default function EditTeam() {
 			</div>
 			<fieldset
 				className="space-y-3"
-				disabled={submitting || !teamHasActiveSubscription}
+				disabled={submitting}
 			>
 				<h3 className="text-xl">Team Logo</h3>
 				<Logo teamId={id} randomCacheBuster={randomCacheBuster} />

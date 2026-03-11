@@ -28,7 +28,6 @@ import {
 
 import { useEffect, useState } from 'react'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
 
 type Season = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -194,7 +193,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			seasons: {
 				orderBy: (seasons, { desc }) => desc(seasons.startDate),
 			},
-			subscription: true,
 		},
 	})
 
@@ -205,18 +203,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	}
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
-	const teamHasActiveSubscription_ = teamHasActiveSubscription(team)
 
 	return json({
 		team,
 		userHasAccessToTeam,
-		teamHasActiveSubscription: teamHasActiveSubscription_,
 	})
 }
 
 export default function Seasons() {
-	const { team, userHasAccessToTeam, teamHasActiveSubscription } =
-		useLoaderData<typeof loader>()
+	const { team, userHasAccessToTeam } = useLoaderData<typeof loader>()
 	const [newSeasonModal, setNewSeasonModal] = useState(false)
 
 	return (
@@ -260,15 +255,12 @@ export default function Seasons() {
 			{userHasAccessToTeam ? (
 				<div className="space-y-1">
 					<Dialog open={newSeasonModal} onOpenChange={setNewSeasonModal}>
-						<DialogTrigger asChild>
-							<Button
-								className="w-full sm:w-auto"
-								disabled={!teamHasActiveSubscription}
-							>
-								Add season
-							</Button>
-						</DialogTrigger>
-						<DialogContent>
+					<DialogTrigger asChild>
+						<Button className="w-full sm:w-auto">
+							Add season
+						</Button>
+					</DialogTrigger>
+					<DialogContent>
 							<DialogHeader>
 								<DialogTitle>Add season</DialogTitle>
 							</DialogHeader>

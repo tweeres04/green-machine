@@ -4,8 +4,6 @@ import invariant from 'tiny-invariant'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { rsvps, User } from '~/schema'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
-
 async function handlePost(user: User, gameId: string, formData: FormData) {
 	const db = getDb()
 
@@ -32,7 +30,6 @@ async function handlePost(user: User, gameId: string, formData: FormData) {
 										columns: { id: true },
 										where: (games, { eq }) => eq(games.id, Number(gameId)),
 									},
-									subscription: true,
 								},
 							},
 						},
@@ -50,11 +47,6 @@ async function handlePost(user: User, gameId: string, formData: FormData) {
 
 	if (!game) {
 		throw new Response(null, { status: 404 })
-	}
-
-	const team = receivedInvite?.player?.team
-	if (!teamHasActiveSubscription(team)) {
-		throw new Response('Team subscription required', { status: 402 })
 	}
 
 	const playerId = receivedInvite?.player?.id
@@ -84,11 +76,6 @@ async function handlePatch(user: User, rsvpId: string, formData: FormData) {
 							rsvps: {
 								where: (rsvps, { eq }) => eq(rsvps.id, Number(rsvpId)),
 							},
-							team: {
-								with: {
-									subscription: true,
-								},
-							},
 						},
 					},
 				},
@@ -106,11 +93,6 @@ async function handlePatch(user: User, rsvpId: string, formData: FormData) {
 
 	if (!rsvp) {
 		throw new Response(null, { status: 404 })
-	}
-
-	const team = receivedInvite?.player?.team
-	if (!teamHasActiveSubscription(team)) {
-		throw new Response('Team subscription required', { status: 402 })
 	}
 
 	const value = formData.get('value')
