@@ -34,7 +34,7 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 			name: 'description',
 			content: description,
 		},
-		{ name: 'robots', context: 'noindex' },
+		{ name: 'robots', content: 'noindex' },
 		{
 			tagName: 'link',
 			rel: 'canonical',

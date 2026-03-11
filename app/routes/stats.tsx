@@ -21,7 +21,7 @@ export const meta: MetaFunction = () => {
 	return [
 		{ title: 'Green Machine stats' },
 		{ name: 'description', content: 'Green Machine stats' },
-		{ name: 'robots', context: 'noindex' },
+		{ name: 'robots', content: 'noindex' },
 	]
 }
 
