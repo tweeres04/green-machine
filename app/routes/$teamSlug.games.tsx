@@ -115,14 +115,14 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 			rel: 'canonical',
 			href: url,
 		},
-		{ name: 'og:title', content: title },
-		{ name: 'og:type', content: 'website' },
-		{ name: 'og:description', content: description },
+		{ property: 'og:title', content: title },
+		{ property: 'og:type', content: 'website' },
+		{ property: 'og:description', content: description },
 		{
-			name: 'og:image',
+			property: 'og:image',
 			content: 'https://teamstats.tweeres.com/games_opengraph.png',
 		},
-		{ name: 'og:url', content: url },
+		{ property: 'og:url', content: url },
 	]
 }
 

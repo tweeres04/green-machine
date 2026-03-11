@@ -75,11 +75,10 @@ export default function HomeLandingPage() {
 					</div>
 					<Cta />
 					<img
-						src="/leaderboard.webp"
-						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
-						sizes="(max-width: 600px) 100vw, 800px"
-						alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
-						loading="lazy"
+				src="/leaderboard.webp"
+					srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
+					sizes="(max-width: 600px) 100vw, 800px"
+					alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
 						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
 					/>
 					<img

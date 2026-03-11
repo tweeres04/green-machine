@@ -40,11 +40,11 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 			rel: 'canonical',
 			href: url,
 		},
-		{ name: 'og:title', content: title },
-		{ name: 'og:type', content: 'website' },
-		{ name: 'og:description', content: description },
-		// { name: 'og:image', content: `` }, todo: add og:image
-		{ name: 'og:url', content: url },
+		{ property: 'og:title', content: title },
+		{ property: 'og:type', content: 'website' },
+		{ property: 'og:description', content: description },
+		// { property: 'og:image', content: `` }, todo: add og:image
+		{ property: 'og:url', content: url },
 		{ tagName: 'link', rel: 'canonical', href: url },
 	]
 }

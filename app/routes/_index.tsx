@@ -22,10 +22,10 @@ import { ChevronsUpDown } from 'lucide-react'
 import { getGameForecast } from '~/lib/weather-service'
 
 export const meta: MetaFunction = () => {
-	const price = 19
 	const appName = 'TeamStats'
-	const title = `Soccer Team Stats & Schedules — Easy & Affordable at $${price}/year - ${appName}`
-	const description = `Celebrate every game with beautiful stats! Track goals, assists, and schedules effortlessly. Set up your team in 2 minutes!`
+	const url = 'https://teamstats.tweeres.com'
+	const title = `Soccer Stats Tracker for Rec Teams - ${appName}`
+	const description = `The simple soccer stats tracker for rec league teams. Track goals, assists, leaderboards, and schedules. Try free for 3 games, then just $19/year.`
 	const author = 'Tyler Weeres'
 
 	return [
@@ -34,12 +34,12 @@ export const meta: MetaFunction = () => {
 		},
 		{
 			name: 'description',
-			content: `${description}`,
+			content: description,
 		},
 		{
 			tagName: 'link',
 			rel: 'canonical',
-			href: 'https://teamstats.tweeres.com',
+			href: url,
 		},
 
 		// Open Graph tags
@@ -56,8 +56,12 @@ export const meta: MetaFunction = () => {
 			content: 'website',
 		},
 		{
+			property: 'og:url',
+			content: url,
+		},
+		{
 			property: 'og:image',
-			content: 'https://teamstats.tweeres.com/opengraph.png',
+			content: `${url}/opengraph.png`,
 		},
 
 		// Structured Data
@@ -67,17 +71,19 @@ export const meta: MetaFunction = () => {
 				'@type': 'SoftwareApplication',
 				name: appName,
 				description: description,
+				url,
 				applicationCategory: 'SportsApplication',
 				operatingSystem: 'Any',
+				screenshot: `${url}/opengraph.png`,
 				offers: {
 					'@type': 'Offer',
-					price,
+					price: '19',
 					priceCurrency: 'USD',
-					frequency: 'yearly',
 				},
 				author: {
 					'@type': 'Person',
 					name: author,
+					url: 'https://tweeres.ca/about',
 				},
 			},
 		},

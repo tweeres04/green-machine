@@ -20,11 +20,20 @@ export async function loader() {
 		)
 		.filter(Boolean)
 
+	const staticPages = [
+		'https://teamstats.tweeres.com',
+		'https://teamstats.tweeres.com/privacy-policy',
+		'https://teamstats.tweeres.com/terms-of-service',
+		'https://teamstats.tweeres.com/contact',
+	]
+
+	const staticXml = staticPages
+		.map((loc) => `\t<url>\n\t\t<loc>${loc}</loc>\n\t</url>`)
+		.join('\n')
+
 	const body = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-	<url>
-        <loc>https://teamstats.tweeres.com</loc>
-    </url>
+${staticXml}
 	${teamsXml}
 </urlset>`
 
