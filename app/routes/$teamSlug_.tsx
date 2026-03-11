@@ -824,7 +824,9 @@ function AddStatsButton({
 						<AlertDescription className="space-y-2">
 							<p>{paywallError}</p>
 							<Button asChild size="sm">
-								<a href={`/teams/${teamId}/subscribe`}>Subscribe for $19/year</a>
+								<a href={`/teams/${teamId}/subscribe`}>
+									Subscribe for $19/year
+								</a>
 							</Button>
 						</AlertDescription>
 					</Alert>
@@ -1330,9 +1332,21 @@ export default function Home() {
 					season={season}
 				/>{' '}
 				{userHasAccessToTeam ? (
-					<AddStatsButton teamId={team.id} players={players} games={team.games} />
+					<AddStatsButton
+						teamId={team.id}
+						players={players}
+						games={team.games}
+					/>
 				) : null}
 			</div>
+			<footer className="text-center pt-8 pb-24">
+				<a
+					href="/"
+					className="text-sm underline"
+				>
+					Powered by TeamStats
+				</a>
+			</footer>
 			<Toaster />
 		</>
 	)
