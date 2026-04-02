@@ -3,6 +3,8 @@ services:
     build:
       dockerfile: ./Dockerfile
       context: .
+      args:
+        SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
     restart: always
     volumes:
       - ./database:/app/database
