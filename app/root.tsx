@@ -1,3 +1,4 @@
+import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
 import {
 	Links,
 	Meta,
@@ -108,14 +109,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	)
 }
 
-export default function App() {
+function App() {
 	return <Outlet />
 }
 
+export default withSentry(App);
+
 export function ErrorBoundary() {
-	const error = useRouteError()
-	console.error(error)
-	return (
+    const error = useRouteError()
+    console.error(error)
+    captureRemixErrorBoundaryError(error);
+    return (
 		<html lang="en">
 			<head>
 				<title>There was an unexpected error</title>
