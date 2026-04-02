@@ -72,7 +72,6 @@ import {
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { createInsertSchema } from 'drizzle-zod'
 import { games, Team, teams } from '~/schema'
-import _ from 'lodash'
 import { useToast } from '~/components/ui/use-toast'
 import {
 	Card,
@@ -92,6 +91,7 @@ import {
 import { TeamColorContext } from '~/lib/teamColorContext'
 import mixpanel from 'mixpanel-browser'
 import { Checkbox } from '~/components/ui/checkbox'
+import { StatsDialog } from '~/components/ui/stats-dialog'
 import { getGameForecast, WeatherData } from '~/lib/weather-service'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
@@ -676,70 +676,6 @@ function RsvpDialog({
 	)
 }
 
-function StatsDialog({
-	children,
-	statEntries,
-	game,
-}: {
-	children: ReactNode
-	statEntries: Game['statEntries']
-	game: Game
-}) {
-	const groupedStats = _.groupBy(statEntries, 'playerId')
-
-	const formattedDate = game.timestamp
-		? format(game.timestamp, 'E MMM d')
-		: 'TBD'
-	const formattedTime = game.timestamp ? format(game.timestamp, 'h:mma') : 'TBD'
-
-	const sortedGroupedStats = Object.entries(groupedStats).toSorted(
-		([, a], [, b]) => a[0].player.name.localeCompare(b[0].player.name)
-	)
-
-	return (
-		<Dialog>
-			<DialogTrigger>{children}</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>
-						{game.opponent ?? 'Unknown opponent'} - {formattedDate} at{' '}
-						{formattedTime}
-					</DialogTitle>
-				</DialogHeader>
-				<div className="space-y-1">
-					{sortedGroupedStats.map(([playerId, entries]) => {
-						const player = entries[0].player
-						const goals = entries.filter(
-							(entry) => entry.type === 'goal'
-						).length
-						const assists = entries.filter(
-							(entry) => entry.type === 'assist'
-						).length
-						return (
-							<div
-								key={playerId}
-								className="grid grid-cols-2 sm:grid-cols-[1fr_3fr]"
-							>
-								<div>{player.name}:</div>
-								<div>
-									{goals > 0 && `${goals} goal${goals === 1 ? '' : 's'}`}
-									{goals > 0 && assists > 0 && ', '}
-									{assists > 0 &&
-										`${assists} assist${assists === 1 ? '' : 's'}`}
-								</div>
-							</div>
-						)
-					})}
-				</div>
-				<DialogFooter>
-					<DialogClose>
-						<Button>Done</Button>
-					</DialogClose>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	)
-}
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	const { teamSlug } = params

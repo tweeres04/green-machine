@@ -74,6 +74,7 @@ import {
 	SelectValue,
 } from '~/components/ui/select'
 import { GameCard } from './$teamSlug.games'
+import { StatsDialog } from '~/components/ui/stats-dialog'
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -1275,11 +1276,28 @@ export default function Home() {
 								<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
 								{/* Avatar */}
 								<th className="hidden md:table-cell"></th> {/* Name */}
-								{days().map((day) => (
-									<th key={day} className="text-xs rotate-45 h-10">
-										{formatLocalIsoDateString(day)}
-									</th>
-								))}
+								{days().map((day) => {
+									const game = team.games.find(
+										(g) =>
+											g.timestamp &&
+											formatISO(parseISO(g.timestamp), {
+												representation: 'date',
+											}) === day
+									)
+									return (
+										<th key={day} className="text-xs rotate-45 h-10">
+											{game && game.statEntries.length > 0 ? (
+												<StatsDialog game={game} statEntries={game.statEntries}>
+													<button className="cursor-pointer hover:underline">
+														{formatLocalIsoDateString(day)}
+													</button>
+												</StatsDialog>
+											) : (
+												formatLocalIsoDateString(day)
+											)}
+										</th>
+									)
+								})}
 								{/* Totals */}
 								<th className={`sticky right-0 bg-${team.color}-50 z-10`}></th>
 							</tr>
