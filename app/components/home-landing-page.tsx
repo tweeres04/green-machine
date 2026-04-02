@@ -15,6 +15,7 @@ import React from 'react'
 import { Instagram } from '~/components/ui/icons/instagram'
 import { TikTok } from '~/components/ui/icons/tiktok'
 import { Youtube } from '~/components/ui/icons/youtube'
+import { faqs } from '~/lib/faqs'
 
 function Cta() {
 	return (
@@ -69,16 +70,16 @@ export default function HomeLandingPage() {
 					<div className="space-y-3">
 						<h2 className="text-3xl">Make every game more fun</h2>
 						<p>
-							Give your social soccer team something to celebrate — track goals
+							Give your social soccer team something to celebrate. Track goals
 							and assists, see who's playing next, and build team spirit
 						</p>
 					</div>
 					<Cta />
 					<img
-				src="/leaderboard.webp"
-					srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
-					sizes="(max-width: 600px) 100vw, 800px"
-					alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
+						src="/leaderboard.webp"
+						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
+						sizes="(max-width: 600px) 100vw, 800px"
+						alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
 						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
 					/>
 					<img
@@ -183,6 +184,18 @@ export default function HomeLandingPage() {
 							</p>
 						</FeatureListItem>
 					</FeatureList>
+				</div>
+				<Cta />
+				<div id="faq" className="faq space-y-8">
+					<h3 className="text-2xl">Frequently asked questions</h3>
+					<dl className="space-y-8 [&_div]:space-y-2 [&_dt]:font-semibold">
+						{faqs.map((faq) => (
+							<div key={faq.question}>
+								<dt>{faq.question}</dt>
+								<dd>{faq.answer}</dd>
+							</div>
+						))}
+					</dl>
 				</div>
 				<Cta />
 				<footer className="py-16 space-y-5">

@@ -1,4 +1,5 @@
 import type { LoaderFunctionArgs, MetaFunction } from '@remix-run/node'
+import { faqs } from '~/lib/faqs'
 import { defer } from '@remix-run/node'
 import { Await, Link, useLoaderData } from '@remix-run/react'
 import { Button } from '~/components/ui/button'
@@ -64,7 +65,7 @@ export const meta: MetaFunction = () => {
 			content: `${url}/opengraph.png`,
 		},
 
-		// Structured Data
+		// Structured Data - SoftwareApplication
 		{
 			'script:ld+json': {
 				'@context': 'https://schema.org',
@@ -85,6 +86,22 @@ export const meta: MetaFunction = () => {
 					name: author,
 					url: 'https://tweeres.ca/about',
 				},
+			},
+		},
+
+		// Structured Data - FAQPage
+		{
+			'script:ld+json': {
+				'@context': 'https://schema.org',
+				'@type': 'FAQPage',
+				mainEntity: faqs.map((faq) => ({
+					'@type': 'Question' as const,
+					name: faq.question,
+					acceptedAnswer: {
+						'@type': 'Answer' as const,
+						text: faq.answer,
+					},
+				})),
 			},
 		},
 	]
