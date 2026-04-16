@@ -1,5 +1,6 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import { format } from 'date-fns'
+import { Mail, MailCheck, MailX } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import {
 	Dialog,
@@ -10,6 +11,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '~/components/ui/dialog'
+import { RsvpForm } from '~/components/ui/rsvp-form'
 
 type StatEntryWithPlayer = {
 	id: number
@@ -19,19 +21,31 @@ type StatEntryWithPlayer = {
 }
 
 type StatsDialogGame = {
+	id: number
 	opponent: string | null
 	timestamp: string | null
+}
+
+type StatsDialogPlayer = {
+	rsvps: { id: number; gameId: number; rsvp: 'yes' | 'no' }[]
 }
 
 export function StatsDialog({
 	children,
 	statEntries,
 	game,
+	player,
 }: {
 	children: ReactNode
 	statEntries: StatEntryWithPlayer[]
 	game: StatsDialogGame
+	player?: StatsDialogPlayer | null
 }) {
+	const [open, setOpen] = useState(false)
+	const [showRsvpForm, setShowRsvpForm] = useState(false)
+
+	const rsvp = player?.rsvps.find((r) => r.gameId === game.id)
+
 	const groupedStats: Record<number, StatEntryWithPlayer[]> = {}
 	for (const entry of statEntries) {
 		if (!groupedStats[entry.playerId]) groupedStats[entry.playerId] = []
@@ -50,7 +64,13 @@ export function StatsDialog({
 	)
 
 	return (
-		<Dialog>
+		<Dialog
+			open={open}
+			onOpenChange={(value) => {
+				setOpen(value)
+				if (!value) setShowRsvpForm(false)
+			}}
+		>
 			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
@@ -61,7 +81,7 @@ export function StatsDialog({
 				</DialogHeader>
 				<div className="space-y-1">
 					{sortedGroupedStats.map(([playerId, entries]) => {
-						const player = entries[0].player
+						const player_ = entries[0].player
 						const goals = entries.filter(
 							(entry) => entry.type === 'goal'
 						).length
@@ -73,7 +93,7 @@ export function StatsDialog({
 								key={playerId}
 								className="grid grid-cols-2 sm:grid-cols-[1fr_3fr]"
 							>
-								<div>{player.name}:</div>
+								<div>{player_.name}:</div>
 								<div>
 									{goals > 0 && `${goals} goal${goals === 1 ? '' : 's'}`}
 									{goals > 0 && assists > 0 && ', '}
@@ -84,11 +104,39 @@ export function StatsDialog({
 						)
 					})}
 				</div>
-				<DialogFooter>
-					<DialogClose>
-						<Button>Done</Button>
-					</DialogClose>
-				</DialogFooter>
+				{player ? (
+					showRsvpForm ? (
+						<RsvpForm
+							player={player}
+							game={game}
+							closeModal={() => setShowRsvpForm(false)}
+						/>
+					) : (
+						<DialogFooter>
+							<Button
+								size="icon"
+								variant={rsvp ? 'secondary' : 'default'}
+								onClick={() => setShowRsvpForm(true)}
+							>
+								{rsvp ? (
+									rsvp.rsvp === 'yes' ? (
+										<MailCheck />
+									) : (
+										<MailX />
+									)
+								) : (
+									<Mail />
+								)}
+							</Button>
+						</DialogFooter>
+					)
+				) : (
+					<DialogFooter>
+						<DialogClose>
+							<Button>Done</Button>
+						</DialogClose>
+					</DialogFooter>
+				)}
 			</DialogContent>
 		</Dialog>
 	)

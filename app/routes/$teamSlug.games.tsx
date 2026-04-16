@@ -95,6 +95,7 @@ import { TeamColorContext } from '~/lib/teamColorContext'
 import mixpanel from 'mixpanel-browser'
 import { Checkbox } from '~/components/ui/checkbox'
 import { StatsDialog } from '~/components/ui/stats-dialog'
+import { RsvpForm } from '~/components/ui/rsvp-form'
 import { getGameForecast, WeatherData } from '~/lib/weather-service'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
@@ -136,75 +137,6 @@ type Game = Awaited<
 type Player = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
 >['team']['players'][0]
-
-function RsvpForm({
-	player,
-	closeModal,
-	game,
-}: {
-	player: Player
-	closeModal?: () => void
-	game: Game
-}) {
-	const fetcher = useFetcher()
-	const saving = fetcher.state !== 'idle'
-
-	const rsvp = player.rsvps.find((rsvp) => rsvp.gameId === game.id)
-
-	useEffect(() => {
-		if (closeModal && fetcher.state === 'loading') {
-			closeModal()
-		}
-	}, [closeModal, fetcher.state])
-
-	const action = rsvp
-		? `/games/${game.id}/rsvps/${rsvp.id}`
-		: `/games/${game.id}/rsvps`
-
-	const method = rsvp ? 'patch' : 'post'
-
-	return (
-		<fieldset className="space-y-3" disabled={saving}>
-			<label htmlFor="timestamp_input" className="block">
-				Are you going?
-			</label>
-			<DialogFooter>
-				<Button variant="secondary" onClick={closeModal}>
-					Cancel
-				</Button>{' '}
-				<fetcher.Form action={action} method={method}>
-					<input type="hidden" name="value" value="no" />
-					<Button
-						variant="destructive"
-						className="w-full sm:w-auto"
-						onClick={() => {
-							mixpanel.track('click rsvp response', {
-								gameId: game.id,
-								response: 'no',
-							})
-						}}
-					>
-						No
-					</Button>
-				</fetcher.Form>{' '}
-				<fetcher.Form action={action} method={method}>
-					<input type="hidden" name="value" value="yes" />
-					<Button
-						className="w-full sm:w-auto"
-						onClick={() => {
-							mixpanel.track('click rsvp response', {
-								gameId: game.id,
-								response: 'yes',
-							})
-						}}
-					>
-						Yes
-					</Button>
-				</fetcher.Form>
-			</DialogFooter>
-		</fieldset>
-	)
-}
 
 function GameForm({
 	closeModal,
@@ -1057,7 +989,11 @@ export function GameCard({
 					</Badge>
 				</RsvpDialog>
 				{game.statEntries.some((se) => se.type === 'goal') && (
-					<StatsDialog game={game} statEntries={game.statEntries}>
+					<StatsDialog
+						game={game}
+						statEntries={game.statEntries}
+						player={player}
+					>
 						<Badge variant="secondary">
 							{game.statEntries.filter((se) => se.type === 'goal').length} goal
 							{game.statEntries.filter((se) => se.type === 'goal').length === 1
@@ -1067,7 +1003,11 @@ export function GameCard({
 					</StatsDialog>
 				)}
 				{game.statEntries.some((se) => se.type === 'assist') && (
-					<StatsDialog game={game} statEntries={game.statEntries}>
+					<StatsDialog
+						game={game}
+						statEntries={game.statEntries}
+						player={player}
+					>
 						<Badge variant="secondary">
 							{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
 							assist

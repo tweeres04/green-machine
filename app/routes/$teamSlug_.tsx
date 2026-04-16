@@ -1315,7 +1315,7 @@ export default function Home() {
 									return (
 										<th key={day} className="text-xs rotate-45 h-10">
 											{game && game.statEntries.length > 0 ? (
-												<StatsDialog game={game} statEntries={game.statEntries}>
+												<StatsDialog game={game} statEntries={game.statEntries} player={player}>
 													<button className="cursor-pointer hover:underline">
 														{formatLocalIsoDateString(day)}
 													</button>
