@@ -42,6 +42,11 @@ export function RsvpForm({
 
 	const gameInPast = game.timestamp ? isPast(game.timestamp) : false
 
+	function submitRsvp(value: 'yes' | 'no') {
+		mixpanel.track('click rsvp response', { gameId: game.id, response: value })
+		fetcher.submit({ value }, { method, action })
+	}
+
 	return (
 		<fieldset className="space-y-3" disabled={saving}>
 			<p>{gameInPast ? 'Did you go?' : 'Are you going?'}</p>
@@ -51,35 +56,19 @@ export function RsvpForm({
 						Cancel
 					</Button>
 				) : null}
-				<fetcher.Form action={action} method={method}>
-					<input type="hidden" name="value" value="no" />
-					<Button
-						variant="destructive"
-						className="w-full sm:w-auto"
-						onClick={() => {
-							mixpanel.track('click rsvp response', {
-								gameId: game.id,
-								response: 'no',
-							})
-						}}
-					>
-						No
-					</Button>
-				</fetcher.Form>
-				<fetcher.Form action={action} method={method}>
-					<input type="hidden" name="value" value="yes" />
-					<Button
-						className="w-full sm:w-auto"
-						onClick={() => {
-							mixpanel.track('click rsvp response', {
-								gameId: game.id,
-								response: 'yes',
-							})
-						}}
-					>
-						Yes
-					</Button>
-				</fetcher.Form>
+				<Button
+					variant="destructive"
+					className="w-full sm:w-auto"
+					onClick={() => submitRsvp('no')}
+				>
+					No
+				</Button>
+				<Button
+					className="w-full sm:w-auto"
+					onClick={() => submitRsvp('yes')}
+				>
+					Yes
+				</Button>
 			</DialogFooter>
 		</fieldset>
 	)

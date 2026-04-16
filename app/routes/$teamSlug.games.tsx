@@ -225,15 +225,15 @@ function CancelForm({
 	closeModal: () => void
 	game: Game
 }) {
-	const fetcher = useFetcher<{ rowsAffected: number }>()
+	const fetcher = useFetcher()
 
 	const saving = fetcher.state !== 'idle'
 
 	useEffect(() => {
-		if (fetcher.data?.rowsAffected === 1 && fetcher.state !== 'submitting') {
+		if (fetcher.state === 'loading') {
 			closeModal()
 		}
-	}, [closeModal, fetcher.data?.rowsAffected, fetcher.state])
+	}, [closeModal, fetcher.state])
 
 	return (
 		<fieldset disabled={saving}>
@@ -241,30 +241,18 @@ function CancelForm({
 				<Button variant="secondary" onClick={closeModal}>
 					Close
 				</Button>
-				<fetcher.Form action={`/games/${game.id}`} method="patch">
-					<input
-						type="hidden"
-						name="cancelledAt"
-						defaultValue={game.cancelledAt ?? undefined}
-						id="hidden_cancelledAt_input"
-					/>
-					<Button
-						variant={game.cancelledAt ? 'default' : 'destructive'}
-						type="submit"
-						className="w-full sm:w-auto"
-						onClick={() => {
-							const cancelledAtInput = document.getElementById(
-								'hidden_cancelledAt_input'
-							) as HTMLInputElement
-							invariant(cancelledAtInput, 'cancelledAtInput not found')
-							cancelledAtInput.value = game.cancelledAt
-								? ''
-								: formatISO(new Date())
-						}}
-					>
-						{game.cancelledAt ? 'Uncancel' : 'Cancel'} game
-					</Button>
-				</fetcher.Form>
+				<Button
+					variant={game.cancelledAt ? 'default' : 'destructive'}
+					className="w-full sm:w-auto"
+					onClick={() => {
+						fetcher.submit(
+							{ cancelledAt: game.cancelledAt ? '' : formatISO(new Date()) },
+							{ method: 'patch', action: `/games/${game.id}` }
+						)
+					}}
+				>
+					{game.cancelledAt ? 'Uncancel' : 'Cancel'} game
+				</Button>
 			</DialogFooter>
 		</fieldset>
 	)
@@ -440,6 +428,12 @@ function MoreButton({
 		setDialogContent(null)
 	}
 
+	useEffect(() => {
+		if (fetcher.state === 'loading') {
+			closeModal()
+		}
+	}, [fetcher.state])
+
 	return (
 		<Dialog
 			open={dialogOpen}
@@ -526,17 +520,18 @@ function MoreButton({
 												Cancel
 											</Button>
 										</DialogClose>
-										<fetcher.Form
-											method="delete"
-											action={`/games/${game.id}/destroy`}
+										<Button
+											variant="destructive"
+											className="w-full sm:w-auto"
+											onClick={() => {
+												fetcher.submit(null, {
+													method: 'delete',
+													action: `/games/${game.id}/destroy`,
+												})
+											}}
 										>
-											<Button
-												variant="destructive"
-												className="w-full sm:w-auto"
-											>
-												Remove
-											</Button>
-										</fetcher.Form>
+											Remove
+										</Button>
 									</DialogFooter>
 								)
 							}}

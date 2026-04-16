@@ -110,6 +110,12 @@ function MoreButton({
 	const [editSeasonModal, setEditSeasonModal] = useState(false)
 	const [removeSeasonModal, setRemoveSeasonModal] = useState(false)
 
+	useEffect(() => {
+		if (fetcher.state === 'loading') {
+			setRemoveSeasonModal(false)
+		}
+	}, [fetcher.state])
+
 	return (
 		<>
 			<DropdownMenu>
@@ -164,14 +170,18 @@ function MoreButton({
 								Cancel
 							</Button>
 						</DialogClose>
-						<fetcher.Form
-							method="delete"
-							action={`/seasons/${season.id}/destroy`}
+						<Button
+							variant="destructive"
+							className="w-full sm:w-auto"
+							onClick={() => {
+								fetcher.submit(null, {
+									method: 'delete',
+									action: `/seasons/${season.id}/destroy`,
+								})
+							}}
 						>
-							<Button variant="destructive" className="w-full sm:w-auto">
-								Remove
-							</Button>
-						</fetcher.Form>
+							Remove
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

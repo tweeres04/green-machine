@@ -256,17 +256,18 @@ export default function EditTeam() {
 																Cancel
 															</Button>
 														</DialogClose>
-														<fetcher.Form
-															method="delete"
-															action={`/players/${p.id}/destroy`}
+														<Button
+															variant="destructive"
+															className="w-full sm:w-auto"
+															onClick={() => {
+																fetcher.submit(null, {
+																	method: 'delete',
+																	action: `/players/${p.id}/destroy`,
+																})
+															}}
 														>
-															<Button
-																variant="destructive"
-																className="w-full sm:w-auto"
-															>
-																Remove
-															</Button>
-														</fetcher.Form>
+															Remove
+														</Button>
 													</DialogFooter>
 												),
 											}))
