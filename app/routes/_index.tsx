@@ -251,7 +251,6 @@ export default function Index() {
 									<GameCard
 										game={nextGame}
 										team={nextGame.team}
-										teamHasActiveSubscription={teamHasActiveSubscription_}
 										userHasAccessToTeam={false}
 										player={player}
 										nextGame

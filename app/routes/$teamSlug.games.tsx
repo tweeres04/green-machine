@@ -39,6 +39,9 @@ import {
 	Cloud,
 	Thermometer,
 	Wind,
+	Mail,
+	MailCheck,
+	MailX,
 } from 'lucide-react'
 
 import {
@@ -485,9 +488,11 @@ function ImportScheduleForm({
 function MoreButton({
 	userHasAccessToTeam,
 	game,
+	player,
 }: {
 	userHasAccessToTeam: boolean
 	game: Game
+	player?: Player | null
 }) {
 	const fetcher = useFetcher()
 	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
@@ -495,10 +500,6 @@ function MoreButton({
 		null
 	)
 	const [dialogContent, setDialogContent] = useState<ReactNode | null>(null)
-
-	if (!userHasAccessToTeam) {
-		return null
-	}
 
 	const dialogOpen = Boolean(dialogTitle && dialogContent)
 
@@ -523,6 +524,32 @@ function MoreButton({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
+					{player ? (
+						<DropdownMenuItem
+							className="hidden sm:block"
+							onClick={() => {
+								setDialogTitle(
+									`RSVP to game against ${game.opponent ?? 'unknown opponent'}`
+								)
+								setDialogDescription(
+									`${game.location ?? 'Location TBD'}, ${
+										game.timestamp
+											? format(game.timestamp, "E MMM d 'at' h:mma")
+											: 'date and time TBD'
+									}`
+								)
+								setDialogContent(
+									<RsvpForm
+										player={player}
+										game={game}
+										closeModal={closeModal}
+									/>
+								)
+							}}
+						>
+							RSVP
+						</DropdownMenuItem>
+					) : null}
 					{userHasAccessToTeam ? (
 						<DropdownMenuItem
 							onClick={() => {
@@ -675,7 +702,6 @@ function RsvpDialog({
 		</Dialog>
 	)
 }
-
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	const { teamSlug } = params
@@ -942,10 +968,13 @@ export function GameCard({
 	game,
 	team,
 	userHasAccessToTeam,
+	player,
 	nextGame = false,
 	linkToTeamPage = false,
 	weatherData,
 }: GameCardProps) {
+	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
+
 	return (
 		<Card
 			className={
@@ -1020,48 +1049,106 @@ export function GameCard({
 				)
 			})()}
 
-			{game.statEntries.length > 0 ? (
-				<CardContent className="space-x-1">
-					{game.statEntries.some((se) => se.type === 'goal') && (
-						<StatsDialog game={game} statEntries={game.statEntries}>
-							<Badge variant="secondary">
-								{game.statEntries.filter((se) => se.type === 'goal').length}{' '}
-								goal
-								{game.statEntries.filter((se) => se.type === 'goal').length ===
-								1
-									? ''
-									: 's'}
-							</Badge>
-						</StatsDialog>
-					)}
-					{game.statEntries.some((se) => se.type === 'assist') && (
-						<StatsDialog game={game} statEntries={game.statEntries}>
-							<Badge variant="secondary">
-								{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
-								assist
-								{game.statEntries.filter((se) => se.type === 'assist')
-									.length === 1
-									? ''
-									: 's'}
-							</Badge>
-						</StatsDialog>
-					)}
-				</CardContent>
+			<CardContent className="space-x-1">
+				<RsvpDialog rsvps={game.rsvps} players={team.players}>
+					<Badge>
+						{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
+						{team.players.length} attending
+					</Badge>
+				</RsvpDialog>
+				{game.statEntries.some((se) => se.type === 'goal') && (
+					<StatsDialog game={game} statEntries={game.statEntries}>
+						<Badge variant="secondary">
+							{game.statEntries.filter((se) => se.type === 'goal').length} goal
+							{game.statEntries.filter((se) => se.type === 'goal').length === 1
+								? ''
+								: 's'}
+						</Badge>
+					</StatsDialog>
+				)}
+				{game.statEntries.some((se) => se.type === 'assist') && (
+					<StatsDialog game={game} statEntries={game.statEntries}>
+						<Badge variant="secondary">
+							{game.statEntries.filter((se) => se.type === 'assist').length}{' '}
+							assist
+							{game.statEntries.filter((se) => se.type === 'assist').length ===
+							1
+								? ''
+								: 's'}
+						</Badge>
+					</StatsDialog>
+				)}
+			</CardContent>
+			{player || nextGame || userHasAccessToTeam ? (
+				<CardFooter className="justify-end gap-1">
+					<>
+						{player ? (
+							<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
+								<DialogTrigger asChild>
+									{(() => {
+										const rsvp = game.rsvps.find(
+											(rsvp) => rsvp.playerId === player.id
+										)
+										return (
+											<Button
+												size="icon"
+												variant={rsvp ? 'secondary' : 'default'}
+												onClick={() => {
+													mixpanel.track('open rsvp dialog', {
+														gameId: game.id,
+													})
+												}}
+											>
+												{rsvp ? (
+													rsvp.rsvp === 'yes' ? (
+														<MailCheck />
+													) : (
+														<MailX />
+													)
+												) : (
+													<Mail />
+												)}
+											</Button>
+										)
+									})()}
+								</DialogTrigger>
+								<DialogContent>
+									<DialogHeader>
+										<DialogTitle>
+											RSVP to game against {game.opponent ?? 'unknown opponent'}
+										</DialogTitle>
+										<DialogDescription>
+											{game.location ?? 'Location TBD'},{' '}
+											{game.timestamp
+												? format(game.timestamp, "E MMM d 'at' h:mma")
+												: 'date and time TBD'}
+										</DialogDescription>
+									</DialogHeader>
+									<RsvpForm
+										player={player}
+										game={game}
+										closeModal={() => setRsvpDialogOpen(false)}
+									/>
+								</DialogContent>
+							</Dialog>
+						) : null}
+						{nextGame ? (
+							<ShareNextGameButton
+								teamName={team.name}
+								slug={team.slug}
+								nextGame={game}
+							/>
+						) : null}
+						{userHasAccessToTeam ? (
+							<MoreButton
+								userHasAccessToTeam={userHasAccessToTeam}
+								game={game}
+								player={player}
+							/>
+						) : null}
+					</>
+				</CardFooter>
 			) : null}
-			<CardFooter className="justify-end gap-1">
-				<>
-					{nextGame ? (
-						<ShareNextGameButton
-							teamName={team.name}
-							slug={team.slug}
-							nextGame={game}
-						/>
-					) : null}
-					{userHasAccessToTeam ? (
-						<MoreButton userHasAccessToTeam={userHasAccessToTeam} game={game} />
-					) : null}
-				</>
-			</CardFooter>
 		</Card>
 	)
 }

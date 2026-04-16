@@ -510,11 +510,13 @@ function PlayerRow({
 	userHasAccessToTeam,
 	player,
 	days,
+	gameIdByDate,
 }: {
 	teamColor: string
 	userHasAccessToTeam: boolean
 	player: PlayerWithStats
 	days: () => string[]
+	gameIdByDate: Map<string, number>
 }) {
 	const [statEditDialog, setStatEditDialog] = useState<StatEditDialogData>(null)
 	const [statDeleteDialog, setStatDeleteDialog] =
@@ -537,6 +539,12 @@ function PlayerRow({
 			return acc
 		},
 		days().map((d) => [d, []])
+	)
+
+	const missedGameIds = new Set(
+		player.rsvps
+			.filter((r) => r.rsvp === 'no')
+			.map((r) => r.gameId)
 	)
 
 	return (
@@ -638,6 +646,17 @@ function PlayerRow({
 								</Popover>
 							)
 						})}
+						{entries.length === 0 &&
+							missedGameIds.has(gameIdByDate.get(date) ?? -1) && (
+								<Popover>
+									<PopoverTrigger>
+										<span className="text-xs opacity-40">🚫</span>
+									</PopoverTrigger>
+									<PopoverContent>
+										{player.name} missed this game
+									</PopoverContent>
+								</Popover>
+							)}
 					</td>
 				))}
 				<td
@@ -1191,6 +1210,15 @@ export default function Home() {
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
+	const gameIdByDate = new Map<string, number>(
+		team.games
+			.filter((g) => g.timestamp)
+			.map((g) => [
+				formatISO(parseISO(g.timestamp!), { representation: 'date' }),
+				g.id,
+			])
+	)
+
 	function days() {
 		return Array.from(
 			new Set(
@@ -1310,6 +1338,7 @@ export default function Home() {
 									userHasAccessToTeam={userHasAccessToTeam}
 									player={p}
 									days={days}
+									gameIdByDate={gameIdByDate}
 								/>
 							))}
 						</tbody>
