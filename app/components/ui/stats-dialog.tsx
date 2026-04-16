@@ -80,6 +80,9 @@ export function StatsDialog({
 					</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-1">
+					{sortedGroupedStats.length === 0 && (
+						<div className="text-sm">No stats logged for this game</div>
+					)}
 					{sortedGroupedStats.map(([playerId, entries]) => {
 						const player_ = entries[0].player
 						const goals = entries.filter(

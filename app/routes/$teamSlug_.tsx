@@ -6,6 +6,7 @@ import type {
 import { eq } from 'drizzle-orm'
 import {
 	defer,
+	Link,
 	useFetcher,
 	useLoaderData,
 	useLocation,
@@ -56,7 +57,6 @@ import {
 import {
 	ArrowRightCircle,
 	ArrowUpDown,
-	Calendar,
 	ChevronDown,
 	ChevronsUpDown,
 	LoaderCircle,
@@ -75,6 +75,7 @@ import {
 } from '~/components/ui/select'
 import { GameCard } from './$teamSlug.games'
 import { StatsDialog } from '~/components/ui/stats-dialog'
+import { SeasonDropdown } from '~/components/ui/season-dropdown'
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -506,12 +507,14 @@ function StatDeleteDialog({
 }
 
 function PlayerRow({
+	teamSlug,
 	teamColor,
 	userHasAccessToTeam,
 	player,
 	days,
 	gameIdByDate,
 }: {
+	teamSlug: string
 	teamColor: string
 	userHasAccessToTeam: boolean
 	player: PlayerWithStats
@@ -563,10 +566,18 @@ function PlayerRow({
 								<AvatarFallback>{player.name[0]}</AvatarFallback>
 							</Avatar>
 						</PopoverTrigger>
-						<PopoverContent>{player.name}</PopoverContent>
+						<PopoverContent>
+							<Link to={`/${teamSlug}/players/${player.id}`} className="hover:underline">
+								{player.name}
+							</Link>
+						</PopoverContent>
 					</Popover>
 				</td>
-				<td className="hidden md:table-cell">{player.name}</td>
+				<td className="hidden md:table-cell">
+					<Link to={`/${teamSlug}/players/${player.id}`} className="hover:underline">
+						{player.name}
+					</Link>
+				</td>
 				{statEntriesByDay.map(([date, entries], entryDateIndex) => (
 					<td
 						key={date}
@@ -1119,46 +1130,6 @@ function AddStatsButton({
 	)
 }
 
-function SeasonDropdown({
-	seasons,
-	season,
-}: {
-	seasons: { id: number; name: string }[]
-	season: Season | null | undefined
-}) {
-	const path = useLocation().pathname
-	const navigate = useNavigate()
-
-	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button variant="secondary">
-					<Calendar />
-					<span>{season?.name ?? 'All seasons'}</span>
-				</Button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent>
-				<DropdownMenuRadioGroup
-					value={season?.id?.toString() ?? ''}
-					onValueChange={(newSeasonId) => {
-						if (newSeasonId) {
-							navigate(`${path}?season=${newSeasonId}`)
-						} else {
-							navigate(path)
-						}
-					}}
-				>
-					<DropdownMenuRadioItem value="all">All seasons</DropdownMenuRadioItem>
-					{seasons.map((season) => (
-						<DropdownMenuRadioItem value={season.id.toString()} key={season.id}>
-							{season.name}
-						</DropdownMenuRadioItem>
-					))}
-				</DropdownMenuRadioGroup>
-			</DropdownMenuContent>
-		</DropdownMenu>
-	)
-}
 
 function SortDropdown() {
 	const path = useLocation().pathname
@@ -1334,6 +1305,7 @@ export default function Home() {
 							{players.map((p) => (
 								<PlayerRow
 									key={p.id}
+									teamSlug={team.slug}
 									teamColor={team.color}
 									userHasAccessToTeam={userHasAccessToTeam}
 									player={p}

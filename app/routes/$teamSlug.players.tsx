@@ -3,7 +3,7 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import { useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
+import { Link, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
@@ -31,7 +31,11 @@ import {
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '~/components/ui/popover'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -172,14 +176,32 @@ export default function EditTeam() {
 					).length
 					return (
 						<li className="flex items-center gap-3" key={p.id}>
-							<Avatar>
-								<AvatarImage
-									src={`https://files.tweeres.com/teamstats/players/${p.id}/image`}
-									className="object-cover"
-								/>
-								<AvatarFallback>{p.name[0]}</AvatarFallback>
-							</Avatar>
-							<span className="grow">{p.name}</span>
+							<Popover>
+								<PopoverTrigger>
+									<Avatar>
+										<AvatarImage
+											src={`https://files.tweeres.com/teamstats/players/${p.id}/image`}
+											className="object-cover"
+										/>
+										<AvatarFallback>{p.name[0]}</AvatarFallback>
+									</Avatar>
+								</PopoverTrigger>
+								<PopoverContent>
+									<Link
+										to={`/${team.slug}/players/${p.id}`}
+										className="hover:underline"
+									>
+										{p.name}
+									</Link>
+								</PopoverContent>
+							</Popover>
+							<Link
+								to={`/${team.slug}/players/${p.id}`}
+								className="grow hover:underline hidden sm:block"
+							>
+								{p.name}
+							</Link>
+							<div className="grow sm:hidden" />
 							<span className="text-2xl">
 								{p.statEntries.length === 0
 									? '-'
