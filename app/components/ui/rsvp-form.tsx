@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useFetcher } from '@remix-run/react'
+import { isPast } from 'date-fns'
 import mixpanel from 'mixpanel-browser'
 import { Button } from '~/components/ui/button'
 import { DialogFooter } from '~/components/ui/dialog'
@@ -10,6 +11,7 @@ type RsvpFormPlayer = {
 
 type RsvpFormGame = {
 	id: number
+	timestamp: string | null
 }
 
 export function RsvpForm({
@@ -38,9 +40,11 @@ export function RsvpForm({
 
 	const method = rsvp ? 'patch' : 'post'
 
+	const gameInPast = game.timestamp ? isPast(game.timestamp) : false
+
 	return (
 		<fieldset className="space-y-3" disabled={saving}>
-			<p>Are you going?</p>
+			<p>{gameInPast ? 'Did you go?' : 'Are you going?'}</p>
 			<DialogFooter>
 				{closeModal ? (
 					<Button variant="secondary" onClick={closeModal}>
