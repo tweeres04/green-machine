@@ -23,6 +23,7 @@ import invariant from 'tiny-invariant'
 import { Button } from '~/components/ui/button'
 import { Skeleton } from '~/components/ui/skeleton'
 import { Input } from '~/components/ui/input'
+import { Textarea } from '~/components/ui/textarea'
 import Nav from '~/components/ui/nav'
 import { Badge } from '~/components/ui/badge'
 import { getDb } from '~/lib/getDb'
@@ -283,6 +284,7 @@ function ImportScheduleForm({
 	}, [fetcher.data])
 
 	const [selectedTimestamps, setSelectedTimestamps] = useState<string[]>([])
+	const [source, setSource] = useState<'url' | 'paste'>('url')
 
 	useEffect(() => {
 		if (games) {
@@ -367,15 +369,50 @@ function ImportScheduleForm({
 	) : (
 		<fetcher.Form action="/import-schedule" method="post">
 			<fieldset className="space-y-3" disabled={saving}>
-				<div>
-					<label htmlFor="schedule_url_input">Schedule URL</label>
-					<Input
-						id="schedule_url_input"
-						required
-						name="schedule_url"
-						type="url"
-					/>
+				<div className="flex gap-4">
+					<label className="flex items-center gap-2">
+						<input
+							type="radio"
+							name="source"
+							value="url"
+							checked={source === 'url'}
+							onChange={() => setSource('url')}
+						/>
+						URL
+					</label>
+					<label className="flex items-center gap-2">
+						<input
+							type="radio"
+							name="source"
+							value="paste"
+							checked={source === 'paste'}
+							onChange={() => setSource('paste')}
+						/>
+						Paste
+					</label>
 				</div>
+				{source === 'url' ? (
+					<div>
+						<label htmlFor="schedule_url_input">Schedule URL</label>
+						<Input
+							id="schedule_url_input"
+							required
+							name="schedule_url"
+							type="url"
+						/>
+					</div>
+				) : (
+					<div>
+						<label htmlFor="schedule_text_input">Schedule</label>
+						<Textarea
+							id="schedule_text_input"
+							required
+							name="schedule_text"
+							rows={8}
+							placeholder="Paste your schedule here"
+						/>
+					</div>
+				)}
 				<div>
 					<label htmlFor="team_name_input">Team Name</label>
 					<Input id="team_name_input" required name="team_name" type="text" />

@@ -3,14 +3,16 @@ import { ActionFunction, json } from '@remix-run/node'
 export const action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData()
 	const scheduleUrl = formData.get('schedule_url')
+	const pastedSchedule = formData.get('schedule_text')
 	const teamName = formData.get('team_name')
 
-	if (!scheduleUrl || !teamName) {
+	if (!teamName || (!scheduleUrl && !pastedSchedule)) {
 		return new Response(null, { status: 400 })
 	}
 
-	const scheduleResponse = await fetch(scheduleUrl as string)
-	const scheduleHtml = await scheduleResponse.text()
+	const scheduleContent = scheduleUrl
+		? await fetch(scheduleUrl as string).then((r) => r.text())
+		: (pastedSchedule as string)
 
 	const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
 		method: 'POST',
@@ -24,11 +26,11 @@ export const action: ActionFunction = async ({ request }) => {
 			messages: [
 				{
 					role: 'system',
-					content: `Extract a JSON formatted list of games from the HTML provided. Only include games for the team called ${teamName}. Include the timestamp in ISO format but without the Z character, opponent, and location. Only respond with JSON. Do not include any other enclosing text.`,
+					content: `Extract a JSON formatted list of games from the schedule provided. Only include games for the team called ${teamName}. Include the timestamp in ISO format but without the Z character, opponent, and location. Only respond with JSON. Do not include any other enclosing text.`,
 				},
 				{
 					role: 'user',
-					content: scheduleHtml,
+					content: scheduleContent,
 				},
 			],
 		}),
