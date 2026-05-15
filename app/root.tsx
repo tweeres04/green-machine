@@ -18,6 +18,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { UserContext } from '~/lib/userContext'
 import invariant from 'tiny-invariant'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
+import { useFacebookPixelPageView } from '~/lib/useFacebookPixelPageView'
 
 export async function loader({
 	params: { teamSlug },
@@ -41,20 +42,23 @@ export async function loader({
 
 	invariant(process.env.MIXPANEL_TOKEN, 'MIXPANEL_TOKEN missing in .env')
 	const mixpanelToken = process.env.MIXPANEL_TOKEN
+	const fbPixelId = process.env.FB_PIXEL_ID ?? null
 
 	return json({
 		color: team?.color ?? 'gray',
 		user,
 		userHasAccessToTeam,
 		mixpanelToken,
+		fbPixelId,
 	})
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { color, user, userHasAccessToTeam, mixpanelToken } =
+	const { color, user, userHasAccessToTeam, mixpanelToken, fbPixelId } =
 		useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
 
 	useMixpanelIdentify(user)
+	useFacebookPixelPageView(fbPixelId ?? null)
 
 	return (
 		<html lang="en">
@@ -104,6 +108,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					data-key="OR25pSoDpycSw5Y6N2q99Q"
 					async
 				></script>
+				{/* Meta Pixel */}
+				{fbPixelId ? (
+					<script
+						dangerouslySetInnerHTML={{
+							__html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${fbPixelId}');fbq('track','PageView');`,
+						}}
+					/>
+				) : null}
 			</body>
 		</html>
 	)

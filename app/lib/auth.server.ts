@@ -6,6 +6,7 @@ import { getDb } from './getDb'
 import { User, users } from '~/schema'
 import invariant from 'tiny-invariant'
 import { mixpanelServer } from './mixpanel.server'
+import { sendCapiEvent } from './facebook.server'
 import { LibsqlError } from '@libsql/client'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
@@ -27,7 +28,8 @@ async function signUp(
 	name: FormDataEntryValue | null,
 	email: string,
 	password: string,
-	repeatPassword: FormDataEntryValue | null
+	repeatPassword: FormDataEntryValue | null,
+	request: Request
 ) {
 	if (!name || typeof name !== 'string') {
 		throw new Error('Name is required')
@@ -69,6 +71,12 @@ async function signUp(
 	mixpanelServer.track('sign up', {
 		distinct_id: newUser.id,
 	})
+
+	sendCapiEvent({
+		request,
+		eventName: 'CompleteRegistration',
+		user: newUser,
+	}).catch(console.error)
 
 	return newUser
 }
@@ -124,7 +132,7 @@ authenticator.use(
 			path === '/login'
 				? await login(email, password)
 				: path === '/signup'
-				? await signUp(name, email, password, repeatPassword)
+				? await signUp(name, email, password, repeatPassword, request)
 				: null
 
 		invariant(user, 'Path should be /login or /signup')

@@ -4,6 +4,7 @@ import { getDb } from '~/lib/getDb'
 import { teams, teamsUsers } from '~/schema'
 import { LibsqlError } from '@libsql/client'
 import { mixpanelServer } from '~/lib/mixpanel.server'
+import { sendCapiEvent } from '~/lib/facebook.server'
 
 export const action: ActionFunction = async ({ request }) => {
 	const user = await authenticator.isAuthenticated(request)
@@ -60,6 +61,16 @@ export const action: ActionFunction = async ({ request }) => {
 		'team name': newTeam.name,
 		ip: 0,
 	})
+
+	sendCapiEvent({
+		request,
+		eventName: 'StartTrial',
+		user,
+		customData: {
+			team_id: newTeam.id,
+			team_name: newTeam.name,
+		},
+	}).catch(console.error)
 
 	// Redirect to the new team page (free trial starts automatically)
 	return redirect(`/${newTeam.slug}`, { status: 303 })
