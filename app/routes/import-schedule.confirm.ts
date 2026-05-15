@@ -1,7 +1,10 @@
 import { ActionFunction, json } from '@remix-run/node'
+import { createInsertSchema } from 'drizzle-zod'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
-import { Game, games } from '~/schema'
+import { games } from '~/schema'
+
+const GamesSchema = createInsertSchema(games).omit({ teamId: true }).array()
 
 export const action: ActionFunction = async ({ request }) => {
 	const [user, formData] = await Promise.all([
@@ -14,25 +17,26 @@ export const action: ActionFunction = async ({ request }) => {
 		request.formData(),
 	])
 
-	const teamId = formData.get('team_id')
+	const teamId = Number(formData.get('team_id'))
 
-	const [userHasAccessToTeam] = await Promise.all([
-		hasAccessToTeam(user, Number(teamId)),
-	])
+	const userHasAccessToTeam = await hasAccessToTeam(user, teamId)
 
 	if (!userHasAccessToTeam) {
 		throw new Response(null, { status: 403 })
 	}
 
-	const gamesToAdd = JSON.parse(formData.get('games') as string)
+	const parseResult = GamesSchema.safeParse(
+		JSON.parse(formData.get('games') as string)
+	)
+	if (!parseResult.success) {
+		return new Response(null, { status: 400 })
+	}
 
 	const db = getDb()
 
 	await db
 		.insert(games)
-		.values(
-			gamesToAdd.map((game: Omit<Game, 'teamId'>) => ({ teamId, ...game }))
-		)
+		.values(parseResult.data.map((game) => ({ ...game, teamId })))
 
 	return json({ success: true })
 }
