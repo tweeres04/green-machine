@@ -48,6 +48,9 @@ mixpanel.init(window.mixpanelToken, {
 	persistence: 'localStorage',
 	record_sessions_percent: 100,
 	record_heatmap_data: true,
+	record_mask_all_text: false,
+	record_mask_all_inputs: false,
+	record_mask_input_selector: 'input[type="password"]',
 })
 
 startTransition(() => {
