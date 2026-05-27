@@ -9,7 +9,9 @@ type CapiUser = {
 }
 
 type CapiOptions = {
-	request: Request
+	// Omit for server-originated events (e.g. Stripe webhooks) where the request
+	// is not the customer's browser, so we don't send the server's IP/UA/URL.
+	request?: Request
 	eventName: string
 	user?: CapiUser | null
 	customData?: Record<string, unknown>
@@ -56,15 +58,13 @@ export async function sendCapiEvent({
 		return
 	}
 
-	const cookieHeader = request.headers.get('cookie')
-	const fbp = getCookie(cookieHeader, '_fbp')
-	const fbc = getCookie(cookieHeader, '_fbc')
+	const cookieHeader = request?.headers.get('cookie') ?? null
 
 	const userData: Record<string, unknown> = {
-		client_ip_address: getClientIp(request),
-		client_user_agent: request.headers.get('user-agent') ?? undefined,
-		fbp,
-		fbc,
+		client_ip_address: request ? getClientIp(request) : undefined,
+		client_user_agent: request?.headers.get('user-agent') ?? undefined,
+		fbp: getCookie(cookieHeader, '_fbp'),
+		fbc: getCookie(cookieHeader, '_fbc'),
 		em: hashEmail(user?.email),
 		external_id: user?.id ? sha256(String(user.id)) : undefined,
 	}
@@ -77,9 +77,10 @@ export async function sendCapiEvent({
 		event_name: eventName,
 		event_time: Math.floor(Date.now() / 1000),
 		action_source: 'website',
-		event_source_url: request.url,
 		user_data: userData,
 	}
+
+	if (request) event.event_source_url = request.url
 
 	if (eventId) event.event_id = eventId
 	if (customData) event.custom_data = customData

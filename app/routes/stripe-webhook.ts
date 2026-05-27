@@ -67,8 +67,7 @@ async function updateSubscription(subscription: Stripe.Subscription) {
 async function trackNewSubscription(
 	teamId: string,
 	subscription: Stripe.Subscription,
-	session: Stripe.Checkout.Session,
-	request: Request
+	session: Stripe.Checkout.Session
 ) {
 	const db = getDb()
 	const teamUser = await db.query.teamsUsers.findFirst({
@@ -96,8 +95,9 @@ async function trackNewSubscription(
 		ip: 0,
 	})
 
+	// No request passed: this fires from the Stripe webhook, so the request is
+	// Stripe's server, not the customer's browser. Match on email + external_id.
 	await sendCapiEvent({
-		request,
 		eventName: 'Purchase',
 		eventId: subscription.id,
 		user: teamUser.user,
@@ -158,8 +158,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		trackNewSubscription(
 			subscription.metadata.team_id,
 			subscription,
-			session,
-			request
+			session
 		).catch(console.error) // Basic error handling - log to sentry at some point
 
 		return new Response()
