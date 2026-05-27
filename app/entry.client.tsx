@@ -44,8 +44,10 @@ declare global {
 
 mixpanel.init(window.mixpanelToken, {
 	debug: process.env.NODE_ENV !== 'production',
-	track_pageview: 'url-with-path-and-query-string',
+	track_pageview: 'url-with-path',
 	persistence: 'localStorage',
+	record_sessions_percent: 100,
+	record_heatmap_data: true,
 })
 
 startTransition(() => {
