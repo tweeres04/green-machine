@@ -26,20 +26,23 @@ export function TrialStatus({
 		} else if (!atLimit) {
 			return `You've tracked ${gamesWithStatsCount} of 3 free games. Subscribe to keep the stats coming.`
 		} else {
-			return "Your team's off to a great start! Subscribe for $19/year to keep tracking every goal."
+			return "Your team's off to a great start! Keep tracking every goal."
 		}
 	}
-
-	const buttonText = atLimit ? 'Subscribe' : 'Subscribe for $19/year'
 
 	return (
 		<Alert>
 			<AlertDescription className="space-y-3">
 				<p>{getMessage()}</p>
+				<p className="text-sm">
+					<span className="font-semibold">Early access pricing, 50% off:</span>{' '}
+					<span className="text-muted-foreground line-through">$39</span>{' '}
+					<span className="font-medium">$19/year</span>
+				</p>
 				<div className="space-y-1">
 					<Button asChild variant={atLimit ? 'default' : 'secondary'}>
 						<a href={`/teams/${teamId}/subscribe`} className="underline font-medium">
-							{buttonText}
+							Subscribe
 						</a>
 					</Button>
 					{atLimit && <p className="text-xs text-center">Cancel anytime</p>}

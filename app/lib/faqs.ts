@@ -12,7 +12,7 @@ export const faqs = [
 	{
 		question: 'How much does TeamStats cost?',
 		answer:
-			'$19 USD per year for your whole team. Your first 3 games are free so you can try it before paying anything.',
+			"$19 USD per year for your whole team. That's 50% off the regular $39 while we're in early access. Your first 3 games are free so you can try it before paying anything.",
 	},
 	{
 		question: 'How long does setup take?',

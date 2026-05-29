@@ -26,7 +26,7 @@ export const meta: MetaFunction = () => {
 	const appName = 'TeamStats'
 	const url = 'https://teamstats.tweeres.com'
 	const title = `Soccer Stats Tracker for Rec Teams - ${appName}`
-	const description = `The simple soccer stats tracker for rec league teams. Track goals, assists, leaderboards, and schedules. Try free for 3 games, then just $19/year.`
+	const description = `The simple soccer stats tracker for rec league teams. Track goals, assists, leaderboards, and schedules. Try free for 3 games, then just $19/year (50% off early access).`
 	const author = 'Tyler Weeres'
 
 	return [

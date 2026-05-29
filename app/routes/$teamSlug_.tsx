@@ -854,10 +854,15 @@ function AddStatsButton({
 					<Alert variant="destructive">
 						<AlertDescription className="space-y-2">
 							<p>{paywallError}</p>
+							<p className="text-sm">
+								<span className="font-semibold">
+									Early access pricing, 50% off:
+								</span>{' '}
+								<span className="line-through opacity-70">$39</span>{' '}
+								<span className="font-medium">$19/year</span>
+							</p>
 							<Button asChild size="sm">
-								<a href={`/teams/${teamId}/subscribe`}>
-									Subscribe for $19/year
-								</a>
+								<a href={`/teams/${teamId}/subscribe`}>Subscribe</a>
 							</Button>
 						</AlertDescription>
 					</Alert>

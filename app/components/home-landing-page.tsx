@@ -31,8 +31,9 @@ function Cta() {
 					</Link>
 				</Button>
 			</div>
-			<small className="block text-sm leading-none font-light">
-				Just $19 USD/year for your whole team
+			<small className="block text-sm leading-tight font-light">
+				Early access: <span className="line-through opacity-70">$39</span> $19
+				USD/year for your whole team
 			</small>
 		</div>
 	)
@@ -163,8 +164,9 @@ export default function HomeLandingPage() {
 						</FeatureListItem>
 						<FeatureListItem icon={<Wallet />} title="Affordable">
 							<p>
-								Only $19 USD per year. I'm a one person team with low costs and
-								no investors.
+								Early access pricing is just $19 USD per year, half off the
+								regular $39. I'm a one person team with low costs and no
+								investors.
 							</p>
 						</FeatureListItem>
 						<FeatureListItem icon={<Hammer />} title="Expert team">
