@@ -345,8 +345,12 @@ export default function EditTeam() {
 								<Input name="name" id="name_input" />
 							</div>
 							<div>
-								<label htmlFor="name_input">Email</label>
+								<label htmlFor="email_input">Email (optional)</label>
 								<Input name="email" id="email_input" />
+								<p className="text-sm text-muted-foreground mt-1">
+									Adding an email invites them to a TeamStats account
+									where they can see this team.
+								</p>
 							</div>
 						</div>
 						<DialogFooter className="flex-col sm:flex-row">
