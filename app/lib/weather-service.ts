@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai'
 import { getDb } from './getDb'
 import { WeatherForecast, weatherForecasts } from '../schema'
 import { subHours } from 'date-fns'
@@ -19,7 +18,38 @@ function expiredDate() {
 	return expiredDate
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY })
+// WMO weather interpretation codes -> human-readable conditions.
+// https://open-meteo.com/en/docs
+const weatherCodeConditions: Record<number, string> = {
+	0: 'Clear sky',
+	1: 'Mainly clear',
+	2: 'Partly cloudy',
+	3: 'Overcast',
+	45: 'Fog',
+	48: 'Freezing fog',
+	51: 'Light drizzle',
+	53: 'Drizzle',
+	55: 'Heavy drizzle',
+	56: 'Light freezing drizzle',
+	57: 'Freezing drizzle',
+	61: 'Light rain',
+	63: 'Rain',
+	65: 'Heavy rain',
+	66: 'Light freezing rain',
+	67: 'Freezing rain',
+	71: 'Light snow',
+	73: 'Snow',
+	75: 'Heavy snow',
+	77: 'Snow grains',
+	80: 'Light rain showers',
+	81: 'Rain showers',
+	82: 'Heavy rain showers',
+	85: 'Light snow showers',
+	86: 'Snow showers',
+	95: 'Thunderstorm',
+	96: 'Thunderstorm with hail',
+	99: 'Thunderstorm with heavy hail',
+}
 
 const isCacheValid = (forecast: WeatherForecast) => {
 	const expiresAt = expiredDate()
@@ -112,35 +142,83 @@ export const getGameForecast = async (gameId: number) => {
 			return null
 		}
 
-		const prompt = `What is the weather forecast for ${game.team.location} specifically around ${game.timestamp}? Please use current weather data and forecasting information to provide:
-1. Temperature
-2. Weather conditions (sunny, cloudy, rainy, etc.)
-3. Wind speed if available
+		if (!game.team.location) {
+			console.error(`No location on team`)
+			return null
+		}
 
-For data points that require a unit (temperature, wind speed), use appropriate local units for ${game.team.location}.
+		// Turn the free-text location into coordinates + country. Nominatim is a
+		// real full-text geocoder, so it handles qualifiers like "Victoria, BC"
+		// and street addresses (Open-Meteo's geocoder is name-prefix only).
+		const geoResponse = await fetch(
+			`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+				game.team.location
+			)}&format=json&limit=1&addressdetails=1`,
+			{ headers: { 'User-Agent': 'green-machine (team weather forecasts)' } }
+		)
+		const geo = await geoResponse.json()
+		const place = geo?.[0]
 
-Only respond with json, do not include any other text. Use the following JSON format:
-{
-  "temperature": "22°C",
-  "conditions": "Partly cloudy",
-  "windSpeed": "10 km/h",
-}`
+		if (!place) {
+			console.error(`Could not geocode location: ${game.team.location}`)
+			return null
+		}
 
-		const result = await ai.models.generateContent({
-			model: 'gemini-2.5-flash-lite',
-			contents: prompt,
-			config: { tools: [{ googleSearch: {} }] },
+		// US is the practical exception that wants Fahrenheit/mph; everywhere
+		// else (including Canada) gets metric. Nominatim returns a lowercase code.
+		const useImperial = place.address?.country_code === 'us'
+		const temperatureUnit = useImperial ? 'fahrenheit' : 'celsius'
+		const windSpeedUnit = useImperial ? 'mph' : 'kmh'
+
+		// Forecast in UTC (timezone=GMT) so hourly times line up with the
+		// game's UTC timestamp without offset math.
+		const forecastResponse = await fetch(
+			`https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=GMT&forecast_days=16`
+		)
+		const forecast = await forecastResponse.json()
+		const hourly = forecast.hourly
+
+		if (!hourly?.time?.length) {
+			console.error(`No hourly forecast returned for ${game.team.location}`)
+			return null
+		}
+
+		// Find the forecast hour closest to game time.
+		const gameTime = new Date(game.timestamp).getTime()
+		let closestIndex = 0
+		let closestDiff = Infinity
+		hourly.time.forEach((time: string, index: number) => {
+			const diff = Math.abs(new Date(`${time}Z`).getTime() - gameTime)
+			if (diff < closestDiff) {
+				closestDiff = diff
+				closestIndex = index
+			}
 		})
 
-		const weatherData: WeatherData = result.text
-			? JSON.parse(result.text.replace(/^```json/, '').replace(/```$/, ''))
-			: null
+		// If the nearest hour is more than 6 hours off, the game is outside the
+		// forecast window (~16 days out) and we have no real data for it.
+		if (closestDiff > 6 * 60 * 60 * 1000) {
+			console.error(`Game time outside forecast window: ${game.timestamp}`)
+			return null
+		}
 
-		const badValues = ['N/A', 'unknown']
-		weatherData.windSpeed =
-			weatherData.windSpeed && badValues.includes(weatherData.windSpeed)
-				? undefined
-				: weatherData.windSpeed
+		const temperature = hourly.temperature_2m[closestIndex]
+		const humidity = hourly.relative_humidity_2m[closestIndex]
+		const windSpeed = hourly.wind_speed_10m[closestIndex]
+		const weatherCode = hourly.weather_code[closestIndex]
+		const units = forecast.hourly_units
+
+		const weatherData: WeatherData = {
+			temperature: `${Math.round(temperature)}${units.temperature_2m}`,
+			conditions: weatherCodeConditions[weatherCode] ?? 'Unknown',
+			humidity:
+				humidity != null ? `${Math.round(humidity)}${units.relative_humidity_2m}` : undefined,
+			windSpeed:
+				windSpeed != null
+					? `${Math.round(windSpeed)} ${units.wind_speed_10m}`
+					: undefined,
+			forecastTime: `${hourly.time[closestIndex]}Z`,
+		}
 
 		cacheForecast(weatherData, gameId).then(() => {
 			console.log(`cached weather data for ${gameId}`)
