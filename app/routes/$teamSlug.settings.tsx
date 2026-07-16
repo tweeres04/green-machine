@@ -18,6 +18,7 @@ import { Input } from '~/components/ui/input'
 import { upperFirst } from 'lodash-es'
 import { Checkbox } from '~/components/ui/checkbox'
 import { eq } from 'drizzle-orm'
+import { geocodeLocation } from '~/lib/weather-service'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -121,10 +122,22 @@ export const action: ActionFunction = async ({ request, params }) => {
 		throw new Response('Invalid form data', { status: 400 })
 	}
 
+	// Geocode here so weather lookups can skip Nominatim at request time
+	const locationChanged = (location || null) !== team.location
+	const geocoded =
+		locationChanged && location ? await geocodeLocation(location) : null
+
 	await db
 		.update(teams)
 		.set({
 			location: location || null,
+			...(locationChanged
+				? {
+						latitude: geocoded?.latitude ?? null,
+						longitude: geocoded?.longitude ?? null,
+						countryCode: geocoded?.countryCode ?? null,
+				  }
+				: {}),
 			nextGameForecast:
 				nextGameForecast === 'true'
 					? true

@@ -1,7 +1,7 @@
 import { getDb } from './getDb'
-import { WeatherForecast, weatherForecasts } from '../schema'
+import { WeatherForecast, weatherForecasts, teams } from '../schema'
 import { subHours } from 'date-fns'
-import { lte, sql } from 'drizzle-orm'
+import { eq, lte, sql } from 'drizzle-orm'
 
 export interface WeatherData {
 	temperature: string
@@ -49,6 +49,44 @@ const weatherCodeConditions: Record<number, string> = {
 	95: 'Thunderstorm',
 	96: 'Thunderstorm with hail',
 	99: 'Thunderstorm with heavy hail',
+}
+
+export interface GeocodeResult {
+	latitude: number
+	longitude: number
+	countryCode: string | null
+}
+
+// Turn a free-text location into coordinates + country. Nominatim is a
+// real full-text geocoder, so it handles qualifiers like "Victoria, BC"
+// and street addresses (Open-Meteo's geocoder is name-prefix only).
+export const geocodeLocation = async (
+	location: string
+): Promise<GeocodeResult | null> => {
+	try {
+		const geoResponse = await fetch(
+			`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+				location
+			)}&format=json&limit=1&addressdetails=1`,
+			{ headers: { 'User-Agent': 'green-machine (team weather forecasts)' } }
+		)
+		const geo = await geoResponse.json()
+		const place = geo?.[0]
+
+		if (!place) {
+			console.error(`Could not geocode location: ${location}`)
+			return null
+		}
+
+		return {
+			latitude: Number(place.lat),
+			longitude: Number(place.lon),
+			countryCode: place.address?.country_code ?? null,
+		}
+	} catch (error) {
+		console.error('Error geocoding location:', error)
+		return null
+	}
 }
 
 const isCacheValid = (forecast: WeatherForecast) => {
@@ -147,33 +185,38 @@ export const getGameForecast = async (gameId: number) => {
 			return null
 		}
 
-		// Turn the free-text location into coordinates + country. Nominatim is a
-		// real full-text geocoder, so it handles qualifiers like "Victoria, BC"
-		// and street addresses (Open-Meteo's geocoder is name-prefix only).
-		const geoResponse = await fetch(
-			`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-				game.team.location
-			)}&format=json&limit=1&addressdetails=1`,
-			{ headers: { 'User-Agent': 'green-machine (team weather forecasts)' } }
-		)
-		const geo = await geoResponse.json()
-		const place = geo?.[0]
+		// Coordinates are geocoded and stored when the location is saved in
+		// settings. Teams saved before that existed get geocoded here once,
+		// then read from the team row like everyone else.
+		let coords: GeocodeResult
+		if (game.team.latitude != null && game.team.longitude != null) {
+			coords = {
+				latitude: game.team.latitude,
+				longitude: game.team.longitude,
+				countryCode: game.team.countryCode,
+			}
+		} else {
+			const geocoded = await geocodeLocation(game.team.location)
 
-		if (!place) {
-			console.error(`Could not geocode location: ${game.team.location}`)
-			return null
+			if (!geocoded) {
+				return null
+			}
+
+			coords = geocoded
+
+			await db.update(teams).set(geocoded).where(eq(teams.id, game.team.id))
 		}
 
 		// US is the practical exception that wants Fahrenheit/mph; everywhere
 		// else (including Canada) gets metric. Nominatim returns a lowercase code.
-		const useImperial = place.address?.country_code === 'us'
+		const useImperial = coords.countryCode === 'us'
 		const temperatureUnit = useImperial ? 'fahrenheit' : 'celsius'
 		const windSpeedUnit = useImperial ? 'mph' : 'kmh'
 
 		// Forecast in UTC (timezone=GMT) so hourly times line up with the
 		// game's UTC timestamp without offset math.
 		const forecastResponse = await fetch(
-			`https://api.open-meteo.com/v1/forecast?latitude=${place.lat}&longitude=${place.lon}&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=GMT&forecast_days=16`
+			`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=GMT&forecast_days=16`
 		)
 		const forecast = await forecastResponse.json()
 		const hourly = forecast.hourly

@@ -1,5 +1,11 @@
 import { relations } from 'drizzle-orm'
-import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
+import {
+	sqliteTable,
+	integer,
+	text,
+	real,
+	index,
+} from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -11,6 +17,10 @@ export const teams = sqliteTable('teams', {
 	slug: text('slug').notNull().unique(),
 	color: text('color').notNull().default('gray'),
 	location: text('location'),
+	// Geocoded from location so weather lookups skip Nominatim at request time
+	latitude: real('latitude'),
+	longitude: real('longitude'),
+	countryCode: text('country_code'),
 	nextGameForecast: integer('next_game_forecast', { mode: 'boolean' })
 		.notNull()
 		.default(false),
