@@ -18,7 +18,7 @@ The product is positioned as **small, focused, and affordable** ($19/year) vs. b
 
 - **Framework**: Remix v2.13 with Vite
 - **Language**: TypeScript (strict mode enabled)
-- **Database**: SQLite with Drizzle ORM (@libsql/client)
+- **Database**: SQLite with Drizzle ORM (@libsql/client) — a local file on the same box as the app in production too (not Turso/remote), so queries are sub-millisecond and external HTTP calls are always the latency bottleneck
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Authentication**: remix-auth with form-based strategy
 - **Validation**: Zod schemas
