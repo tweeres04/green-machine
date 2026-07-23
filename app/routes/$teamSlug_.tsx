@@ -399,18 +399,31 @@ function makeColumnKeys(games: Game[]) {
 	return { columnKeyForGameTimestamp, columnKeyForStatEntry }
 }
 
+// Dates outside the current year get a compact year suffix: "Sep 10 '25"
+function columnNeedsYear(columnKey: string) {
+	return parseISO(columnKey).getFullYear() !== new Date().getFullYear()
+}
+
 // Multi-game dates stack date and time on two fixed lines so the rotated
 // label renders the same at every device pixel ratio instead of leaving
-// the wrap point up to font metrics
+// the wrap point up to font metrics. The nowrap wrapper keeps longer
+// labels (year suffixes) from wrapping unpredictably too.
 function ColumnHeaderLabel({ columnKey }: { columnKey: string }) {
-	return columnKey.includes('T') ? (
+	const date = parseISO(columnKey)
+	const dateLabel = columnNeedsYear(columnKey)
+		? format(date, `${dateFormat} ''yy`)
+		: formatLocalIsoDateString(columnKey)
+
+	return (
 		<span className="inline-block text-nowrap leading-tight">
-			{formatLocalIsoDateString(columnKey)}
-			<br />
-			{format(parseISO(columnKey), 'h:mma')}
+			{dateLabel}
+			{columnKey.includes('T') ? (
+				<>
+					<br />
+					{format(date, 'h:mma')}
+				</>
+			) : null}
 		</span>
-	) : (
-		<>{formatLocalIsoDateString(columnKey)}</>
 	)
 }
 
@@ -1256,7 +1269,10 @@ export default function Home() {
 		).toSorted() as string[]
 	}
 
-	const hasMultiGameColumns = columnKeys().some((k) => k.includes('T'))
+	// Time-stacked and year-suffixed labels need a taller header row
+	const hasLongHeaderLabels = columnKeys().some(
+		(k) => k.includes('T') || columnNeedsYear(k)
+	)
 
 	useEffect(() => {
 		const tableContainer = document.getElementById('table_container')
@@ -1339,7 +1355,7 @@ export default function Home() {
 											key={columnKey}
 											className={cn(
 												'text-xs rotate-45',
-												hasMultiGameColumns ? 'h-14' : 'h-10'
+												hasLongHeaderLabels ? 'h-14' : 'h-10'
 											)}
 										>
 											{game && game.statEntries.length > 0 ? (
