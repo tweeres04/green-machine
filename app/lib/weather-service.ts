@@ -153,8 +153,19 @@ const cacheForecast = async (weatherData: WeatherData, gameId: number) => {
 }
 
 export const getGameForecast = async (gameId: number) => {
+	// Temporary timing logs to find where the 5s streaming budget goes in prod
+	const start = Date.now()
+	const mark = (label: string) => {
+		console.log(
+			`weather timing [game ${gameId}] ${label}: ${
+				Date.now() - start
+			}ms (${new Date().toISOString()})`
+		)
+	}
+	mark('start')
 	try {
 		const cachedForecast = await getCachedForecast(gameId)
+		mark('cache checked')
 		if (cachedForecast) {
 			return cachedForecast
 		}
@@ -169,6 +180,8 @@ export const getGameForecast = async (gameId: number) => {
 				team: true,
 			},
 		})
+
+		mark('game loaded')
 
 		if (!game) {
 			console.error(`Game not found: ${gameId}`)
@@ -215,10 +228,13 @@ export const getGameForecast = async (gameId: number) => {
 
 		// Forecast in UTC (timezone=GMT) so hourly times line up with the
 		// game's UTC timestamp without offset math.
+		mark('forecast fetch start')
 		const forecastResponse = await fetch(
 			`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&hourly=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}&timezone=GMT&forecast_days=16`
 		)
+		mark('forecast response received')
 		const forecast = await forecastResponse.json()
+		mark('forecast body parsed')
 		const hourly = forecast.hourly
 
 		if (!hourly?.time?.length) {
@@ -262,6 +278,8 @@ export const getGameForecast = async (gameId: number) => {
 					: undefined,
 			forecastTime: `${hourly.time[closestIndex]}Z`,
 		}
+
+		mark('done')
 
 		cacheForecast(weatherData, gameId).then(() => {
 			console.log(`cached weather data for ${gameId}`)
