@@ -32,6 +32,7 @@ import {
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
+import { LoaderCircle } from 'lucide-react'
 import {
 	Popover,
 	PopoverContent,
@@ -147,6 +148,18 @@ export default function EditTeam() {
 	const [changeImageDialog, setChangeImageDialog] = useState<Player | null>(
 		null
 	)
+	const imageFetcher = useFetcher()
+	const imageSaving = imageFetcher.state !== 'idle'
+	// Cache buster so the new photo shows immediately after upload: the
+	// image URL never changes, so the browser would keep the cached one
+	const [imageVersion, setImageVersion] = useState(0)
+
+	useEffect(() => {
+		if (imageFetcher.state === 'idle' && imageFetcher.data !== undefined) {
+			setChangeImageDialog(null)
+			setImageVersion(Date.now())
+		}
+	}, [imageFetcher.state, imageFetcher.data])
 
 	const [{ title, description, body }, setMenuDialogState] = useState<{
 		title: string | null
@@ -198,7 +211,9 @@ export default function EditTeam() {
 								<PopoverTrigger>
 									<Avatar>
 										<AvatarImage
-											src={`https://files.tweeres.com/teamstats/players/${p.id}/image`}
+											src={`https://files.tweeres.com/teamstats/players/${p.id}/image${
+												imageVersion ? `?v=${imageVersion}` : ''
+											}`}
 											className="object-cover"
 										/>
 										<AvatarFallback>{p.name[0]}</AvatarFallback>
@@ -425,22 +440,33 @@ export default function EditTeam() {
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Change image</DialogTitle>
-						<fetcher.Form
+						<imageFetcher.Form
 							method="post"
 							action={`/players/${changeImageDialog?.id}/image`}
 							className="space-y-3"
 							encType="multipart/form-data"
 						>
-							<Input type="file" name="name" id="image_input" />
-							<DialogFooter className="flex-col sm:flex-row">
-								<DialogClose>
-									<Button variant="secondary" type="button">
-										Cancel
+							<fieldset disabled={imageSaving} className="space-y-3">
+								<Input type="file" name="name" id="image_input" />
+								<DialogFooter className="flex-col sm:flex-row">
+									<DialogClose>
+										<Button variant="secondary" type="button">
+											Cancel
+										</Button>
+									</DialogClose>
+									<Button type="submit">
+										{imageSaving ? (
+											<>
+												Saving
+												<LoaderCircle className="size-4 animate-spin" />
+											</>
+										) : (
+											'Save'
+										)}
 									</Button>
-								</DialogClose>
-								<Button type="submit">Save</Button>
-							</DialogFooter>
-						</fetcher.Form>
+								</DialogFooter>
+							</fieldset>
+						</imageFetcher.Form>
 					</DialogHeader>
 				</DialogContent>
 			</Dialog>
