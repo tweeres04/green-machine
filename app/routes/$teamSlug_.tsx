@@ -294,6 +294,19 @@ export async function loader({
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
 
+	const { columnKeyForStatEntry } = makeColumnKeys(team.games)
+	const allColumnKeys = Array.from(
+		new Set(
+			team.players.flatMap((p) => p.statEntries.map(columnKeyForStatEntry))
+		)
+	).toSorted()
+	const streakByPlayerId = new Map(
+		team.players.map((p) => [
+			p.id,
+			bestStreak(p.statEntries, allColumnKeys, columnKeyForStatEntry).length,
+		])
+	)
+
 	// todo: move this sorting to the db at some point
 	team.players = team.players.toSorted((a, b) => {
 		if (sort === 'name') {
@@ -320,6 +333,13 @@ export async function loader({
 			const bContributions = bGoals + bAssists
 			if (bContributions !== aContributions)
 				return bContributions - aContributions
+			if (bGoals !== aGoals) return bGoals - aGoals
+			return a.name.localeCompare(b.name)
+		}
+		if (sort === 'streak') {
+			const aStreak = streakByPlayerId.get(a.id) ?? 0
+			const bStreak = streakByPlayerId.get(b.id) ?? 0
+			if (bStreak !== aStreak) return bStreak - aStreak
 			if (bGoals !== aGoals) return bGoals - aGoals
 			return a.name.localeCompare(b.name)
 		}
@@ -405,6 +425,47 @@ function makeColumnKeys(games: Game[]) {
 	// Date-only keys are prefixes of same-date timestamp keys, so
 	// lexicographic sorting keeps columns in chronological order
 	return { columnKeyForGameTimestamp, columnKeyForStatEntry }
+}
+
+// Matches the letters used in the "10G 4A" totals column
+const statLetter: Record<string, string> = {
+	goal: 'G',
+	assist: 'A',
+}
+
+// Longest run of consecutive stats-table columns containing the same stat
+// type — the same definition the 🔥 flames use, so sorting by streak
+// matches what's visibly burning in the table. Returns the run length and
+// the type that achieved it (goals win ties).
+function bestStreak(
+	statEntries: { type: string; timestamp: string; game?: { timestamp: string | null } | null }[],
+	allColumnKeys: string[],
+	columnKeyForStatEntry: (statEntry: {
+		timestamp: string
+		game?: { timestamp: string | null } | null
+	}) => string
+) {
+	const typesByColumnKey = new Map<string, Set<string>>()
+	for (const se of statEntries) {
+		const key = columnKeyForStatEntry(se)
+		typesByColumnKey.set(key, (typesByColumnKey.get(key) ?? new Set()).add(se.type))
+	}
+
+	const bestByType = ['goal', 'assist'].map((type) => {
+		let run = 0
+		let best = 0
+		for (const key of allColumnKeys) {
+			run = typesByColumnKey.get(key)?.has(type) ? run + 1 : 0
+			best = Math.max(best, run)
+		}
+		return { type, best }
+	})
+
+	const length = Math.max(...bestByType.map((b) => b.best))
+	const type =
+		length > 0 ? bestByType.find((b) => b.best === length)!.type : null
+
+	return { length, type }
 }
 
 // Dates outside the current year get a compact year suffix: "Sep 10 '25"
@@ -603,10 +664,17 @@ function PlayerRow({
 	const [statDeleteDialog, setStatDeleteDialog] =
 		useState<StatDeleteDialogData>(null)
 
+	const sort =
+		new URLSearchParams(useLocation().search).get('sort') ?? 'goals'
+
 	const goalCount = player.statEntries.filter((s) => s.type === 'goal').length
 	const assistCount = player.statEntries.filter(
 		(s) => s.type === 'assist'
 	).length
+	const streak =
+		sort === 'streak'
+			? bestStreak(player.statEntries, columnKeys(), columnKeyForStatEntry)
+			: null
 	const statEntriesByColumn: [string, StatEntry[]][] = player.statEntries.reduce(
 		(acc: [string, StatEntry[]][], se) => {
 			const columnKey = columnKeyForStatEntry(se)
@@ -683,9 +751,7 @@ function PlayerRow({
 										<span
 											className={cn(
 												'stat inline-block relative text-xs',
-												isStreak
-													? "before:content-['🔥'] before:absolute before:-z-10 before:text-3xl before:opacity-20 before:left-1/2 before:-translate-x-1/2 before:top-1/2 before:-translate-y-[60%]"
-													: null,
+												isStreak ? 'streak' : null,
 												i !== 0 ? '-ml-2' : null
 											)}
 										>
@@ -748,7 +814,11 @@ function PlayerRow({
 				<td
 					className={`text-xl text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
 				>
-					{player.statEntries.length === 0
+					{streak !== null
+						? streak.length > 1
+							? `${streak.length}${statLetter[streak.type!] ?? ''}`
+							: '-'
+						: player.statEntries.length === 0
 						? '-'
 						: `${goalCount}G ${assistCount}A`}
 				</td>
@@ -1222,6 +1292,7 @@ function SortDropdown() {
 		goals: 'Most goals',
 		assists: 'Most assists',
 		contributions: 'Most contributions',
+		streak: 'Best streak',
 	}[sort]
 
 	return (
@@ -1245,6 +1316,7 @@ function SortDropdown() {
 					<DropdownMenuRadioItem value="contributions">
 						Contributions
 					</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="streak">Streak</DropdownMenuRadioItem>
 					<DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>

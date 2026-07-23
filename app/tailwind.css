@@ -1,4 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-  
+
+@layer components {
+	/* Flame emoji behind stats that are part of a streak. Uses the escape
+	   sequence instead of a literal emoji (and instead of an arbitrary
+	   content class in the markup) because the dev server's streamed output
+	   can split multi-byte characters across chunk boundaries, corrupting
+	   them. \1F525 is ascii-safe everywhere. */
+	.streak::before {
+		content: '\1F525';
+		@apply absolute -z-10 text-3xl opacity-20 left-1/2 -translate-x-1/2 top-1/2 -translate-y-[60%];
+	}
+}
