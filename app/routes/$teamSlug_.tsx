@@ -298,11 +298,14 @@ export async function loader({
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
 
-	const { columnKeyForStatEntry } = makeColumnKeys(team.games)
+	const { columnKeyForGameTimestamp, columnKeyForStatEntry } = makeColumnKeys(
+		team.games
+	)
 	const allColumnKeys = Array.from(
-		new Set(
-			team.players.flatMap((p) => p.statEntries.map(columnKeyForStatEntry))
-		)
+		new Set([
+			...pastGameColumnKeys(team.games, columnKeyForGameTimestamp),
+			...team.players.flatMap((p) => p.statEntries.map(columnKeyForStatEntry)),
+		])
 	).toSorted()
 	const streakByPlayerId = new Map(
 		team.players.map((p) => [
@@ -429,6 +432,17 @@ function makeColumnKeys(games: Game[]) {
 	// Date-only keys are prefixes of same-date timestamp keys, so
 	// lexicographic sorting keeps columns in chronological order
 	return { columnKeyForGameTimestamp, columnKeyForStatEntry }
+}
+
+// Played games get a column even when no stats were recorded — the empty
+// column shows the game happened (and breaks streaks)
+function pastGameColumnKeys(
+	games: { timestamp: string | null; cancelledAt: string | null }[],
+	columnKeyForGameTimestamp: (timestamp: string) => string
+) {
+	return games
+		.filter((g) => g.timestamp && !g.cancelledAt && !isFuture(g.timestamp))
+		.map((g) => columnKeyForGameTimestamp(g.timestamp!))
 }
 
 // Matches the letters used in the "10G 4A" totals column
@@ -1277,7 +1291,10 @@ export default function Home() {
 
 	function columnKeys() {
 		return Array.from(
-			new Set(players.flatMap((p) => p.statEntries.map(columnKeyForStatEntry)))
+			new Set([
+				...pastGameColumnKeys(team.games, columnKeyForGameTimestamp),
+				...players.flatMap((p) => p.statEntries.map(columnKeyForStatEntry)),
+			])
 		).toSorted() as string[]
 	}
 
