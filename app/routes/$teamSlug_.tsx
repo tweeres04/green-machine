@@ -362,6 +362,58 @@ function formatLocalIsoDateString(dateIsoString: string) {
 	return result
 }
 
+function isoDateString(timestamp: string) {
+	return formatISO(parseISO(timestamp), { representation: 'date' })
+}
+
+// Stats table columns are one-per-date, except dates with multiple games
+// (tournaments), which get one column per game keyed by the game's full
+// timestamp so each game's stats stay separate.
+function makeColumnKeys(games: Game[]) {
+	const gameCountByDate = new Map<string, number>()
+	for (const game of games) {
+		if (!game.timestamp) continue
+		const date = isoDateString(game.timestamp)
+		gameCountByDate.set(date, (gameCountByDate.get(date) ?? 0) + 1)
+	}
+
+	function columnKeyForGameTimestamp(timestamp: string) {
+		const date = isoDateString(timestamp)
+		return (gameCountByDate.get(date) ?? 0) > 1
+			? formatISO(parseISO(timestamp))
+			: date
+	}
+
+	// Entries without a linked game group by their own date, like today
+	function columnKeyForStatEntry(statEntry: {
+		timestamp: string
+		game?: { timestamp: string | null } | null
+	}) {
+		return statEntry.game?.timestamp
+			? columnKeyForGameTimestamp(statEntry.game.timestamp)
+			: isoDateString(statEntry.timestamp)
+	}
+
+	// Date-only keys are prefixes of same-date timestamp keys, so
+	// lexicographic sorting keeps columns in chronological order
+	return { columnKeyForGameTimestamp, columnKeyForStatEntry }
+}
+
+// Multi-game dates stack date and time on two fixed lines so the rotated
+// label renders the same at every device pixel ratio instead of leaving
+// the wrap point up to font metrics
+function ColumnHeaderLabel({ columnKey }: { columnKey: string }) {
+	return columnKey.includes('T') ? (
+		<span className="inline-block text-nowrap leading-tight">
+			{formatLocalIsoDateString(columnKey)}
+			<br />
+			{format(parseISO(columnKey), 'h:mma')}
+		</span>
+	) : (
+		<>{formatLocalIsoDateString(columnKey)}</>
+	)
+}
+
 type StatEditDialogData = Omit<StatEntry, 'playerId' | 'gameId'> | null
 
 function StatEditDialog({
@@ -511,15 +563,20 @@ function PlayerRow({
 	teamColor,
 	userHasAccessToTeam,
 	player,
-	days,
-	gameIdByDate,
+	columnKeys,
+	columnKeyForStatEntry,
+	gameIdByColumnKey,
 }: {
 	teamSlug: string
 	teamColor: string
 	userHasAccessToTeam: boolean
 	player: PlayerWithStats
-	days: () => string[]
-	gameIdByDate: Map<string, number>
+	columnKeys: () => string[]
+	columnKeyForStatEntry: (statEntry: {
+		timestamp: string
+		game?: { timestamp: string | null } | null
+	}) => string
+	gameIdByColumnKey: Map<string, number>
 }) {
 	const [statEditDialog, setStatEditDialog] = useState<StatEditDialogData>(null)
 	const [statDeleteDialog, setStatDeleteDialog] =
@@ -529,19 +586,16 @@ function PlayerRow({
 	const assistCount = player.statEntries.filter(
 		(s) => s.type === 'assist'
 	).length
-	const statEntriesByDay: [string, StatEntry[]][] = player.statEntries.reduce(
+	const statEntriesByColumn: [string, StatEntry[]][] = player.statEntries.reduce(
 		(acc: [string, StatEntry[]][], se) => {
-			const date = parseISO(se.game?.timestamp ?? se.timestamp)
-			const dateString = formatISO(date, {
-				representation: 'date',
-			})
-			const dateEntryPair = acc.find(([d]) => d === dateString)
-			invariant(dateEntryPair, 'dateEntryPair not found')
-			dateEntryPair[1]?.push(se)
+			const columnKey = columnKeyForStatEntry(se)
+			const columnEntryPair = acc.find(([k]) => k === columnKey)
+			invariant(columnEntryPair, 'columnEntryPair not found')
+			columnEntryPair[1]?.push(se)
 
 			return acc
 		},
-		days().map((d) => [d, []])
+		columnKeys().map((k) => [k, []])
 	)
 
 	const missedGameIds = new Set(
@@ -578,12 +632,12 @@ function PlayerRow({
 						{player.name}
 					</Link>
 				</td>
-				{statEntriesByDay.map(([date, entries], entryDateIndex) => (
+				{statEntriesByColumn.map(([columnKey, entries], columnIndex) => (
 					<td
-						key={date}
+						key={columnKey}
 						className={cn(
 							'text-center text-nowrap',
-							entryDateIndex !== statEntriesByDay.length - 1
+							columnIndex !== statEntriesByColumn.length - 1
 								? 'border-r border-green-900/25 border-dashed'
 								: null,
 							`has-[.stat]:bg-${teamColor}-100`
@@ -593,12 +647,12 @@ function PlayerRow({
 							const localTimestamp = parseISO(timestamp)
 
 							const isStreak =
-								(entryDateIndex !== 0 &&
-									statEntriesByDay[entryDateIndex - 1][1].some(
+								(columnIndex !== 0 &&
+									statEntriesByColumn[columnIndex - 1][1].some(
 										(se) => se.type === type
 									)) ||
-								(entryDateIndex !== statEntriesByDay.length - 1 &&
-									statEntriesByDay[entryDateIndex + 1][1].some(
+								(columnIndex !== statEntriesByColumn.length - 1 &&
+									statEntriesByColumn[columnIndex + 1][1].some(
 										(se) => se.type === type
 									))
 
@@ -658,7 +712,7 @@ function PlayerRow({
 							)
 						})}
 						{entries.length === 0 &&
-							missedGameIds.has(gameIdByDate.get(date) ?? -1) && (
+							missedGameIds.has(gameIdByColumnKey.get(columnKey) ?? -1) && (
 								<Popover>
 									<PopoverTrigger>
 										<span className="text-xs opacity-40">🚫</span>
@@ -1186,29 +1240,23 @@ export default function Home() {
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
-	const gameIdByDate = new Map<string, number>(
+	const { columnKeyForGameTimestamp, columnKeyForStatEntry } = makeColumnKeys(
 		team.games
-			.filter((g) => g.timestamp)
-			.map((g) => [
-				formatISO(parseISO(g.timestamp!), { representation: 'date' }),
-				g.id,
-			])
 	)
 
-	function days() {
-		return Array.from(
-			new Set(
-				players.flatMap((p) =>
-					p.statEntries.flatMap((se) => {
-						const date = parseISO(se.game?.timestamp ?? se.timestamp)
-						const isoString = formatISO(date, { representation: 'date' })
+	const gameIdByColumnKey = new Map<string, number>(
+		team.games
+			.filter((g) => g.timestamp)
+			.map((g) => [columnKeyForGameTimestamp(g.timestamp!), g.id])
+	)
 
-						return isoString
-					})
-				)
-			)
+	function columnKeys() {
+		return Array.from(
+			new Set(players.flatMap((p) => p.statEntries.map(columnKeyForStatEntry)))
 		).toSorted() as string[]
 	}
+
+	const hasMultiGameColumns = columnKeys().some((k) => k.includes('T'))
 
 	useEffect(() => {
 		const tableContainer = document.getElementById('table_container')
@@ -1280,24 +1328,28 @@ export default function Home() {
 								<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
 								{/* Avatar */}
 								<th className="hidden md:table-cell"></th> {/* Name */}
-								{days().map((day) => {
+								{columnKeys().map((columnKey) => {
 									const game = team.games.find(
 										(g) =>
 											g.timestamp &&
-											formatISO(parseISO(g.timestamp), {
-												representation: 'date',
-											}) === day
+											columnKeyForGameTimestamp(g.timestamp) === columnKey
 									)
 									return (
-										<th key={day} className="text-xs rotate-45 h-10">
+										<th
+											key={columnKey}
+											className={cn(
+												'text-xs rotate-45',
+												hasMultiGameColumns ? 'h-14' : 'h-10'
+											)}
+										>
 											{game && game.statEntries.length > 0 ? (
 												<StatsDialog game={game} statEntries={game.statEntries} player={player}>
 													<button className="cursor-pointer hover:underline">
-														{formatLocalIsoDateString(day)}
+														<ColumnHeaderLabel columnKey={columnKey} />
 													</button>
 												</StatsDialog>
 											) : (
-												formatLocalIsoDateString(day)
+												<ColumnHeaderLabel columnKey={columnKey} />
 											)}
 										</th>
 									)
@@ -1314,8 +1366,9 @@ export default function Home() {
 									teamColor={team.color}
 									userHasAccessToTeam={userHasAccessToTeam}
 									player={p}
-									days={days}
-									gameIdByDate={gameIdByDate}
+									columnKeys={columnKeys}
+									columnKeyForStatEntry={columnKeyForStatEntry}
+									gameIdByColumnKey={gameIdByColumnKey}
 								/>
 							))}
 						</tbody>
