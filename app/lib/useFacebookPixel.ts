@@ -52,7 +52,7 @@ function initFacebookPixel(fbPixelId: string) {
 	fbq('track', 'PageView')
 }
 
-export function useFacebookPixelPageView(fbPixelId: string | null) {
+export function useFacebookPixel(fbPixelId: string | null) {
 	const { pathname, search } = useLocation()
 	const firstRender = useRef(true)
 

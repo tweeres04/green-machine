@@ -18,7 +18,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { UserContext } from '~/lib/userContext'
 import invariant from 'tiny-invariant'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
-import { useFacebookPixelPageView } from '~/lib/useFacebookPixelPageView'
+import { useFacebookPixel } from '~/lib/useFacebookPixel'
 
 export async function loader({
 	params: { teamSlug },
@@ -58,7 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 		useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
 
 	useMixpanelIdentify(user)
-	useFacebookPixelPageView(fbPixelId ?? null)
+	useFacebookPixel(fbPixelId ?? null)
 
 	return (
 		<html lang="en">
@@ -108,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					data-key="OR25pSoDpycSw5Y6N2q99Q"
 					async
 				></script>
-				{/* Meta Pixel is bootstrapped post-hydration in useFacebookPixelPageView */}
+				{/* Meta Pixel is bootstrapped post-hydration in useFacebookPixel */}
 			</body>
 		</html>
 	)
