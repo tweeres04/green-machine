@@ -15,6 +15,8 @@ export const teams = sqliteTable('teams', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull(),
 	slug: text('slug').notNull().unique(),
+	// The owner is always an admin and can't be demoted
+	ownerId: integer('owner_id'),
 	color: text('color').notNull().default('gray'),
 	location: text('location'),
 	// Geocoded from location so weather lookups skip Nominatim at request time

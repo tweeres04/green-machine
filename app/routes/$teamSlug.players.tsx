@@ -11,7 +11,8 @@ import { getDb } from '~/lib/getDb'
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import invariant from 'tiny-invariant'
-import { Player, type Team } from '~/schema'
+import { eq } from 'drizzle-orm'
+import { Player, teams, type Team } from '~/schema'
 import Nav from '~/components/ui/nav'
 import {
 	Dialog,
@@ -75,7 +76,12 @@ export async function loader({
 
 	invariant(teamSlug, 'Missing teamSlug parameter')
 
-	const [team, user] = await Promise.all([
+	const teamIdQuery = db
+		.select({ id: teams.id })
+		.from(teams)
+		.where(eq(teams.slug, teamSlug))
+
+	const [team, user, admins] = await Promise.all([
 		db.query.teams.findFirst({
 			where: (teams, { eq }) => eq(teams.slug, teamSlug),
 			with: {
@@ -90,6 +96,9 @@ export async function loader({
 			},
 		}),
 		authenticator.isAuthenticated(request),
+		db.query.teamsUsers.findMany({
+			where: (teamsUsers, { eq }) => eq(teamsUsers.teamId, teamIdQuery),
+		}),
 	])
 
 	if (!team) {
@@ -106,7 +115,9 @@ export async function loader({
 		throw new Response(null, { status: 401 })
 	}
 
-	return { team }
+	const adminUserIds = admins.map((a) => a.userId)
+
+	return { team, adminUserIds, userId: user.id }
 }
 
 function useClearNewPlayerForm(
@@ -128,7 +139,7 @@ function useClearNewPlayerForm(
 }
 
 export default function EditTeam() {
-	const { team } = useLoaderData<typeof loader>()
+	const { team, adminUserIds, userId } = useLoaderData<typeof loader>()
 	const { id, players } = team
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
@@ -174,6 +185,13 @@ export default function EditTeam() {
 					const assistCount = p.statEntries.filter(
 						(s) => s.type === 'assist'
 					).length
+					const linkedUserId = p.userInvites.find(
+						(ui) => ui.acceptedAt && ui.userId
+					)?.userId
+					const isAdmin =
+						linkedUserId != null && adminUserIds.includes(linkedUserId)
+					const adminLocked =
+						linkedUserId === team.ownerId || linkedUserId === userId
 					return (
 						<li className="flex items-center gap-3" key={p.id}>
 							<Popover>
@@ -266,6 +284,38 @@ export default function EditTeam() {
 											Send invite
 										</DropdownMenuItem>
 									)}
+									{linkedUserId != null ? (
+										isAdmin ? (
+											<DropdownMenuItem
+												disabled={adminLocked}
+												onClick={() => {
+													fetcher.submit(
+														{ userId: String(linkedUserId) },
+														{
+															method: 'delete',
+															action: `/teams/${id}/admins`,
+														}
+													)
+												}}
+											>
+												{adminLocked ? 'Admin' : 'Remove admin'}
+											</DropdownMenuItem>
+										) : (
+											<DropdownMenuItem
+												onClick={() => {
+													fetcher.submit(
+														{ userId: String(linkedUserId) },
+														{
+															method: 'post',
+															action: `/teams/${id}/admins`,
+														}
+													)
+												}}
+											>
+												Make admin
+											</DropdownMenuItem>
+										)
+									) : null}
 									<DropdownMenuItem
 										onClick={() => {
 											setMenuDialogState(() => ({

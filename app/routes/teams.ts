@@ -34,6 +34,7 @@ export const action: ActionFunction = async ({ request }) => {
 				.values({
 					name: name,
 					slug: slug,
+					ownerId: user.id,
 				})
 				.returning()
 			await tx.insert(teamsUsers).values({
