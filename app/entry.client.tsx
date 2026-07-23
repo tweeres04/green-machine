@@ -16,6 +16,8 @@ import mixpanel from 'mixpanel-browser'
 
 init({
 	dsn: 'https://be220b42e1246adfa24c00c1e6917b15@o4504010497720320.ingest.us.sentry.io/4511094435414016',
+	enabled: process.env.NODE_ENV === 'production',
+	environment: process.env.NODE_ENV,
 	tracesSampleRate: 1,
 	enableLogs: true,
 
