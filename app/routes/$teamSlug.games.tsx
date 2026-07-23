@@ -125,8 +125,11 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 		{ property: 'og:description', content: description },
 		{
 			property: 'og:image',
-			content: 'https://teamstats.tweeres.com/games_opengraph.png',
+			content: `${url}/og.png`,
 		},
+		{ property: 'og:image:width', content: '1200' },
+		{ property: 'og:image:height', content: '630' },
+		{ name: 'twitter:card', content: 'summary_large_image' },
 		{ property: 'og:url', content: url },
 	]
 }
