@@ -315,6 +315,14 @@ export async function loader({
 			if (bGoals !== aGoals) return bGoals - aGoals
 			return a.name.localeCompare(b.name)
 		}
+		if (sort === 'contributions') {
+			const aContributions = aGoals + aAssists
+			const bContributions = bGoals + bAssists
+			if (bContributions !== aContributions)
+				return bContributions - aContributions
+			if (bGoals !== aGoals) return bGoals - aGoals
+			return a.name.localeCompare(b.name)
+		}
 		return 0
 	})
 
@@ -1213,6 +1221,7 @@ function SortDropdown() {
 		name: 'Name',
 		goals: 'Most goals',
 		assists: 'Most assists',
+		contributions: 'Most contributions',
 	}[sort]
 
 	return (
@@ -1233,6 +1242,9 @@ function SortDropdown() {
 				>
 					<DropdownMenuRadioItem value="goals">Goals</DropdownMenuRadioItem>
 					<DropdownMenuRadioItem value="assists">Assists</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="contributions">
+						Contributions
+					</DropdownMenuRadioItem>
 					<DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
