@@ -37,7 +37,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '~/components/ui/dialog'
-import { capitalize } from 'lodash-es'
+import { upperFirst } from 'lodash-es'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
@@ -51,6 +51,7 @@ import {
 	DropdownMenu,
 	DropdownMenuTrigger,
 	DropdownMenuContent,
+	DropdownMenuItem,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
 } from '~/components/ui/dropdown-menu'
@@ -60,6 +61,7 @@ import {
 	ChevronDown,
 	ChevronsUpDown,
 	LoaderCircle,
+	MoreHorizontal,
 	Share,
 	Sparkles,
 } from 'lucide-react'
@@ -83,6 +85,11 @@ import {
 } from '~/components/ui/collapsible'
 import mixpanel from 'mixpanel-browser'
 import { getGameForecast } from '~/lib/weather-service'
+import {
+	oncePerGameStatTypes,
+	statEmoji,
+	statLabel,
+} from '~/lib/stat-types'
 import { TrialStatus } from '~/components/ui/trial-status'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
@@ -538,7 +545,7 @@ function StatEditDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Edit {data?.type}</DialogTitle>
+					<DialogTitle>Edit {data ? statLabel[data.type] : null}</DialogTitle>
 				</DialogHeader>
 				<fetcher.Form action={`/stats/${data?.id}`} method="PATCH">
 					<div className="pb-4">
@@ -618,7 +625,9 @@ function StatDeleteDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Delete {data?.type}?</DialogTitle>
+					<DialogTitle>
+						Delete {data ? statLabel[data.type] : null}?
+					</DialogTitle>
 					<DialogDescription>
 						By {data?.playerName} on{' '}
 						{data?.timestamp ? format(data.timestamp, dateFormat) : null}
@@ -758,12 +767,12 @@ function PlayerRow({
 												i !== 0 ? '-ml-2' : null
 											)}
 										>
-											{type === 'goal' ? '⚽️' : '🍎'}
+											{statEmoji[type]}
 										</span>
 									</PopoverTrigger>
 									<PopoverContent className="space-y-3">
 										<div>
-											{capitalize(type)} by {player.name} on{' '}
+											{upperFirst(statLabel[type])} by {player.name} on{' '}
 											{format(localTimestamp, dateFormat)}
 										</div>
 										{userHasAccessToTeam ? (
@@ -871,13 +880,13 @@ function AddStatsButton({
 
 	const isSubmitting = fetcher.state === 'submitting'
 
-	// Check if we hit the paywall (402 error response with error field)
-	const paywallError =
+	// Error response from the action (paywall or one-award-per-game guard)
+	const errorData =
 		fetcher.state === 'idle' &&
 		fetcher.data &&
 		typeof fetcher.data === 'object' &&
 		'error' in fetcher.data
-			? (fetcher.data as { error: string }).error
+			? (fetcher.data as { error: string; paywall?: boolean })
 			: null
 
 	useEffect(() => {
@@ -896,25 +905,31 @@ function AddStatsButton({
 		}
 	}, [dialogOpen])
 
+	// Close when a save lands. Gated on 'idle' rather than 'loading': fast
+	// dev loaders let the fetcher pass through 'loading' without React
+	// committing a render there, which left the dialog stuck open. 'idle' is
+	// terminal so it can't be missed, and because this effect depends on
+	// nothing but the fetcher, stale success data from an earlier save can't
+	// re-close a reopened dialog. On error, stay open and show the alert
 	useEffect(() => {
-		if (fetcher.state === 'loading') {
-			// Only close dialog on success (no error in response)
-			const hasError =
-				fetcher.data &&
-				typeof fetcher.data === 'object' &&
-				'error' in fetcher.data
-			if (fetcher.data !== undefined && !hasError) {
-				setDialogOpen(false)
-			}
-			if (selectedGameId === 'manual') {
-				invariant(
-					typeof fetcher.data === 'number',
-					'Fetcher data is not the game ID'
-				)
-				setSelectedGameId(fetcher.data.toString())
-			}
+		if (fetcher.state !== 'idle' || fetcher.data === undefined) {
+			return
 		}
-	}, [fetcher.data, fetcher.state, selectedGameId])
+		const hasError =
+			fetcher.data &&
+			typeof fetcher.data === 'object' &&
+			'error' in fetcher.data
+		if (!hasError) {
+			setDialogOpen(false)
+		}
+	}, [fetcher.data, fetcher.state])
+
+	// A manual-date save creates the game; adopt its ID as the selection
+	useEffect(() => {
+		if (selectedGameId === 'manual' && typeof fetcher.data === 'number') {
+			setSelectedGameId(fetcher.data.toString())
+		}
+	}, [fetcher.data, selectedGameId])
 
 	useEffect(() => {
 		if (aiFetcher.state === 'idle' && aiFetcher.data) {
@@ -943,6 +958,27 @@ function AddStatsButton({
 		)
 	}
 
+	// All saved entries for the selected game, across players (Number() of
+	// 'manual' or null is NaN, which matches nothing)
+	const savedStatsForSelectedGame = players.flatMap((p) =>
+		p.statEntries.filter((se) => se.gameId === Number(selectedGameId))
+	)
+
+	function addStat(playerId: number, type: StatEntry['type']) {
+		setStats((stats) => [
+			// Award stats are one per game: adding one moves it to this player
+			...((oncePerGameStatTypes as readonly string[]).includes(type)
+				? stats.filter((s) => s.type !== type)
+				: stats),
+			{
+				playerId,
+				timestamp: timestampValue,
+				type,
+				gameId: selectedGameId === 'manual' ? null : Number(selectedGameId),
+			},
+		])
+	}
+
 	function submit(e: MouseEvent) {
 		e.preventDefault()
 
@@ -954,6 +990,8 @@ function AddStatsButton({
 		mixpanel.track('add stats', {
 			goals: stats.filter((s) => s.type === 'goal').length,
 			assists: stats.filter((s) => s.type === 'assist').length,
+			mvps: stats.filter((s) => s.type === 'mvp').length,
+			cleanSheets: stats.filter((s) => s.type === 'clean_sheet').length,
 		})
 	}
 
@@ -993,25 +1031,29 @@ function AddStatsButton({
 			>
 				<Add />
 			</Button>
-			<DialogContent className="flex flex-col max-h-[95dvh] w-[92dvw]">
+			<DialogContent className="flex flex-col h-dvh w-dvw max-w-none sm:h-auto sm:max-h-[95dvh] sm:w-[92dvw] sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>Add stats</DialogTitle>
 				</DialogHeader>
 
-				{paywallError && (
+				{errorData && (
 					<Alert variant="destructive">
 						<AlertDescription className="space-y-2">
-							<p>{paywallError}</p>
-							<p className="text-sm">
-								<span className="font-semibold">
-									Early access pricing, 50% off:
-								</span>{' '}
-								<span className="line-through opacity-70">$39</span>{' '}
-								<span className="font-medium">$19/year</span>
-							</p>
-							<Button asChild size="sm">
-								<a href={`/teams/${teamId}/subscribe`}>Subscribe</a>
-							</Button>
+							<p>{errorData.error}</p>
+							{errorData.paywall ? (
+								<>
+									<p className="text-sm">
+										<span className="font-semibold">
+											Early access pricing, 50% off:
+										</span>{' '}
+										<span className="line-through opacity-70">$39</span>{' '}
+										<span className="font-medium">$19/year</span>
+									</p>
+									<Button asChild size="sm">
+										<a href={`/teams/${teamId}/subscribe`}>Subscribe</a>
+									</Button>
+								</>
+							) : null}
 						</AlertDescription>
 					</Alert>
 				)}
@@ -1167,44 +1209,41 @@ function AddStatsButton({
 							.map((player) => (
 								<li
 									key={player.id}
-									className="grid grid-cols-3 gap-3 items-center"
+									className="grid grid-cols-[1fr_auto_auto] gap-3 items-center"
 								>
 									<div>{player.name}</div>
 									<div>
-										{(() => {
-											const existingStats = players.flatMap((p) =>
-												p.statEntries.filter(
-													(se) => se.gameId === Number(selectedGameId)
-												)
-											)
-											const goals = existingStats.filter(
-												(s) => s.playerId === player.id && s.type === 'goal'
-											).length
-											const assists = existingStats.filter(
-												(s) => s.playerId === player.id && s.type === 'assist'
-											).length
-											return (
-												<div className="text-[0.6rem]">
-													{goals ? <span>{goals}⚽️</span> : null}{' '}
-													{assists ? <span>{assists}🍎</span> : null}
-												</div>
-											)
-										})()}
-										{(() => {
-											const goals = stats.filter(
-												(s) => s.playerId === player.id && s.type === 'goal'
-											).length
-											const assists = stats.filter(
-												(s) => s.playerId === player.id && s.type === 'assist'
-											).length
-											return (
-												<div>
-													{goals || assists ? '+' : null}
-													{goals ? <span>{goals}⚽️</span> : null}{' '}
-													{assists ? <span>{assists}🍎</span> : null}
-												</div>
-											)
-										})()}
+										<div className="text-[0.6rem]">
+											{Object.keys(statEmoji).map((type) => {
+												const count = savedStatsForSelectedGame.filter(
+													(s) =>
+														s.playerId === player.id && s.type === type
+												).length
+												return count ? (
+													<span key={type}>
+														{count}
+														{statEmoji[type]}{' '}
+													</span>
+												) : null
+											})}
+										</div>
+										<div>
+											{stats.some((s) => s.playerId === player.id)
+												? '+'
+												: null}
+											{Object.keys(statEmoji).map((type) => {
+												const count = stats.filter(
+													(s) =>
+														s.playerId === player.id && s.type === type
+												).length
+												return count ? (
+													<span key={type}>
+														{count}
+														{statEmoji[type]}{' '}
+													</span>
+												) : null
+											})}
+										</div>
 									</div>
 									<div className="flex gap-1 justify-end">
 										<Button
@@ -1212,22 +1251,7 @@ function AddStatsButton({
 											size="icon"
 											variant="secondary"
 											className="relative"
-											onClick={() => {
-												setStats((stats) => {
-													return [
-														...stats,
-														{
-															playerId: player.id,
-															timestamp: timestampValue,
-															type: 'assist',
-															gameId:
-																selectedGameId === 'manual'
-																	? null
-																	: Number(selectedGameId),
-														},
-													]
-												})
-											}}
+											onClick={() => addStat(player.id, 'assist')}
 										>
 											🍎
 											<Add className={cn('absolute top-0 right-0 size-4')} />
@@ -1237,26 +1261,34 @@ function AddStatsButton({
 											size="icon"
 											variant="secondary"
 											className="relative"
-											onClick={() => {
-												setStats((stats) => {
-													return [
-														...stats,
-														{
-															playerId: player.id,
-															timestamp: timestampValue,
-															type: 'goal',
-															gameId:
-																selectedGameId === 'manual'
-																	? null
-																	: Number(selectedGameId),
-														},
-													]
-												})
-											}}
+											onClick={() => addStat(player.id, 'goal')}
 										>
 											⚽️
 											<Add className={cn('absolute top-0 right-0 size-4')} />
 										</Button>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button
+													type="button"
+													size="icon"
+													variant="secondary"
+													aria-label="More stat types"
+												>
+													<MoreHorizontal />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												{oncePerGameStatTypes.map((type) => (
+													<DropdownMenuItem
+														key={type}
+														onClick={() => addStat(player.id, type)}
+													>
+														{statEmoji[type]}{' '}
+														{upperFirst(statLabel[type])}
+													</DropdownMenuItem>
+												))}
+											</DropdownMenuContent>
+										</DropdownMenu>
 									</div>
 								</li>
 							))}

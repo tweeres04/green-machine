@@ -91,18 +91,21 @@ export function StatsDialog({
 						const assists = entries.filter(
 							(entry) => entry.type === 'assist'
 						).length
+						const parts = []
+						if (goals > 0) parts.push(`${goals} goal${goals === 1 ? '' : 's'}`)
+						if (assists > 0)
+							parts.push(`${assists} assist${assists === 1 ? '' : 's'}`)
+						if (entries.some((entry) => entry.type === 'mvp'))
+							parts.push('MVP 🪓')
+						if (entries.some((entry) => entry.type === 'clean_sheet'))
+							parts.push('clean sheet 🧤')
 						return (
 							<div
 								key={playerId}
 								className="grid grid-cols-2 sm:grid-cols-[1fr_3fr]"
 							>
 								<div>{player_.name}:</div>
-								<div>
-									{goals > 0 && `${goals} goal${goals === 1 ? '' : 's'}`}
-									{goals > 0 && assists > 0 && ', '}
-									{assists > 0 &&
-										`${assists} assist${assists === 1 ? '' : 's'}`}
-								</div>
+								<div>{parts.join(', ')}</div>
 							</div>
 						)
 					})}

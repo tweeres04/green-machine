@@ -211,7 +211,7 @@ export const gamesRelations = relations(games, ({ one, many }) => ({
 	statEntries: many(statEntries),
 }))
 
-const statSchema = z.enum(['goal', 'assist'])
+const statSchema = z.enum(['goal', 'assist', 'mvp', 'clean_sheet'])
 type Stat = z.infer<typeof statSchema>
 
 export const statEntries = sqliteTable(

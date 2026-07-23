@@ -15,6 +15,7 @@ import { getDb } from '~/lib/getDb'
 import { authenticator } from '~/lib/auth.server'
 import { z, ZodError } from 'zod'
 import { canAddStatsToGame } from '~/lib/teamHasActiveSubscription'
+import { oncePerGameStatTypes, statLabel } from '~/lib/stat-types'
 import { getGamesWithStatsCount } from '~/lib/getGamesWithStatsCount'
 
 export const meta: MetaFunction = () => {
@@ -106,11 +107,60 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json(
 			{
 				error: "You've tracked stats for 3 games, the max for free teams. Subscribe to track unlimited games.",
+				paywall: true,
 			},
 			{
 				status: 402,
 			}
 		)
+	}
+
+	// One award stat (MVP, clean sheet) per game. The dialog prevents doubles
+	// too, but don't rely on the UI alone
+	for (const type of oncePerGameStatTypes) {
+		const gameIds = newEntries
+			.filter((e) => e.type === type)
+			.map((e) => e.gameId)
+		// Duplicate null gameIds count too: they all land in the same new game
+		if (gameIds.length !== new Set(gameIds).size) {
+			return json(
+				{ error: `Only one ${statLabel[type]} per game` },
+				{ status: 400 }
+			)
+		}
+	}
+
+	// An award stat added to a game that already has one moves it: the old
+	// entry is deleted so the award lands on the new player
+	const awardGameIds = newEntries
+		.filter((e) =>
+			(oncePerGameStatTypes as readonly string[]).includes(e.type)
+		)
+		.map((e) => e.gameId)
+		.filter((id): id is number => id != null)
+
+	let replacedAwardIds: number[] = []
+	if (awardGameIds.length > 0) {
+		const existingAwards = await db
+			.select({
+				id: statEntries.id,
+				gameId: statEntries.gameId,
+				type: statEntries.type,
+			})
+			.from(statEntries)
+			.where(
+				and(
+					inArray(statEntries.gameId, awardGameIds),
+					inArray(statEntries.type, [...oncePerGameStatTypes])
+				)
+			)
+		replacedAwardIds = existingAwards
+			.filter((existing) =>
+				newEntries.some(
+					(e) => e.gameId === existing.gameId && e.type === existing.type
+				)
+			)
+			.map((existing) => existing.id)
 	}
 
 	return db.transaction(async (tx) => {
@@ -126,6 +176,9 @@ export async function action({ request }: ActionFunctionArgs) {
 				entry.gameId = game.id
 			})
 			newGameId = game.id
+		}
+		if (replacedAwardIds.length > 0) {
+			await tx.delete(statEntries).where(inArray(statEntries.id, replacedAwardIds))
 		}
 		await tx.insert(statEntries).values(newEntries)
 		return newGameId
