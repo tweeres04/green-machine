@@ -639,7 +639,11 @@ function PlayerRow({
 						<PopoverTrigger>
 							<Avatar title={player.name} className="shadow">
 								<AvatarImage
-									src={`https://files.tweeres.com/teamstats/players/${player.id}/image`}
+									src={`https://files.tweeres.com/teamstats/players/${player.id}/image${
+										player.imageUpdatedAt
+											? `?v=${encodeURIComponent(player.imageUpdatedAt)}`
+											: ''
+									}`}
 									className="object-cover"
 								/>
 								<AvatarFallback>{player.name[0]}</AvatarFallback>

@@ -6,8 +6,11 @@ import {
 
 import * as Minio from 'minio'
 import invariant from 'tiny-invariant'
+import { eq } from 'drizzle-orm'
+import { formatISO } from 'date-fns'
 import { getDb } from '~/lib/getDb'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { players } from '~/schema'
 
 invariant(process.env.MINIO_ACCESS_KEY, 'Missing MINIO_ACCESS_KEY')
 invariant(process.env.MINIO_SECRET_KEY, 'Missing MINIO_SECRET_KEY')
@@ -77,13 +80,25 @@ export async function action({ params, request }: ActionFunctionArgs) {
 		throw new Response(null, { status: 403 })
 	}
 
+	// The image URL is stable, so bump imageUpdatedAt on any change to
+	// cache-bust it everywhere it renders
+
 	// native web forms don't support put
 	if (request.method.toLowerCase() === 'post') {
-		return handlePost(request, Number(playerId))
+		const result = await handlePost(request, Number(playerId))
+		await db
+			.update(players)
+			.set({ imageUpdatedAt: formatISO(new Date()) })
+			.where(eq(players.id, Number(playerId)))
+		return result
 	}
 
 	if (request.method.toLowerCase() === 'delete') {
 		await minioClient.removeObject('teamstats', `players/${playerId}/image`)
+		await db
+			.update(players)
+			.set({ imageUpdatedAt: formatISO(new Date()) })
+			.where(eq(players.id, Number(playerId)))
 		return new Response(null, { status: 204 })
 	}
 }

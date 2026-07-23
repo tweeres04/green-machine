@@ -150,14 +150,10 @@ export default function EditTeam() {
 	)
 	const imageFetcher = useFetcher()
 	const imageSaving = imageFetcher.state !== 'idle'
-	// Cache buster so the new photo shows immediately after upload: the
-	// image URL never changes, so the browser would keep the cached one
-	const [imageVersion, setImageVersion] = useState(0)
 
 	useEffect(() => {
 		if (imageFetcher.state === 'idle' && imageFetcher.data !== undefined) {
 			setChangeImageDialog(null)
-			setImageVersion(Date.now())
 		}
 	}, [imageFetcher.state, imageFetcher.data])
 
@@ -212,7 +208,9 @@ export default function EditTeam() {
 									<Avatar>
 										<AvatarImage
 											src={`https://files.tweeres.com/teamstats/players/${p.id}/image${
-												imageVersion ? `?v=${imageVersion}` : ''
+												p.imageUpdatedAt
+													? `?v=${encodeURIComponent(p.imageUpdatedAt)}`
+													: ''
 											}`}
 											className="object-cover"
 										/>

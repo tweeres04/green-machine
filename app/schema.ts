@@ -102,6 +102,8 @@ export const players = sqliteTable(
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		teamId: integer('team_id').notNull(),
 		name: text('name').notNull(),
+		// Bumped on photo upload; cache-busts the image URL, which never changes
+		imageUpdatedAt: text('image_updated_at'),
 	},
 	(table) => ({
 		teamIdIdx: index('players_team_id_idx').on(table.teamId),

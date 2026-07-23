@@ -1,0 +1,1 @@
+ALTER TABLE `players` ADD `image_updated_at` text;
