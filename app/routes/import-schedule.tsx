@@ -2,6 +2,8 @@ import { ActionFunction, json } from '@remix-run/node'
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
 
+import { authenticator } from '~/lib/auth.server'
+
 const MAX_PASTE_BYTES = 50_000
 const MAX_FETCH_BYTES = 500_000
 const FETCH_TIMEOUT_MS = 15_000
@@ -53,6 +55,12 @@ async function fetchSchedule(rawUrl: string): Promise<string> {
 }
 
 export const action: ActionFunction = async ({ request }) => {
+	const user = await authenticator.isAuthenticated(request)
+
+	if (!user) {
+		throw new Response(null, { status: 401 })
+	}
+
 	const formData = await request.formData()
 	const scheduleUrl = formData.get('schedule_url') as string | null
 	const pastedSchedule = formData.get('schedule_text') as string | null
