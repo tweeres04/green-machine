@@ -239,29 +239,7 @@ export async function loader({
 				with: {
 					userInvites: true,
 					rsvps: true,
-					statEntries: season
-						? {
-								where: (statEntries, { and, gte, lte }) => {
-									invariant(season, 'No season inside stats query')
-
-									let endOfSeasonEndDay: Date | string = parseISO(
-										season.endDate
-									)
-									endOfSeasonEndDay = endOfDay(endOfSeasonEndDay)
-									endOfSeasonEndDay = formatISO(endOfSeasonEndDay)
-
-									// TODO: need to check the game date first
-									// this _may_ fail across dst since sqlite does a string comparison (but I'll tackle that if it actually happens)
-									return and(
-										gte(statEntries.timestamp, season.startDate),
-										lte(statEntries.timestamp, endOfSeasonEndDay)
-									)
-								},
-								with: {
-									game: true,
-								},
-						  }
-						: { with: { game: true } },
+					statEntries: { with: { game: true } },
 				},
 				orderBy: (players, { asc }) => [asc(players.name)],
 			},
@@ -300,6 +278,22 @@ export async function loader({
 
 	if (!team) {
 		throw new Response('Team not found', { status: 404 })
+	}
+
+	// Game-linked stats belong to their game's season; stats without a game
+	// (or with a TBD game) fall back to their own timestamp. Filtered here
+	// instead of in the query because drizzle's relational `where` can't
+	// reference the joined games table
+	if (season) {
+		const seasonStart = parseISO(season.startDate)
+		const seasonEnd = endOfDay(parseISO(season.endDate))
+
+		for (const player of team.players) {
+			player.statEntries = player.statEntries.filter((se) => {
+				const timestamp = parseISO(se.game?.timestamp ?? se.timestamp)
+				return timestamp >= seasonStart && timestamp <= seasonEnd
+			})
+		}
 	}
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, team.id)
@@ -506,89 +500,6 @@ function ColumnHeaderLabel({ columnKey }: { columnKey: string }) {
 	)
 }
 
-type StatEditDialogData = Omit<StatEntry, 'playerId' | 'gameId'> | null
-
-function StatEditDialog({
-	show,
-	closeDialog,
-	data,
-}: {
-	show: boolean
-	closeDialog: () => void
-	data: StatEditDialogData
-}) {
-	const fetcher = useFetcher<{ rowsAffected: number }>()
-
-	const isSubmitting =
-		fetcher.state === 'submitting' &&
-		fetcher.formAction === `/stats/${data?.id}`
-
-	const localTimestamp = data?.timestamp ? parseISO(data?.timestamp) : null
-	const datepickerTimestampString = localTimestamp
-		? formatISO(localTimestamp).slice(0, 19) // Chop off offset
-		: undefined
-
-	useEffect(() => {
-		if (fetcher.state === 'loading' && fetcher.data?.rowsAffected === 1) {
-			closeDialog()
-		}
-	}, [closeDialog, fetcher.data?.rowsAffected, fetcher.state])
-
-	return (
-		<Dialog
-			open={Boolean(show)}
-			onOpenChange={(value) => {
-				if (!value) {
-					closeDialog()
-				}
-			}}
-		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit {data ? statLabel[data.type] : null}</DialogTitle>
-				</DialogHeader>
-				<fetcher.Form action={`/stats/${data?.id}`} method="PATCH">
-					<div className="pb-4">
-						<Input
-							type="datetime-local"
-							defaultValue={datepickerTimestampString}
-							step="1"
-							onChange={(e) => {
-								const timestampInput =
-									e.target.parentElement?.querySelector<HTMLInputElement>(
-										'#timestamp_input' // I should use a ref at some point
-									)
-								invariant(timestampInput, 'timestampInput not found')
-								timestampInput.value = formatISO(parseISO(e.target.value))
-							}}
-						/>
-						<input
-							type="hidden"
-							name="timestamp"
-							id="timestamp_input"
-							defaultValue={
-								datepickerTimestampString
-									? formatISO(parseISO(datepickerTimestampString))
-									: undefined
-							}
-						/>
-					</div>
-					<DialogFooter>
-						<DialogClose asChild>
-							<Button variant="secondary" type="button">
-								Cancel
-							</Button>
-						</DialogClose>
-						<Button type="submit" disabled={isSubmitting}>
-							Save
-						</Button>
-					</DialogFooter>
-				</fetcher.Form>
-			</DialogContent>
-		</Dialog>
-	)
-}
-
 type StatDeleteDialogData =
 	| (Omit<StatEntry, 'playerId' | 'gameId'> & { playerName: string })
 	| null
@@ -672,7 +583,6 @@ function PlayerRow({
 	}) => string
 	gameIdByColumnKey: Map<string, number>
 }) {
-	const [statEditDialog, setStatEditDialog] = useState<StatEditDialogData>(null)
 	const [statDeleteDialog, setStatDeleteDialog] =
 		useState<StatDeleteDialogData>(null)
 
@@ -778,18 +688,6 @@ function PlayerRow({
 										{userHasAccessToTeam ? (
 											<div className="flex gap-1 text-center">
 												<Button
-													variant="secondary"
-													onClick={() => {
-														setStatEditDialog({
-															id,
-															type,
-															timestamp,
-														})
-													}}
-												>
-													Edit
-												</Button>
-												<Button
 													className="shrink-0"
 													variant="destructive"
 													size="icon"
@@ -835,11 +733,6 @@ function PlayerRow({
 						: `${goalCount}G ${assistCount}A`}
 				</td>
 			</tr>
-			<StatEditDialog
-				show={Boolean(statEditDialog)}
-				closeDialog={() => setStatEditDialog(null)}
-				data={statEditDialog}
-			/>
 			<StatDeleteDialog
 				show={Boolean(statDeleteDialog)}
 				closeDialog={() => setStatDeleteDialog(null)}
