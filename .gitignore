@@ -21,6 +21,9 @@ test.db-wal
 *.afdesign~lock~
 .DS_Store
 
+# Claude Code machine-local settings
+.claude/settings.local.json
+
 # Playwright
 /test-results/
 /playwright-report/
