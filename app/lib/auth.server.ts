@@ -124,15 +124,19 @@ authenticator.use(
 			throw new Error('A password is required')
 		}
 
+		// Emails are stored and compared lowercase so logins are
+		// case-insensitive (mobile keyboards love to capitalize them)
+		const normalizedEmail = email.trim().toLowerCase()
+
 		const path = new URL(request.url).pathname
 		if (path !== '/login' && path !== '/signup') {
 			throw new Error('Not found')
 		}
 		const user =
 			path === '/login'
-				? await login(email, password)
+				? await login(normalizedEmail, password)
 				: path === '/signup'
-				? await signUp(name, email, password, repeatPassword, request)
+				? await signUp(name, normalizedEmail, password, repeatPassword, request)
 				: null
 
 		invariant(user, 'Path should be /login or /signup')

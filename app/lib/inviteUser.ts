@@ -62,6 +62,8 @@ export async function inviteUser({
 	teamId: number
 	inviterName: string
 }) {
+	email = email.trim().toLowerCase()
+
 	const randomToken = randomBytes(16).toString('hex')
 
 	const db = getDb()
