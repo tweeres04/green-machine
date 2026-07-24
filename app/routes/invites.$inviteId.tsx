@@ -11,6 +11,21 @@ import { commitSession, getSession } from '~/lib/session.server'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import { userInvites } from '~/schema'
 
+// The invite props steer post-login redirects, so clear them once the
+// invite is settled or every future login bounces through the stale invite
+async function clearInviteSessionHeaders(request: Request) {
+	const session = await getSession(request.headers.get('Cookie'))
+
+	if (!session.has('inviteId') && !session.has('inviteToken')) {
+		return undefined
+	}
+
+	session.unset('inviteId')
+	session.unset('inviteToken')
+
+	return { 'Set-Cookie': await commitSession(session) }
+}
+
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	invariant(params.inviteId, 'Missing inviteId parameter')
 
@@ -37,7 +52,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	const user = await authenticator.isAuthenticated(request)
 
 	if (invite.userId === user?.id) {
-		return json({ team: invite.player.team, inviterName: invite.inviter.name })
+		return json(
+			{ team: invite.player.team, inviterName: invite.inviter.name },
+			{ headers: await clearInviteSessionHeaders(request) }
+		)
 	}
 
 	const token = new URL(request.url).searchParams.get('token')
@@ -45,6 +63,16 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	// todo token expiry
 	if (!token || token !== invite.token) {
 		throw new Response(null, { status: 401 })
+	}
+
+	// An accepted invite belongs to its user: don't let it be re-accepted
+	// (e.g. a second account logging in on the same browser after a stale
+	// session redirect)
+	if (invite.acceptedAt) {
+		throw new Response('Invite already used', {
+			status: 410,
+			headers: await clearInviteSessionHeaders(request),
+		})
 	}
 
 	if (!user) {
@@ -68,11 +96,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		})
 		.where(eq(userInvites.id, inviteId))
 
-	return json({
-		team: invite.player.team,
-		inviterName: invite.inviter.name,
-		user,
-	})
+	return json(
+		{
+			team: invite.player.team,
+			inviterName: invite.inviter.name,
+			user,
+		},
+		{ headers: await clearInviteSessionHeaders(request) }
+	)
 }
 
 export default function Invite() {

@@ -117,7 +117,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		teamId: team.id,
 	})
 
-	return json({ teamName: team.name })
+	// Consumed: without this, every future signup on this browser would
+	// redirect back here and file another request
+	const session = await getSession(request.headers.get('Cookie'))
+	let headers
+	if (session.has('inviteRequestTeamId')) {
+		session.unset('inviteRequestTeamId')
+		headers = { 'Set-Cookie': await commitSession(session) }
+	}
+
+	return json({ teamName: team.name }, { headers })
 }
 
 export default function RequestInvite() {
