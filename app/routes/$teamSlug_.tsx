@@ -85,6 +85,7 @@ import {
 } from '~/components/ui/collapsible'
 import mixpanel from 'mixpanel-browser'
 import { getGameForecast } from '~/lib/weather-service'
+import { ogImageVersion } from '~/lib/og-image-version.server'
 import {
 	oncePerGameStatTypes,
 	statEmoji,
@@ -95,7 +96,8 @@ import { TrialStatus } from '~/components/ui/trial-status'
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
 		team: { name, slug },
-	} = data as { team: Team }
+		ogVersion,
+	} = data as { team: Team; ogVersion: string }
 
 	const title = `${name} - TeamStats`
 	const description = `Team stats for ${name}. Track goals and assists for each player. Shareable standings.`
@@ -118,7 +120,7 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 		{ property: 'og:description', content: description },
 		{
 			property: 'og:image',
-			content: `${url}/og.png`,
+			content: `${url}/og.png?v=${ogVersion}`,
 		},
 		{ property: 'og:image:width', content: '1200' },
 		{ property: 'og:image:height', content: '630' },
@@ -377,8 +379,21 @@ export async function loader({
 			? getGameForecast(nextGame.id)
 			: Promise.resolve(null)
 
+	// Mirrors what the og image renders: standings and the next game
+	const ogVersion = ogImageVersion([
+		team.name,
+		team.color,
+		season?.name,
+		team.players.map((p) => [
+			p.name,
+			p.statEntries.map((se) => [se.id, se.type]),
+		]),
+		nextGame ? [nextGame.opponent, nextGame.timestamp] : null,
+	])
+
 	return defer({
 		team,
+		ogVersion,
 		userHasAccessToTeam,
 		teamHasActiveSubscription: teamHasActiveSubscription_,
 		gamesWithStatsCount,

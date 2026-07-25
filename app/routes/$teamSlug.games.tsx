@@ -98,11 +98,13 @@ import { Checkbox } from '~/components/ui/checkbox'
 import { StatsDialog } from '~/components/ui/stats-dialog'
 import { RsvpForm } from '~/components/ui/rsvp-form'
 import { getGameForecast, WeatherData } from '~/lib/weather-service'
+import { ogImageVersion } from '~/lib/og-image-version.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
 		team: { name, slug },
-	} = data as { team: Team }
+		ogVersion,
+	} = data as { team: Team; ogVersion: string }
 
 	const title = `${name} games - TeamStats`
 	const description = `Games for ${name}. Next game, previous games, and upcoming games. Shareable next game.`
@@ -125,7 +127,7 @@ export const meta: MetaFunction = ({ data }: MetaArgs) => {
 		{ property: 'og:description', content: description },
 		{
 			property: 'og:image',
-			content: `${url}/og.png`,
+			content: `${url}/og.png?v=${ogVersion}`,
 		},
 		{ property: 'og:image:width', content: '1200' },
 		{ property: 'og:image:height', content: '630' },
@@ -772,9 +774,25 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			? getGameForecast(nextGame.id)
 			: Promise.resolve(null)
 
+	// Mirrors what the og image renders: the next game
+	const ogVersion = ogImageVersion([
+		team.name,
+		team.color,
+		season?.name,
+		nextGame
+			? [
+					nextGame.opponent,
+					nextGame.timestamp,
+					nextGame.location,
+					nextGame.cancelledAt,
+			  ]
+			: null,
+	])
+
 	return defer({
 		userIsTylerOrMelissa,
 		team,
+		ogVersion,
 		userHasAccessToTeam,
 		player,
 		seasons: team.seasons,
