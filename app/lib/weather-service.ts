@@ -1,6 +1,6 @@
 import { getDb } from './getDb'
 import { WeatherForecast, weatherForecasts, teams } from '../schema'
-import { subHours } from 'date-fns'
+import { differenceInHours, subHours } from 'date-fns'
 import { eq, lte, sql } from 'drizzle-orm'
 
 export interface WeatherData {
@@ -12,11 +12,7 @@ export interface WeatherData {
 }
 
 const CACHE_DURATION_HOURS = 24
-
-function expiredDate() {
-	const expiredDate = subHours(new Date(), CACHE_DURATION_HOURS)
-	return expiredDate
-}
+const GAME_DAY_CACHE_DURATION_HOURS = 1
 
 // WMO weather interpretation codes -> human-readable conditions.
 // https://open-meteo.com/en/docs
@@ -89,14 +85,19 @@ export const geocodeLocation = async (
 	}
 }
 
-const isCacheValid = (forecast: WeatherForecast) => {
-	const expiresAt = expiredDate()
+const isCacheValid = (forecast: WeatherForecast, gameTimestamp: string) => {
+	// Within 24 hours of kickoff, refresh hourly so the forecast stays current
+	const hoursUntilGame = differenceInHours(new Date(gameTimestamp), new Date())
+	const cacheDurationHours =
+		hoursUntilGame < 24 ? GAME_DAY_CACHE_DURATION_HOURS : CACHE_DURATION_HOURS
+	const expiresAt = subHours(new Date(), cacheDurationHours)
 	const createdAt = new Date(forecast.createdAt)
 	return expiresAt < createdAt
 }
 
 const getCachedForecast = async (
-	gameId: number
+	gameId: number,
+	gameTimestamp: string
 ): Promise<WeatherData | null> => {
 	try {
 		const db = getDb()
@@ -126,7 +127,7 @@ const getCachedForecast = async (
 				})
 		}
 
-		if (cached && isCacheValid(cached)) {
+		if (cached && isCacheValid(cached, gameTimestamp)) {
 			return JSON.parse(cached.forecastData)
 		}
 
@@ -154,11 +155,6 @@ const cacheForecast = async (weatherData: WeatherData, gameId: number) => {
 
 export const getGameForecast = async (gameId: number) => {
 	try {
-		const cachedForecast = await getCachedForecast(gameId)
-		if (cachedForecast) {
-			return cachedForecast
-		}
-
 		const db = getDb()
 
 		const game = await db.query.games.findFirst({
@@ -183,6 +179,11 @@ export const getGameForecast = async (gameId: number) => {
 		if (!game.team.location) {
 			console.error(`No location on team`)
 			return null
+		}
+
+		const cachedForecast = await getCachedForecast(gameId, game.timestamp)
+		if (cachedForecast) {
+			return cachedForecast
 		}
 
 		// Coordinates are geocoded and stored when the location is saved in
