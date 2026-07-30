@@ -6,9 +6,20 @@
   "theme_color": "rgb(17, 24, 39)",
   "icons": [
     {
-      "src": "/formation.png",
+      "src": "/teamstats-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/teamstats-logo-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/teamstats-logo-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
