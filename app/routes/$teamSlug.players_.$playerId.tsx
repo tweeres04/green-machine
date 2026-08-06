@@ -19,6 +19,7 @@ import { SeasonDropdown } from '~/components/ui/season-dropdown'
 import { StatsDialog } from '~/components/ui/stats-dialog'
 import { cn } from '~/lib/utils'
 import { getDb } from '~/lib/getDb'
+import { authenticator } from '~/lib/auth.server'
 import { resolveSeason } from '~/lib/resolveSeason'
 import type { Team } from '~/schema'
 
@@ -64,6 +65,26 @@ export async function loader({
 			and(eq(players.id, playerIdNum), eq(players.teamId, team.id)),
 	})
 
+	// RSVPs are submitted as the viewer's own player, so only show the RSVP
+	// button when the viewer is logged in as this player
+	const userIsPlayerPromise = authenticator
+		.isAuthenticated(request)
+		.then((user) =>
+			user
+				? db.query.userInvites
+						.findFirst({
+							where: (userInvites, { and, eq, isNotNull }) =>
+								and(
+									eq(userInvites.playerId, playerIdNum),
+									eq(userInvites.userId, user.id),
+									isNotNull(userInvites.acceptedAt)
+								),
+							columns: { id: true },
+						})
+						.then(Boolean)
+				: false
+		)
+
 	const teamGamesPromise = resolveSeason(db, team.id, seasonParam).then(
 		async (season) => {
 			const seasonDateFilter = season
@@ -101,10 +122,8 @@ export async function loader({
 		}
 	)
 
-	const [player, { season, games: teamGames }] = await Promise.all([
-		playerPromise,
-		teamGamesPromise,
-	])
+	const [player, { season, games: teamGames }, userIsPlayer] =
+		await Promise.all([playerPromise, teamGamesPromise, userIsPlayerPromise])
 	if (!player) throw new Response('Player not found', { status: 404 })
 
 	const playerStats = (g: (typeof teamGames)[number]) =>
@@ -176,6 +195,7 @@ export async function loader({
 	return {
 		team,
 		player,
+		userIsPlayer,
 		seasons: team.seasons,
 		season,
 		summary: {
@@ -192,7 +212,7 @@ export async function loader({
 }
 
 export default function PlayerStatsPage() {
-	const { team, player, seasons, season, summary, gameLog } =
+	const { team, player, userIsPlayer, seasons, season, summary, gameLog } =
 		useLoaderData<typeof loader>()
 
 	return (
@@ -259,7 +279,7 @@ export default function PlayerStatsPage() {
 													timestamp: game.date,
 												}}
 												statEntries={game.statEntries}
-												player={{ rsvps: game.rsvps }}
+												player={userIsPlayer ? { rsvps: game.rsvps } : null}
 											>
 												<button className="cursor-pointer hover:underline">
 													{game.date
@@ -276,7 +296,7 @@ export default function PlayerStatsPage() {
 													timestamp: game.date,
 												}}
 												statEntries={game.statEntries}
-												player={{ rsvps: game.rsvps }}
+												player={userIsPlayer ? { rsvps: game.rsvps } : null}
 											>
 												<button className="cursor-pointer hover:underline text-left">
 													<div>{game.opponent ?? '—'}</div>
