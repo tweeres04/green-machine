@@ -65,8 +65,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 			<head>
 				<meta charSet="utf-8" />
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<link rel="manifest" href="/manifest.json" />
+				{/* Browsers cached the pre-trophy manifest with a 1 year immutable
+				    max-age, so the URL has to change for them to refetch it */}
+				<link rel="manifest" href="/manifest.json?v=2" />
+				<link rel="icon" href="/favicon.ico" sizes="32x32" />
 				<link rel="icon" href="/teamstats-logo.svg" type="image/svg+xml" />
+				<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 				<Meta />
 				<Links />
 				<style
