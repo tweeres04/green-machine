@@ -41,8 +41,17 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	let newEntries: z.infer<typeof statEntrySchema>[]
+	let removedStatIds: number[]
 	try {
-		newEntries = data.map((d: unknown) => statEntrySchema.parse(d))
+		const payload = z
+			.object({
+				stats: z.array(statEntrySchema),
+				removedStatIds: z.array(z.number().int()),
+			})
+			.parse(data)
+		newEntries = payload.stats
+		// Deduped so the access check below can compare counts
+		removedStatIds = [...new Set(payload.removedStatIds)]
 	} catch (err) {
 		if (err instanceof ZodError) {
 			throw new Response(err.message, {
@@ -53,29 +62,62 @@ export async function action({ request }: ActionFunctionArgs) {
 		throw err
 	}
 
+	if (newEntries.length === 0 && removedStatIds.length === 0) {
+		throw new Response('Nothing to save', { status: 400 })
+	}
+
 	const db = getDb()
 	const newPlayerIds = newEntries.map((e) => e.playerId)
-	const accessiblePlayerTeamIds = (
-		await db
-			.selectDistinct({ playerId: players.id, teamId: players.teamId })
-			.from(players)
-			.innerJoin(teams, eq(teams.id, players.teamId))
-			.innerJoin(teamsUsers, eq(teams.id, teamsUsers.teamId))
-			.where(
-				and(eq(teamsUsers.userId, user.id), inArray(players.id, newPlayerIds))
-			)
-	).map(({ playerId, teamId }) => ({ playerId, teamId }))
+
+	// A save can be nothing but removals, so each side is only queried when it
+	// has something in it. inArray rejects an empty list
+	const [accessiblePlayerTeamIds, removableStats] = await Promise.all([
+		newPlayerIds.length > 0
+			? db
+					.selectDistinct({ playerId: players.id, teamId: players.teamId })
+					.from(players)
+					.innerJoin(teams, eq(teams.id, players.teamId))
+					.innerJoin(teamsUsers, eq(teams.id, teamsUsers.teamId))
+					.where(
+						and(
+							eq(teamsUsers.userId, user.id),
+							inArray(players.id, newPlayerIds)
+						)
+					)
+			: [],
+		removedStatIds.length > 0
+			? db
+					.selectDistinct({ id: statEntries.id, teamId: players.teamId })
+					.from(statEntries)
+					.innerJoin(players, eq(players.id, statEntries.playerId))
+					.innerJoin(teams, eq(teams.id, players.teamId))
+					.innerJoin(teamsUsers, eq(teams.id, teamsUsers.teamId))
+					.where(
+						and(
+							eq(teamsUsers.userId, user.id),
+							inArray(statEntries.id, removedStatIds)
+						)
+					)
+			: [],
+	])
 
 	const userHasAccessToPlayers = newPlayerIds.every((id) =>
 		accessiblePlayerTeamIds.map(({ playerId }) => playerId).includes(id)
 	)
 
-	if (!userHasAccessToPlayers) {
+	// A short result means at least one id was someone else's, or doesn't exist
+	if (
+		!userHasAccessToPlayers ||
+		removableStats.length !== removedStatIds.length
+	) {
 		throw new Response(null, { status: 403 })
 	}
 
 	// Check if user can add stats based on subscription and free trial
-	const teamIds = accessiblePlayerTeamIds.map(({ teamId }) => teamId)
+	const teamIds = [
+		...accessiblePlayerTeamIds.map(({ teamId }) => teamId),
+		...removableStats.map(({ teamId }) => teamId),
+	]
 	
 	// For simplicity, we'll check the first team (multi-team stat entries are rare)
 	const teamId = teamIds[0]
@@ -103,7 +145,15 @@ export async function action({ request }: ActionFunctionArgs) {
 	const gamesWithStatsCount = await getGamesWithStatsCount(teamId)
 	
 	// Check if team can add stats
-	if (!canAddStatsToGame(teamSubscription, gamesWithStatsCount, gameAlreadyHasStats)) {
+	// Taking stats away never costs a free game
+	if (
+		newEntries.length > 0 &&
+		!canAddStatsToGame(
+			teamSubscription,
+			gamesWithStatsCount,
+			gameAlreadyHasStats
+		)
+	) {
 		return json(
 			{
 				error: "You've tracked stats for 3 games, the max for free teams. Subscribe to track unlimited games.",
@@ -177,10 +227,15 @@ export async function action({ request }: ActionFunctionArgs) {
 			})
 			newGameId = game.id
 		}
-		if (replacedAwardIds.length > 0) {
-			await tx.delete(statEntries).where(inArray(statEntries.id, replacedAwardIds))
+		// Staged removals and replaced awards go out together, in the same
+		// transaction as the insert, so a save lands whole or not at all
+		const idsToDelete = [...new Set([...replacedAwardIds, ...removedStatIds])]
+		if (idsToDelete.length > 0) {
+			await tx.delete(statEntries).where(inArray(statEntries.id, idsToDelete))
 		}
-		await tx.insert(statEntries).values(newEntries)
+		if (newEntries.length > 0) {
+			await tx.insert(statEntries).values(newEntries)
+		}
 		return newGameId
 	})
 }

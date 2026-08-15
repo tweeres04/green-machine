@@ -816,6 +816,9 @@ function AddStatsButton({
 	const fetcher = useFetcher<number>()
 	const aiFetcher = useFetcher<Omit<StatEntry, 'id'>[]>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
+	// Saved entries staged for deletion. Like added stats, they only take
+	// effect on save, so undo means the same thing for both
+	const [removedStatIds, setRemovedStatIds] = useState<number[]>([])
 	const [textInput, setTextInput] = useState('')
 	const [selectedGameId, setSelectedGameId] = useState<string | null>(() =>
 		games.length === 0 ? 'manual' : null
@@ -850,6 +853,7 @@ function AddStatsButton({
 	useEffect(() => {
 		if (dialogOpen) {
 			setStats([])
+			setRemovedStatIds([])
 			const newDatepickerValue = datepickerTimestampString()
 			setDatepickerValue(newDatepickerValue)
 			const newTimestamp = formatISO(parseISO(newDatepickerValue))
@@ -897,6 +901,9 @@ function AddStatsButton({
 
 	function handleGameSelection(gameIdString: string) {
 		setSelectedGameId(gameIdString)
+		// Staged deletions belong to the game that was selected when they were
+		// staged, so they can't carry over
+		setRemovedStatIds([])
 		const newDatepickerValue = datepickerTimestampString()
 		setDatepickerValue(newDatepickerValue)
 		const newTimestamp = formatISO(parseISO(newDatepickerValue))
@@ -916,6 +923,12 @@ function AddStatsButton({
 		p.statEntries.filter((se) => se.gameId === Number(selectedGameId))
 	)
 
+	// What would still be there after saving, so undo and its disabled state
+	// both work off the same view
+	const remainingSavedStats = savedStatsForSelectedGame.filter(
+		(se) => !removedStatIds.includes(se.id)
+	)
+
 	function addStat(playerId: number, type: StatEntry['type']) {
 		setStats((stats) => [
 			// Award stats are one per game: adding one moves it to this player
@@ -931,23 +944,32 @@ function AddStatsButton({
 		])
 	}
 
-	// Undoes a stat added in this dialog. Takes the most recent one so repeated
-	// taps unwind in the order they were entered. Saved stats are deleted from
-	// the stat popover on the team page, not here.
+	// Rolls back one stat for a player, whether or not it has been saved yet.
+	// Unsaved ones go first, then saved ones get staged for deletion, so
+	// repeated taps unwind newest to oldest
 	function undoStat(playerId: number, type: StatEntry['type']) {
-		setStats((stats) => {
-			const lastIndex = stats.findLastIndex(
-				(s) => s.playerId === playerId && s.type === type
-			)
+		const pendingIndex = stats.findLastIndex(
+			(s) => s.playerId === playerId && s.type === type
+		)
 
-			return lastIndex === -1 ? stats : stats.toSpliced(lastIndex, 1)
-		})
+		if (pendingIndex !== -1) {
+			setStats(stats.toSpliced(pendingIndex, 1))
+			return
+		}
+
+		const saved = remainingSavedStats.findLast(
+			(se) => se.playerId === playerId && se.type === type
+		)
+
+		if (saved) {
+			setRemovedStatIds([...removedStatIds, saved.id])
+		}
 	}
 
 	function submit(e: MouseEvent) {
 		e.preventDefault()
 
-		fetcher.submit(JSON.stringify(stats), {
+		fetcher.submit(JSON.stringify({ stats, removedStatIds }), {
 			encType: 'application/json',
 			action: '/stats',
 			method: 'post',
@@ -957,6 +979,7 @@ function AddStatsButton({
 			assists: stats.filter((s) => s.type === 'assist').length,
 			mvps: stats.filter((s) => s.type === 'mvp').length,
 			cleanSheets: stats.filter((s) => s.type === 'clean_sheet').length,
+			removed: removedStatIds.length,
 		})
 	}
 
@@ -1193,17 +1216,22 @@ function AddStatsButton({
 											})}
 										</div>
 										<div>
-											{stats.some((s) => s.playerId === player.id)
-												? '+'
-												: null}
 											{Object.keys(statEmoji).map((type) => {
-												const count = stats.filter(
+												const added = stats.filter(
 													(s) =>
 														s.playerId === player.id && s.type === type
 												).length
-												return count ? (
+												const removed = savedStatsForSelectedGame.filter(
+													(s) =>
+														s.playerId === player.id &&
+														s.type === type &&
+														removedStatIds.includes(s.id)
+												).length
+												const delta = added - removed
+												return delta ? (
 													<span key={type}>
-														{count}
+														{delta > 0 ? '+' : ''}
+														{delta}
 														{statEmoji[type]}{' '}
 													</span>
 												) : null
@@ -1260,6 +1288,10 @@ function AddStatsButton({
 															!stats.some(
 																(s) =>
 																	s.playerId === player.id && s.type === type
+															) &&
+															!remainingSavedStats.some(
+																(se) =>
+																	se.playerId === player.id && se.type === type
 															)
 														}
 														onClick={() => undoStat(player.id, type)}
@@ -1284,7 +1316,10 @@ function AddStatsButton({
 						<Button
 							type="submit"
 							onClick={submit}
-							disabled={!selectedGameId || stats.length === 0}
+							disabled={
+								!selectedGameId ||
+								(stats.length === 0 && removedStatIds.length === 0)
+							}
 						>
 							Save
 						</Button>
