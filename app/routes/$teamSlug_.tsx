@@ -54,6 +54,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
 } from '~/components/ui/dropdown-menu'
 import {
 	ArrowRightCircle,
@@ -145,6 +146,9 @@ function ShareStandingsButton({
 }) {
 	const { toast } = useToast()
 	const location = useLocation()
+	// A ref rather than state: the second tap of a double tap fires before
+	// React would re-render, so the guard has to update synchronously
+	const sharing = useRef(false)
 
 	const shareAvailable = typeof window !== 'undefined' && 'share' in navigator
 
@@ -173,12 +177,30 @@ function ShareStandingsButton({
 			size="icon"
 			onClick={async () => {
 				if (shareAvailable) {
-					navigator.share({
-						title,
-						text: standingsText,
-						url,
-					})
-					mixpanel.track('share stats')
+					// navigator.share throws InvalidStateError if a second share
+					// starts before the first sheet has closed
+					if (sharing.current) {
+						return
+					}
+
+					sharing.current = true
+
+					try {
+						await navigator.share({
+							title,
+							text: standingsText,
+							url,
+						})
+						mixpanel.track('share stats')
+					} catch (error) {
+						// Dismissing the share sheet rejects with AbortError, which is a
+						// normal outcome rather than a failure
+						if ((error as Error).name !== 'AbortError') {
+							throw error
+						}
+					} finally {
+						sharing.current = false
+					}
 				} else {
 					await window.navigator.clipboard.writeText(`${title}:
 
@@ -544,15 +566,21 @@ function StatDeleteDialog({
 }) {
 	const fetcher = useFetcher<{ rowsAffected: number }>()
 
-	const isSubmitting =
-		fetcher.state === 'submitting' &&
-		fetcher.formAction === `/stats/${data?.id}`
-
 	useEffect(() => {
 		if (fetcher.state === 'loading' && fetcher.data?.rowsAffected === 1) {
 			closeDialog()
 		}
 	}, [closeDialog, fetcher.data?.rowsAffected, fetcher.state])
+
+	// Without data there is no stat to delete, and rendering the form anyway
+	// posts to /stats/undefined
+	if (!data) {
+		return null
+	}
+
+	const isSubmitting =
+		fetcher.state === 'submitting' &&
+		fetcher.formAction === `/stats/${data.id}`
 
 	return (
 		<Dialog
@@ -565,15 +593,13 @@ function StatDeleteDialog({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>
-						Delete {data ? statLabel[data.type] : null}?
-					</DialogTitle>
+					<DialogTitle>Delete {statLabel[data.type]}?</DialogTitle>
 					<DialogDescription>
-						By {data?.playerName} on{' '}
-						{data?.timestamp ? format(data.timestamp, dateFormat) : null}
+						By {data.playerName} on{' '}
+						{data.timestamp ? format(data.timestamp, dateFormat) : null}
 					</DialogDescription>
 				</DialogHeader>
-				<fetcher.Form action={`/stats/${data?.id}`} method="DELETE">
+				<fetcher.Form action={`/stats/${data.id}`} method="DELETE">
 					<fieldset disabled={isSubmitting}>
 						<DialogFooter>
 							<DialogClose asChild>
@@ -905,6 +931,19 @@ function AddStatsButton({
 		])
 	}
 
+	// Undoes a stat added in this dialog. Takes the most recent one so repeated
+	// taps unwind in the order they were entered. Saved stats are deleted from
+	// the stat popover on the team page, not here.
+	function undoStat(playerId: number, type: StatEntry['type']) {
+		setStats((stats) => {
+			const lastIndex = stats.findLastIndex(
+				(s) => s.playerId === playerId && s.type === type
+			)
+
+			return lastIndex === -1 ? stats : stats.toSpliced(lastIndex, 1)
+		})
+	}
+
 	function submit(e: MouseEvent) {
 		e.preventDefault()
 
@@ -1211,6 +1250,21 @@ function AddStatsButton({
 													>
 														{statEmoji[type]}{' '}
 														{upperFirst(statLabel[type])}
+													</DropdownMenuItem>
+												))}
+												<DropdownMenuSeparator />
+												{(['goal', 'assist'] as const).map((type) => (
+													<DropdownMenuItem
+														key={`undo-${type}`}
+														disabled={
+															!stats.some(
+																(s) =>
+																	s.playerId === player.id && s.type === type
+															)
+														}
+														onClick={() => undoStat(player.id, type)}
+													>
+														{statEmoji[type]} Undo {statLabel[type]}
 													</DropdownMenuItem>
 												))}
 											</DropdownMenuContent>

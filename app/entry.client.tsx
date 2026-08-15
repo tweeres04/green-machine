@@ -21,6 +21,10 @@ init({
 	tracesSampleRate: 1,
 	enableLogs: true,
 
+	// Zalo's in-app browser injects a script that references its own globals on
+	// top of our pages. Not our code, and nothing we can fix
+	ignoreErrors: [/zaloJSV2/],
+
 	integrations: [
 		browserTracingIntegration({
 			useEffect,

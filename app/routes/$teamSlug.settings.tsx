@@ -4,6 +4,7 @@ import type {
 	MetaFunction,
 	ActionFunction,
 } from '@remix-run/node'
+import { json } from '@remix-run/node'
 import { Form, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
 
 import { getDb } from '~/lib/getDb'
@@ -147,7 +148,11 @@ export const action: ActionFunction = async ({ request, params }) => {
 		})
 		.where(eq(teams.id, team.id))
 
-	return null
+	// Save the location either way. A location we can't place just means there
+	// is no forecast, which the form says out loud
+	return json({
+		geocodeFailed: Boolean(locationChanged && location && !geocoded),
+	})
 }
 
 function useClearNewPlayerForm(
@@ -238,7 +243,7 @@ export default function EditTeam() {
 	const fetcher = useFetcher()
 
 	// Weather-specific fetcher for debounced location submission
-	const weatherFetcher = useFetcher()
+	const weatherFetcher = useFetcher<{ geocodeFailed: boolean }>()
 	const [locationValue, setLocationValue] = useState(team.location || '')
 	const [nextGameForecast, setNextGameForecast] = useState(
 		team.nextGameForecast ?? false
@@ -324,6 +329,11 @@ export default function EditTeam() {
 						<p className="text-sm text-muted-foreground">
 							City, state or general area where your team plays
 						</p>
+						{weatherFetcher.data?.geocodeFailed ? (
+							<p className="text-sm text-destructive">
+								{`We couldn't find that place on the map, so the forecast won't show. Try a city and region, like "San Francisco, CA".`}
+							</p>
+						) : null}
 					</div>
 					<div className="flex items-center space-x-2">
 						<Checkbox

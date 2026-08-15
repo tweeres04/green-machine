@@ -5,8 +5,8 @@ import {
 	Outlet,
 	Scripts,
 	ScrollRestoration,
-	useLoaderData,
 	useRouteError,
+	useRouteLoaderData,
 } from '@remix-run/react'
 
 import '@fontsource-variable/nunito-sans'
@@ -54,8 +54,16 @@ export async function loader({
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-	const { color, user, userHasAccessToTeam, mixpanelToken, fbPixelId } =
-		useLoaderData<typeof loader>() ?? {} // error pages like 404 don't allow for loader data
+	// Error pages render Layout without loader data, and useLoaderData throws in
+	// that case. useRouteLoaderData returns undefined instead, so every value
+	// needs a fallback for the error page to render
+	const {
+		color = 'gray',
+		user = null,
+		userHasAccessToTeam = false,
+		mixpanelToken = '',
+		fbPixelId = null,
+	} = useRouteLoaderData<typeof loader>('root') ?? {}
 
 	useMixpanelIdentify(user)
 	useFacebookPixel(fbPixelId ?? null)

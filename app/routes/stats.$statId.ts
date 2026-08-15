@@ -1,13 +1,12 @@
 import { ActionFunctionArgs } from '@remix-run/node'
 import { eq } from 'drizzle-orm'
-import invariant from 'tiny-invariant'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { statEntries } from '~/schema'
 
-async function handleDelete(statId: string) {
+async function handleDelete(statId: number) {
 	const db = getDb()
-	return db.delete(statEntries).where(eq(statEntries.id, Number(statId)))
+	return db.delete(statEntries).where(eq(statEntries.id, statId))
 }
 
 export async function action({ params, request }: ActionFunctionArgs) {
@@ -23,18 +22,24 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
 	const db = getDb()
 
-	const { statId } = params
+	const statId = Number(params.statId)
 
-	invariant(statId, 'No stat ID')
+	// The id comes off the URL, so a non-numeric one is a bad request rather
+	// than a broken assumption. NaN would reach the driver as a bind error.
+	if (!Number.isInteger(statId)) {
+		throw new Response('Stat not found', { status: 404 })
+	}
 
 	const stat = await db.query.statEntries.findFirst({
-		where: (statEntries, { eq }) => eq(statEntries.id, Number(statId)),
+		where: (statEntries, { eq }) => eq(statEntries.id, statId),
 		with: {
 			player: true,
 		},
 	})
 
-	invariant(stat, 'Stat not found')
+	if (!stat) {
+		throw new Response('Stat not found', { status: 404 })
+	}
 
 	const userHasAccessToTeam = await hasAccessToTeam(user, stat.player.teamId)
 

@@ -33,6 +33,7 @@ import {
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
 import { LoaderCircle } from 'lucide-react'
+import { captureException } from '@sentry/remix'
 import {
 	Popover,
 	PopoverContent,
@@ -150,6 +151,7 @@ export default function EditTeam() {
 	)
 	const imageFetcher = useFetcher()
 	const imageSaving = imageFetcher.state !== 'idle'
+	const [imageError, setImageError] = useState<string | null>(null)
 
 	useEffect(() => {
 		if (imageFetcher.state === 'idle' && imageFetcher.data !== undefined) {
@@ -432,6 +434,7 @@ export default function EditTeam() {
 				onOpenChange={(value) => {
 					if (!value) {
 						setChangeImageDialog(null)
+						setImageError(null)
 					}
 				}}
 			>
@@ -445,14 +448,45 @@ export default function EditTeam() {
 							encType="multipart/form-data"
 						>
 							<fieldset disabled={imageSaving} className="space-y-3">
-								<Input type="file" name="name" id="image_input" />
+								<Input
+									type="file"
+									accept="image/*"
+									name="name"
+									id="image_input"
+									onChange={async (e) => {
+										setImageError(null)
+
+										const file = e.currentTarget.files?.[0]
+
+										if (!file) {
+											return
+										}
+
+										// iOS hands back photos it cannot always read, when the
+										// original only lives in iCloud
+										try {
+											await file.slice(0, 1).arrayBuffer()
+										} catch (error) {
+											// Report it either way. A photo stranded in iCloud
+											// is the likely cause, but swallowing this would
+											// hide anything else that broke the read
+											captureException(error)
+											setImageError(
+												`We couldn't read that photo. If it lives in iCloud, open it in Photos first, then try again.`
+											)
+										}
+									}}
+								/>
+								{imageError ? (
+									<p className="text-sm text-destructive">{imageError}</p>
+								) : null}
 								<DialogFooter className="flex-col sm:flex-row">
 									<DialogClose>
 										<Button variant="secondary" type="button">
 											Cancel
 										</Button>
 									</DialogClose>
-									<Button type="submit">
+									<Button type="submit" disabled={Boolean(imageError)}>
 										{imageSaving ? (
 											<>
 												Saving
