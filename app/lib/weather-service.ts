@@ -1,3 +1,4 @@
+import { captureException } from '@sentry/remix'
 import { getDb } from './getDb'
 import { WeatherForecast, weatherForecasts, teams } from '../schema'
 import { differenceInHours, subHours } from 'date-fns'
@@ -80,6 +81,9 @@ export const geocodeLocation = async (
 			countryCode: place.address?.country_code ?? null,
 		}
 	} catch (error) {
+		// Nominatim rate limits by IP and can block a thin User-Agent. Without
+		// reporting, forecasts would just quietly stop working for every team
+		captureException(error)
 		console.error('Error geocoding location:', error)
 		return null
 	}
@@ -133,6 +137,7 @@ const getCachedForecast = async (
 
 		return null
 	} catch (error) {
+		captureException(error)
 		console.error('Error checking cached forecast:', error)
 		return null
 	}
@@ -149,6 +154,7 @@ const cacheForecast = async (weatherData: WeatherData, gameId: number) => {
 			createdAt: now.toISOString(),
 		})
 	} catch (error) {
+		captureException(error)
 		console.error('Error caching forecast:', error)
 	}
 }
@@ -270,6 +276,7 @@ export const getGameForecast = async (gameId: number) => {
 
 		return weatherData
 	} catch (error) {
+		captureException(error)
 		console.error('Error fetching weather forecast:', error)
 		return null
 	}
