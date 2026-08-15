@@ -8,6 +8,8 @@ import invariant from 'tiny-invariant'
 import { mixpanelServer } from './mixpanel.server'
 import { sendCapiEvent } from './facebook.server'
 import { LibsqlError } from '@libsql/client'
+import { captureException } from '@sentry/remix'
+import { sendWelcomeEmail } from './welcome-email.server'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
 	if (!user) {
@@ -71,6 +73,8 @@ async function signUp(
 	mixpanelServer.track('sign up', {
 		distinct_id: newUser.id,
 	})
+
+	sendWelcomeEmail(newUser).catch(captureException)
 
 	sendCapiEvent({
 		request,
