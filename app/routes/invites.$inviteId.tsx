@@ -9,6 +9,7 @@ import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { commitSession, getSession } from '~/lib/session.server'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 import { userInvites } from '~/schema'
 
 // The invite props steer post-login redirects, so clear them once the
@@ -95,6 +96,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 			acceptedAt: formatISO(new Date()),
 		})
 		.where(eq(userInvites.id, inviteId))
+
+	mixpanelServer.track('invite accepted', {
+		distinct_id: user.id,
+		'team id': invite.player.team.id,
+		'invite id': inviteId,
+	})
 
 	return json(
 		{

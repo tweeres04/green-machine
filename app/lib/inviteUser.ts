@@ -4,6 +4,7 @@ import Mailgun from 'mailgun.js'
 import { randomBytes } from 'node:crypto'
 import { userInvites } from '~/schema'
 import { formatISO } from 'date-fns'
+import { mixpanelServer } from './mixpanel.server'
 
 async function sendInviteEmail({
 	teamId,
@@ -87,5 +88,11 @@ export async function inviteUser({
 		inviterName,
 		email,
 		randomToken,
+	})
+
+	mixpanelServer.track('invite sent', {
+		distinct_id: userId,
+		'team id': teamId,
+		'invite id': inviteId,
 	})
 }
