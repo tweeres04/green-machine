@@ -5,6 +5,8 @@ import { teams, teamsUsers } from '~/schema'
 import { LibsqlError } from '@libsql/client'
 import { mixpanelServer } from '~/lib/mixpanel.server'
 import { sendCapiEvent } from '~/lib/facebook.server'
+import { notifyOwner } from '~/lib/owner-notification.server'
+import { captureException } from '@sentry/remix'
 
 export const action: ActionFunction = async ({ request }) => {
 	const user = await authenticator.isAuthenticated(request)
@@ -62,6 +64,13 @@ export const action: ActionFunction = async ({ request }) => {
 		'team name': newTeam.name,
 		ip: 0,
 	})
+
+	notifyOwner({
+		subject: `New team: ${newTeam.name}`,
+		text: `${user.name} (${user.email}) created ${newTeam.name}.
+
+${process.env.BASE_URL}/${newTeam.slug}`,
+	}).catch(captureException)
 
 	sendCapiEvent({
 		request,

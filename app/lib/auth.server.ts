@@ -10,6 +10,7 @@ import { sendCapiEvent } from './facebook.server'
 import { LibsqlError } from '@libsql/client'
 import { captureException } from '@sentry/remix'
 import { sendWelcomeEmail } from './welcome-email.server'
+import { notifyOwner } from './owner-notification.server'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
 	if (!user) {
@@ -75,6 +76,11 @@ async function signUp(
 	})
 
 	sendWelcomeEmail(newUser).catch(captureException)
+
+	notifyOwner({
+		subject: `New signup: ${newUser.name}`,
+		text: `${newUser.name} (${newUser.email}) just signed up.`,
+	}).catch(captureException)
 
 	sendCapiEvent({
 		request,
