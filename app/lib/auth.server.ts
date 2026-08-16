@@ -11,10 +11,17 @@ import { LibsqlError } from '@libsql/client'
 import { captureException } from '@sentry/remix'
 import { sendWelcomeEmail } from './welcome-email.server'
 import { notifyOwner } from './owner-notification.server'
+import { isElevatedFor } from './support.server'
 
 export async function hasAccessToTeam(user: User | null, teamId: number) {
 	if (!user) {
 		return false
+	}
+
+	// Support access is opt in and expires. Without a live elevation for this
+	// team, a support user is treated like anyone else
+	if (isElevatedFor(user, teamId)) {
+		return true
 	}
 
 	const db = getDb()

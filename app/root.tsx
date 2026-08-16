@@ -19,6 +19,8 @@ import { UserContext } from '~/lib/userContext'
 import invariant from 'tiny-invariant'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import { useFacebookPixel } from '~/lib/useFacebookPixel'
+import { elevationFor } from '~/lib/support.server'
+import { SupportBanner } from '~/components/ui/support-banner'
 
 export async function loader({
 	params: { teamSlug },
@@ -44,12 +46,17 @@ export async function loader({
 	const mixpanelToken = process.env.MIXPANEL_TOKEN
 	const fbPixelId = process.env.FB_PIXEL_ID ?? null
 
+	// Follows you around rather than being scoped to the team page, so you
+	// can't forget it's running
+	const supportElevation = user ? elevationFor(user.id) : null
+
 	return json({
 		color: team?.color ?? 'gray',
 		user,
 		userHasAccessToTeam,
 		mixpanelToken,
 		fbPixelId,
+		supportElevation,
 	})
 }
 
@@ -63,6 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 		userHasAccessToTeam = false,
 		mixpanelToken = '',
 		fbPixelId = null,
+		supportElevation = null,
 	} = useRouteLoaderData<typeof loader>('root') ?? {}
 
 	useMixpanelIdentify(user)
@@ -92,6 +100,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				></style>
 			</head>
 			<body className={`bg-${color}-50`}>
+				{supportElevation ? (
+					<SupportBanner expiresAt={supportElevation.expiresAt} />
+				) : null}
 				<script
 					dangerouslySetInnerHTML={{
 						__html: `window.mixpanelToken = "${mixpanelToken}"`,
