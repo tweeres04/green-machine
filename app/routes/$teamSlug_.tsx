@@ -1428,6 +1428,7 @@ export default function Home() {
 				teamId={team.id}
 				gamesWithStatsCount={gamesWithStatsCount}
 				hasActiveSubscription={Boolean(teamHasActiveSubscription)}
+				userHasAccessToTeam={userHasAccessToTeam}
 			/>
 			{nextGame ? (
 				<Collapsible className="space-y-3" defaultOpen>

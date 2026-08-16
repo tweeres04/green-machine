@@ -6,15 +6,23 @@ interface TrialStatusProps {
 	teamId: number
 	gamesWithStatsCount: number
 	hasActiveSubscription: boolean
+	userHasAccessToTeam: boolean
 }
 
 export function TrialStatus({
 	teamId,
 	gamesWithStatsCount,
 	hasActiveSubscription,
+	userHasAccessToTeam,
 }: TrialStatusProps) {
 	// Don't show anything for subscribed teams
 	if (hasActiveSubscription) {
+		return null
+	}
+
+	// Players who aren't on the team can't subscribe, so pitching them a
+	// Subscribe button just gives them a button that won't work
+	if (!userHasAccessToTeam) {
 		return null
 	}
 
