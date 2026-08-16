@@ -1258,7 +1258,11 @@ export default function Games() {
 								{upcomingGames.length > 0 || nextGame ? (
 									<Separator className="w-10/12 mx-auto" />
 								) : null}
-								<Collapsible className="space-y-3">
+								<Collapsible
+									className="space-y-3"
+									// With nothing upcoming, a collapsed list is an empty page
+									defaultOpen={!nextGame}
+								>
 									<CollapsibleTrigger asChild>
 										<div className="flex w-full place-items-center cursor-pointer">
 											<h2 className="text-2xl flex-grow text-left">
