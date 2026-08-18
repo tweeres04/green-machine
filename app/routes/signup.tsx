@@ -1,21 +1,27 @@
 // app/routes/login.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Form, Link, useActionData } from '@remix-run/react'
+import { Form, Link, useActionData, useSearchParams } from '@remix-run/react'
 import { AuthorizationError } from 'remix-auth'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
 import { getSession } from '~/lib/session.server'
+import { safeRedirect } from '~/lib/redirect-to.server'
 
 // First we create our UI with the form doing a POST and the inputs with the
 // names we are going to use in the strategy
 export default function SignUp() {
 	const actionData = useActionData<{ message: string } | undefined>()
+	const [searchParams] = useSearchParams()
+	const redirectTo = searchParams.get('redirectTo')
 
 	return (
 		<Form method="post" className="space-y-3">
+			{redirectTo ? (
+				<input type="hidden" name="redirectTo" value={redirectTo} />
+			) : null}
 			<h1 className="text-2xl">Sign up</h1>
 			<div>
 				<label htmlFor="email_input">Email</label>
@@ -60,7 +66,15 @@ export default function SignUp() {
 			<p>
 				Already have an account?{' '}
 				<Button asChild variant="link">
-					<Link to="/login">Log in</Link>
+					<Link
+						to={
+							redirectTo
+								? `/login?redirectTo=${encodeURIComponent(redirectTo)}`
+								: '/login'
+						}
+					>
+						Log in
+					</Link>
 				</Button>
 			</p>
 			{actionData?.message && (
@@ -80,6 +94,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const inviteRequestTeamId = session.get('inviteRequestTeamId')
 
+	// Cloned because authenticate consumes the original request's body
+	const formData = await request.clone().formData()
+	const redirectTo = safeRedirect(formData.get('redirectTo'))
+
 	// we call the method with the name of the strategy we want to use and the
 	// request object, optionally we pass an object with the URLs we want the user
 	// to be redirected to after a success or a failure
@@ -87,7 +105,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		return await authenticator.authenticate('user-pass', request, {
 			successRedirect: inviteRequestTeamId
 				? `/request-invite?team_id=${inviteRequestTeamId}`
-				: '/',
+				: redirectTo ?? '/',
 		})
 	} catch (err) {
 		if (err instanceof Response) {
@@ -104,8 +122,12 @@ export async function action({ request }: ActionFunctionArgs) {
 // authenticated with `authenticator.isAuthenticated` and redirect to the
 // root if it is or return null if it's not
 export async function loader({ request }: LoaderFunctionArgs) {
+	const redirectTo = safeRedirect(
+		new URL(request.url).searchParams.get('redirectTo')
+	)
+
 	// If the user is already authenticated redirect to / directly
 	return await authenticator.isAuthenticated(request, {
-		successRedirect: '/',
+		successRedirect: redirectTo ?? '/',
 	})
 }

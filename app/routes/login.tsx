@@ -1,13 +1,14 @@
 // app/routes/login.tsx
 import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Form, Link, useActionData } from '@remix-run/react'
+import { Form, Link, useActionData, useSearchParams } from '@remix-run/react'
 import { AuthorizationError } from 'remix-auth'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
 import { getSession } from '~/lib/session.server'
+import { safeRedirect } from '~/lib/redirect-to.server'
 
 // Second, we need to export an action function, here we will use the
 // `authenticator.authenticate method`
@@ -16,6 +17,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	const inviteId = session.get('inviteId')
 	const inviteToken = session.get('inviteToken')
+
+	// Cloned because authenticate consumes the original request's body
+	const formData = await request.clone().formData()
+	const redirectTo = safeRedirect(formData.get('redirectTo'))
+
 	// we call the method with the name of the strategy we want to use and the
 	// request object, optionally we pass an object with the URLs we want the user
 	// to be redirected to after a success or a failure
@@ -24,7 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			successRedirect:
 				inviteId && inviteToken
 					? `/invites/${inviteId}?token=${inviteToken}`
-					: '/',
+					: redirectTo ?? '/',
 		})
 	} catch (err) {
 		if (err instanceof Response) {
@@ -41,9 +47,13 @@ export async function action({ request }: ActionFunctionArgs) {
 // authenticated with `authenticator.isAuthenticated` and redirect to /
 // if it is or return null if it's not
 export async function loader({ request }: LoaderFunctionArgs) {
+	const redirectTo = safeRedirect(
+		new URL(request.url).searchParams.get('redirectTo')
+	)
+
 	// If the user is already authenticated redirect to / directly
 	return await authenticator.isAuthenticated(request, {
-		successRedirect: '/',
+		successRedirect: redirectTo ?? '/',
 	})
 }
 
@@ -51,9 +61,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 // names we are going to use in the strategy
 export default function Login() {
 	const actionData = useActionData<{ message: string } | undefined>()
+	const [searchParams] = useSearchParams()
+	const redirectTo = searchParams.get('redirectTo')
 
 	return (
 		<Form method="post" className="space-y-3">
+			{redirectTo ? (
+				<input type="hidden" name="redirectTo" value={redirectTo} />
+			) : null}
 			<h1 className="text-2xl">Sign in</h1>
 			<div>
 				<label htmlFor="email_input">Email</label>
@@ -72,7 +87,15 @@ export default function Login() {
 			<p>
 				No account?{' '}
 				<Button asChild variant="link">
-					<Link to="/signup">Sign up</Link>
+					<Link
+						to={
+							redirectTo
+								? `/signup?redirectTo=${encodeURIComponent(redirectTo)}`
+								: '/signup'
+						}
+					>
+						Sign up
+					</Link>
 				</Button>
 			</p>
 			{actionData?.message && (

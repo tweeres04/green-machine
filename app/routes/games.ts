@@ -3,6 +3,7 @@ import invariant from 'tiny-invariant'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { games } from '~/schema'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 export async function action({ request }: ActionFunctionArgs) {
 	if (request.method.toLowerCase() !== 'post') {
@@ -37,10 +38,17 @@ export async function action({ request }: ActionFunctionArgs) {
 		throw new Response('Opponent is required', { status: 400 })
 	}
 
-	return db.insert(games).values({
+	await db.insert(games).values({
 		teamId,
 		timestamp,
 		opponent,
 		location,
 	})
+
+	mixpanelServer.track('add game', {
+		distinct_id: user.id,
+		'team id': Number(teamId),
+	})
+
+	return null
 }

@@ -78,7 +78,7 @@ function useAutoSlug(
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await authenticator.isAuthenticated(request, {
-		failureRedirect: '/signup',
+		failureRedirect: '/signup?redirectTo=/teams/new',
 	})
 
 	return null

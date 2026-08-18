@@ -10,6 +10,7 @@ import { z, ZodError } from 'zod'
 import { canAddStatsToGame } from '~/lib/teamHasActiveSubscription'
 import { oncePerGameStatTypes, statLabel } from '~/lib/stat-types'
 import { getGamesWithStatsCount } from '~/lib/getGamesWithStatsCount'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 export const meta: MetaFunction = () => {
 	return [
@@ -109,32 +110,34 @@ export async function action({ request }: ActionFunctionArgs) {
 	) {
 		throw new Response(null, { status: 403 })
 	}
-	
+
 	// For simplicity, we'll check the first team (multi-team stat entries are rare)
 	const teamId = teamIds[0]
-	
+
 	// Get team subscription
 	const teamSubscription = await db.query.teamSubscriptions.findFirst({
 		where: (ts, { eq }) => eq(ts.teamId, teamId),
 	})
-	
+
 	// Get the gameId we're adding stats to
 	const targetGameId = newEntries[0]?.gameId ?? null
-	
+
 	// Check if this game already has stats
 	let gameAlreadyHasStats = false
 	if (targetGameId) {
 		const existingStats = await db
 			.select({ id: statEntries.id })
 			.from(statEntries)
-			.where(and(eq(statEntries.gameId, targetGameId), isNotNull(statEntries.gameId)))
+			.where(
+				and(eq(statEntries.gameId, targetGameId), isNotNull(statEntries.gameId))
+			)
 			.limit(1)
 		gameAlreadyHasStats = existingStats.length > 0
 	}
-	
+
 	// Count games with stats for this team
 	const gamesWithStatsCount = await getGamesWithStatsCount(teamId)
-	
+
 	// Check if team can add stats
 	// Taking stats away never costs a free game
 	if (
@@ -147,7 +150,8 @@ export async function action({ request }: ActionFunctionArgs) {
 	) {
 		return json(
 			{
-				error: "You've tracked stats for 3 games, the max for free teams. Subscribe to track unlimited games.",
+				error:
+					"You've tracked stats for 3 games, the max for free teams. Subscribe to track unlimited games.",
 				paywall: true,
 			},
 			{
@@ -174,9 +178,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	// An award stat added to a game that already has one moves it: the old
 	// entry is deleted so the award lands on the new player
 	const awardGameIds = newEntries
-		.filter((e) =>
-			(oncePerGameStatTypes as readonly string[]).includes(e.type)
-		)
+		.filter((e) => (oncePerGameStatTypes as readonly string[]).includes(e.type))
 		.map((e) => e.gameId)
 		.filter((id): id is number => id != null)
 
@@ -204,7 +206,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			.map((existing) => existing.id)
 	}
 
-	return db.transaction(async (tx) => {
+	const createdGameId = await db.transaction(async (tx) => {
 		let newGameId = null
 		if (newEntries.some((e) => !e.gameId)) {
 			const timestamp = newEntries[0].timestamp
@@ -229,6 +231,19 @@ export async function action({ request }: ActionFunctionArgs) {
 		}
 		return newGameId
 	})
+
+	// Property names match the old client-side event for continuity
+	mixpanelServer.track('add stats', {
+		distinct_id: user.id,
+		'team id': teamId,
+		goals: newEntries.filter((e) => e.type === 'goal').length,
+		assists: newEntries.filter((e) => e.type === 'assist').length,
+		mvps: newEntries.filter((e) => e.type === 'mvp').length,
+		cleanSheets: newEntries.filter((e) => e.type === 'clean_sheet').length,
+		removed: removedStatIds.length,
+	})
+
+	return createdGameId
 }
 
 export async function loader() {

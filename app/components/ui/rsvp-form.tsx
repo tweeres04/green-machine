@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useFetcher } from '@remix-run/react'
 import { isPast } from 'date-fns'
-import mixpanel from 'mixpanel-browser'
 import { Button } from '~/components/ui/button'
 import { DialogFooter } from '~/components/ui/dialog'
 
@@ -43,7 +42,6 @@ export function RsvpForm({
 	const gameInPast = game.timestamp ? isPast(game.timestamp) : false
 
 	function submitRsvp(value: 'yes' | 'no') {
-		mixpanel.track('click rsvp response', { gameId: game.id, response: value })
 		fetcher.submit({ value }, { method, action })
 	}
 
@@ -63,10 +61,7 @@ export function RsvpForm({
 				>
 					No
 				</Button>
-				<Button
-					className="w-full sm:w-auto"
-					onClick={() => submitRsvp('yes')}
-				>
+				<Button className="w-full sm:w-auto" onClick={() => submitRsvp('yes')}>
 					Yes
 				</Button>
 			</DialogFooter>

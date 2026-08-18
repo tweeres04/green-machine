@@ -188,6 +188,11 @@ export default function EditTeam() {
 	return (
 		<>
 			<Nav title="Players" team={team} />
+			{players.length === 0 ? (
+				<p>
+					No players yet. Add your first player to get the leaderboard going.
+				</p>
+			) : null}
 			<ul className="space-y-2">
 				{players.map((p) => {
 					const goalCount = p.statEntries.filter(
@@ -209,7 +214,9 @@ export default function EditTeam() {
 								<PopoverTrigger>
 									<Avatar>
 										<AvatarImage
-											src={`https://files.tweeres.com/teamstats/players/${p.id}/image${
+											src={`https://files.tweeres.com/teamstats/players/${
+												p.id
+											}/image${
 												p.imageUpdatedAt
 													? `?v=${encodeURIComponent(p.imageUpdatedAt)}`
 													: ''
@@ -413,13 +420,13 @@ export default function EditTeam() {
 								<label htmlFor="email_input">Email (optional)</label>
 								<Input name="email" id="email_input" />
 								<p className="text-sm text-muted-foreground mt-1">
-									Adding an email invites them to a TeamStats account
-									where they can see this team.
+									Adding an email invites them to a TeamStats account where they
+									can see this team.
 								</p>
 							</div>
 						</div>
 						<DialogFooter className="flex-col sm:flex-row">
-							<DialogClose>
+							<DialogClose asChild>
 								<Button variant="secondary" type="button">
 									Cancel
 								</Button>

@@ -3,6 +3,7 @@ import { createInsertSchema } from 'drizzle-zod'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { games } from '~/schema'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 const GamesSchema = createInsertSchema(games).omit({ teamId: true }).array()
 
@@ -37,6 +38,12 @@ export const action: ActionFunction = async ({ request }) => {
 	await db
 		.insert(games)
 		.values(parseResult.data.map((game) => ({ ...game, teamId })))
+
+	mixpanelServer.track('import schedule', {
+		distinct_id: user.id,
+		'team id': teamId,
+		'games count': parseResult.data.length,
+	})
 
 	return json({ success: true })
 }

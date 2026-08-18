@@ -90,6 +90,7 @@ import { ogImageVersion } from '~/lib/og-image-version.server'
 import { slugEquals } from '~/lib/team-slug.server'
 import { oncePerGameStatTypes, statEmoji, statLabel } from '~/lib/stat-types'
 import { TrialStatus } from '~/components/ui/trial-status'
+import { SetupChecklist } from '~/components/ui/setup-checklist'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -135,11 +136,13 @@ function ShareStandingsButton({
 	slug,
 	players,
 	season,
+	label,
 }: {
 	teamName: string
 	slug: string
 	players: Awaited<ReturnType<typeof loader>>['team']['players']
 	season?: Season | null
+	label?: string
 }) {
 	const { toast } = useToast()
 	const location = useLocation()
@@ -170,8 +173,8 @@ function ShareStandingsButton({
 	return (
 		<Button
 			title="Share standings"
-			variant="secondary"
-			size="icon"
+			variant={label ? 'default' : 'secondary'}
+			size={label ? 'default' : 'icon'}
 			onClick={async () => {
 				if (shareAvailable) {
 					// navigator.share throws InvalidStateError if a second share
@@ -211,7 +214,13 @@ ${url}`)
 				}
 			}}
 		>
-			{<Share />}
+			{label ? (
+				<>
+					<Share /> {label}
+				</>
+			) : (
+				<Share />
+			)}
 		</Button>
 	)
 }
@@ -889,9 +898,18 @@ function AddStatsButton({
 		}
 	}, [fetcher.data, fetcher.state])
 
-	// A manual-date save creates the game; adopt its ID as the selection
+	// A manual-date save creates the game; adopt its ID as the selection.
+	// Adopt each created game only once: fetcher.data persists across renders,
+	// so without the guard, choosing 'manual' again later snaps the selection
+	// back to that game
+	const adoptedGameIdRef = useRef<number | null>(null)
 	useEffect(() => {
-		if (selectedGameId === 'manual' && typeof fetcher.data === 'number') {
+		if (
+			selectedGameId === 'manual' &&
+			typeof fetcher.data === 'number' &&
+			fetcher.data !== adoptedGameIdRef.current
+		) {
+			adoptedGameIdRef.current = fetcher.data
 			setSelectedGameId(fetcher.data.toString())
 		}
 	}, [fetcher.data, selectedGameId])
@@ -982,13 +1000,6 @@ function AddStatsButton({
 			encType: 'application/json',
 			action: '/stats',
 			method: 'post',
-		})
-		mixpanel.track('add stats', {
-			goals: stats.filter((s) => s.type === 'goal').length,
-			assists: stats.filter((s) => s.type === 'assist').length,
-			mvps: stats.filter((s) => s.type === 'mvp').length,
-			cleanSheets: stats.filter((s) => s.type === 'clean_sheet').length,
-			removed: removedStatIds.length,
 		})
 	}
 
@@ -1396,6 +1407,30 @@ export default function Home() {
 	// real teammates never see the bar because their links don't carry the param
 	const isDemo = Boolean(new URLSearchParams(useLocation().search).get('demo'))
 
+	// A live 0 to 1 transition in revalidated loader data means this visitor
+	// just logged the team's first stats; a page that loads with stats never
+	// fires it
+	const previousGamesWithStatsCount = useRef(gamesWithStatsCount)
+	useEffect(() => {
+		if (previousGamesWithStatsCount.current === 0 && gamesWithStatsCount > 0) {
+			mixpanel.track('first stats celebration')
+			// Soccer fireworks: goals and assists mixed with regular confetti
+			import('canvas-confetti').then(({ default: confetti }) => {
+				const ball = confetti.shapeFromText({ text: '⚽️', scalar: 2 })
+				const apple = confetti.shapeFromText({ text: '🍎', scalar: 2 })
+				confetti({
+					shapes: [ball, apple],
+					scalar: 2,
+					particleCount: 30,
+					spread: 100,
+					startVelocity: 35,
+				})
+				confetti({ particleCount: 80, spread: 70 })
+			})
+		}
+		previousGamesWithStatsCount.current = gamesWithStatsCount
+	}, [gamesWithStatsCount])
+
 	const { columnKeyForGameTimestamp, columnKeyForStatEntry } = makeColumnKeys(
 		team.games
 	)
@@ -1421,6 +1456,9 @@ export default function Home() {
 	)
 
 	useEffect(() => {
+		// The setup block replaces the table entirely on a team with no players
+		if (players.length === 0) return
+
 		const tableContainer = document.getElementById('table_container')
 		invariant(tableContainer, 'tableContainer not found')
 		tableContainer.scrollLeft = tableContainer.scrollWidth
@@ -1470,7 +1508,7 @@ export default function Home() {
 			resizeObserver.disconnect()
 			tableContainer.removeEventListener('scroll', updateScrollShadows)
 		}
-	}, [])
+	}, [players.length])
 
 	const nextGame = team.games.filter(
 		(g) => g.timestamp && isFuture(g.timestamp)
@@ -1479,12 +1517,45 @@ export default function Home() {
 	return (
 		<>
 			<Nav title={team.name} team={team} />
-			<TrialStatus
-				teamId={team.id}
-				gamesWithStatsCount={gamesWithStatsCount}
-				hasActiveSubscription={Boolean(teamHasActiveSubscription)}
-				userHasAccessToTeam={userHasAccessToTeam}
-			/>
+			{/* The setup checklist owns this spot until the first stats are
+			    logged. The trial pitch waits until 2 of 3 free games so the
+			    first save stays a celebration, not a sell */}
+			{userHasAccessToTeam && gamesWithStatsCount === 0 ? (
+				<SetupChecklist
+					teamSlug={team.slug}
+					hasPlayers={players.length > 0}
+					hasFutureGame={Boolean(nextGame)}
+					hasCustomizedSettings={
+						team.color !== 'gray' || Boolean(team.location)
+					}
+				/>
+			) : null}
+			{/* Celebration card fills the gap between first and second game,
+			    keeping the share nudge alive until the trial pitch arrives */}
+			{userHasAccessToTeam && gamesWithStatsCount === 1 ? (
+				<Alert>
+					<AlertDescription className="space-y-3">
+						<p className="font-semibold">
+							The golden boot race has started ⚽️
+						</p>
+						<ShareStandingsButton
+							slug={team.slug}
+							teamName={team.name}
+							players={players}
+							season={season}
+							label="Send it to the group chat"
+						/>
+					</AlertDescription>
+				</Alert>
+			) : null}
+			{gamesWithStatsCount >= 2 ? (
+				<TrialStatus
+					teamId={team.id}
+					gamesWithStatsCount={gamesWithStatsCount}
+					hasActiveSubscription={Boolean(teamHasActiveSubscription)}
+					userHasAccessToTeam={userHasAccessToTeam}
+				/>
+			) : null}
 			{nextGame ? (
 				<Collapsible className="space-y-3" defaultOpen>
 					<CollapsibleTrigger asChild>
@@ -1507,94 +1578,114 @@ export default function Home() {
 					</CollapsibleContent>
 				</Collapsible>
 			) : null}
-			<div className="space-y-5">
-				<h2 className="text-2xl">Stats</h2>
-				<div className="flex gap-1 flex-row-reverse">
-					<div className="hidden sm:block">
-						<ShareStandingsButton
-							slug={team.slug}
-							teamName={team.name}
-							players={players}
-							season={season}
-						/>{' '}
+			{players.length === 0 ? (
+				<div className="space-y-5">
+					<h2 className="text-2xl">Stats</h2>
+					<p>
+						No players yet.
 						{userHasAccessToTeam ? (
-							<AddStatsButton
-								teamId={team.id}
-								players={players}
-								games={team.games}
-							/>
+							<>
+								{' '}
+								<Link to={`/${team.slug}/players`} className="underline">
+									Add your first player
+								</Link>{' '}
+								to get the leaderboard going.
+							</>
 						) : null}
-					</div>
-					<SortDropdown />
-					{seasons.length > 0 && (
-						<SeasonDropdown seasons={seasons} season={season} />
-					)}
+					</p>
 				</div>
-				<div className="relative">
-					<div className="overflow-x-auto w-full" id="table_container">
-						<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
-							<thead>
-								<tr>
-									<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
-									{/* Avatar */}
-									<th className="hidden md:table-cell"></th> {/* Name */}
-									{columnKeys().map((columnKey) => {
-										const game = team.games.find(
-											(g) =>
-												g.timestamp &&
-												columnKeyForGameTimestamp(g.timestamp) === columnKey
-										)
-										return (
-											<th
-												key={columnKey}
-												className={cn(
-													'text-xs rotate-45',
-													hasLongHeaderLabels ? 'h-14' : 'h-10'
-												)}
-											>
-												{game && game.statEntries.length > 0 ? (
-													<StatsDialog
-														game={game}
-														statEntries={game.statEntries}
-														player={player}
-													>
-														<button className="cursor-pointer hover:underline">
-															<ColumnHeaderLabel columnKey={columnKey} />
-														</button>
-													</StatsDialog>
-												) : (
-													<ColumnHeaderLabel columnKey={columnKey} />
-												)}
-											</th>
-										)
-									})}
-									{/* Totals */}
-									<th
-										className={`sticky right-0 bg-${team.color}-50 z-10`}
-									></th>
-								</tr>
-							</thead>
-							<tbody>
-								{players.map((p) => (
-									<PlayerRow
-										key={p.id}
-										teamSlug={team.slug}
-										teamColor={team.color}
-										userHasAccessToTeam={userHasAccessToTeam}
-										player={p}
-										columnKeys={columnKeys}
-										columnKeyForStatEntry={columnKeyForStatEntry}
-										gameIdByColumnKey={gameIdByColumnKey}
-									/>
-								))}
-							</tbody>
-						</table>
+			) : (
+				<div className="space-y-5">
+					<h2 className="text-2xl">Stats</h2>
+					<div className="flex gap-1 flex-row-reverse">
+						<div className="hidden sm:block">
+							<ShareStandingsButton
+								slug={team.slug}
+								teamName={team.name}
+								players={players}
+								season={season}
+							/>{' '}
+							{userHasAccessToTeam ? (
+								<AddStatsButton
+									teamId={team.id}
+									players={players}
+									games={team.games}
+								/>
+							) : null}
+						</div>
+						<SortDropdown />
+						{seasons.length > 0 && (
+							<SeasonDropdown seasons={seasons} season={season} />
+						)}
 					</div>
-					<div className="stats-scroll-shadow-left"></div>
-					<div className="stats-scroll-shadow-right"></div>
+					<div className="relative">
+						<div className="overflow-x-auto w-full" id="table_container">
+							<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
+								<thead>
+									<tr>
+										<th
+											className={`sticky left-0 bg-${team.color}-50 z-10`}
+										></th>
+										{/* Avatar */}
+										<th className="hidden md:table-cell"></th> {/* Name */}
+										{columnKeys().map((columnKey) => {
+											const game = team.games.find(
+												(g) =>
+													g.timestamp &&
+													columnKeyForGameTimestamp(g.timestamp) === columnKey
+											)
+											return (
+												<th
+													key={columnKey}
+													className={cn(
+														'text-xs rotate-45',
+														hasLongHeaderLabels ? 'h-14' : 'h-10'
+													)}
+												>
+													{game && game.statEntries.length > 0 ? (
+														<StatsDialog
+															game={game}
+															statEntries={game.statEntries}
+															player={player}
+														>
+															<button className="cursor-pointer hover:underline">
+																<ColumnHeaderLabel columnKey={columnKey} />
+															</button>
+														</StatsDialog>
+													) : (
+														<ColumnHeaderLabel columnKey={columnKey} />
+													)}
+												</th>
+											)
+										})}
+										{/* Totals */}
+										<th
+											className={`sticky right-0 bg-${team.color}-50 z-10`}
+										></th>
+									</tr>
+								</thead>
+								<tbody>
+									{players.map((p) => (
+										<PlayerRow
+											key={p.id}
+											teamSlug={team.slug}
+											teamColor={team.color}
+											userHasAccessToTeam={userHasAccessToTeam}
+											player={p}
+											columnKeys={columnKeys}
+											columnKeyForStatEntry={columnKeyForStatEntry}
+											gameIdByColumnKey={gameIdByColumnKey}
+										/>
+									))}
+								</tbody>
+							</table>
+						</div>
+						<div className="stats-scroll-shadow-left"></div>
+						<div className="stats-scroll-shadow-right"></div>
+					</div>
 				</div>
-			</div>
-			{isDemo ? null : (
+			)}
+			{isDemo || players.length === 0 ? null : (
 				<div
 					className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 pl-6 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
 				>

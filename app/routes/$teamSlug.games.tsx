@@ -1153,9 +1153,7 @@ export default function Games() {
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
 
-	const isDemo = Boolean(
-		new URLSearchParams(useLocation().search).get('demo')
-	)
+	const isDemo = Boolean(new URLSearchParams(useLocation().search).get('demo'))
 
 	const now = new Date()
 	const upcomingGames = team.games.filter(

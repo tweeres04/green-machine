@@ -28,20 +28,24 @@ export function TrialStatus({
 
 	const atLimit = gamesWithStatsCount >= FREE_GAMES_LIMIT
 
-	const getMessage = () => {
-		if (gamesWithStatsCount === 0) {
-			return 'Your first 3 games are free. Subscribe to track your whole season.'
-		} else if (!atLimit) {
-			return `You've tracked ${gamesWithStatsCount} of 3 free games. Subscribe to keep the stats coming.`
-		} else {
-			return "Your team's off to a great start! Keep tracking every goal."
-		}
-	}
-
+	// Only rendered once stats exist, so there's no zero-games message
 	return (
 		<Alert>
 			<AlertDescription className="space-y-3">
-				<p>{getMessage()}</p>
+				{atLimit ? (
+					<>
+						<p className="font-semibold">
+							Your leaderboard is looking fresh ✨
+						</p>
+						<p>
+							{`That's your 3 free games tracked. Subscribe to keep it going.`}
+						</p>
+					</>
+				) : (
+					<p>
+						{`You've tracked ${gamesWithStatsCount} of 3 free games. Subscribe to keep the stats coming.`}
+					</p>
+				)}
 				<p className="text-sm">
 					<span className="font-semibold">Early access pricing, 50% off:</span>{' '}
 					<span className="text-muted-foreground line-through">$39</span>{' '}
@@ -49,7 +53,10 @@ export function TrialStatus({
 				</p>
 				<div className="space-y-1">
 					<Button asChild variant={atLimit ? 'default' : 'secondary'}>
-						<a href={`/teams/${teamId}/subscribe`} className="underline font-medium">
+						<a
+							href={`/teams/${teamId}/subscribe`}
+							className="underline font-medium"
+						>
 							Subscribe
 						</a>
 					</Button>

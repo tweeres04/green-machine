@@ -4,6 +4,7 @@ import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { players } from '~/schema'
 import { inviteUser } from '~/lib/inviteUser'
+import { mixpanelServer } from '~/lib/mixpanel.server'
 
 export async function action({
 	request,
@@ -38,6 +39,11 @@ export async function action({
 		.values({ name, teamId: Number(teamId) })
 		.returning()
 	const newPlayer = newPlayers[0]
+
+	mixpanelServer.track('add player', {
+		distinct_id: user.id,
+		'team id': Number(teamId),
+	})
 
 	if (newPlayer && email && typeof email === 'string') {
 		inviteUser({
