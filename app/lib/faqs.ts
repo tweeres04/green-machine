@@ -27,7 +27,7 @@ export const faqs = [
 	{
 		question: 'What kind of teams is TeamStats for?',
 		answer:
-			"Rec and amateur soccer teams. Beer leagues, Sunday leagues, adult pickup groups. If your team plays for fun and wants something to talk about between games, it's for you.",
+			"Chill soccer teams at any level. Beer leagues, Sunday leagues, pickup groups, and competitive teams. If your team wants something to talk about between games, it's for you.",
 	},
 	{
 		question: 'Is there a mobile app?',

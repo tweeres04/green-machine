@@ -25,8 +25,8 @@ import { getGameForecast } from '~/lib/weather-service'
 export const meta: MetaFunction = () => {
 	const appName = 'TeamStats'
 	const url = 'https://teamstats.tweeres.com'
-	const title = `Soccer Stats Tracker for Rec Teams - ${appName}`
-	const description = `The simple soccer stats tracker for rec league teams. Track goals, assists, leaderboards, and schedules. Try free for 3 games, then just $19/year (50% off early access).`
+	const title = `Soccer stats tracker with leaderboards for chill teams - ${appName}`
+	const description = `The simple soccer stats tracker for chill teams. Leaderboards for goals, assists, clean sheets, and MVPs, made for your group chat. Free for 3 games, then $19/year.`
 	const author = 'Tyler Weeres'
 
 	return [
