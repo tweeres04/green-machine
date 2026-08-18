@@ -12,4 +12,28 @@
 		content: '\1F525';
 		@apply absolute -z-10 text-3xl opacity-20 left-1/2 -translate-x-1/2 top-1/2 -translate-y-[60%];
 	}
+
+	/* Continuous edge shadows marking where the stats table has games
+	   scrolled out of view under its sticky columns. Overlay strips rather
+	   than box-shadow on the cells: collapsed table cells don't paint
+	   box-shadow in Chromium, and the avatar cells are shorter than their
+	   rows, which broke the shadow into segments. The wrapper's data
+	   attributes and --sticky-*-width vars are set by the stats table's
+	   scroll handler. */
+	.stats-scroll-shadow-left,
+	.stats-scroll-shadow-right {
+		@apply absolute top-0 bottom-0 w-2 pointer-events-none opacity-0 transition-opacity z-10;
+	}
+	.stats-scroll-shadow-left {
+		left: var(--sticky-left-width);
+		background: linear-gradient(to right, rgb(0 0 0 / 0.08), transparent);
+	}
+	.stats-scroll-shadow-right {
+		right: var(--sticky-right-width);
+		background: linear-gradient(to left, rgb(0 0 0 / 0.08), transparent);
+	}
+	[data-scroll-left] > .stats-scroll-shadow-left,
+	[data-scroll-right] > .stats-scroll-shadow-right {
+		@apply opacity-100;
+	}
 }

@@ -16,7 +16,8 @@ export function SeasonDropdown({
 	seasons: { id: number; name: string }[]
 	season: { id: number; name: string } | null | undefined
 }) {
-	const path = useLocation().pathname
+	const location = useLocation()
+	const path = location.pathname
 	const navigate = useNavigate()
 
 	return (
@@ -31,11 +32,9 @@ export function SeasonDropdown({
 				<DropdownMenuRadioGroup
 					value={season?.id?.toString() ?? ''}
 					onValueChange={(newSeasonId) => {
-						if (newSeasonId) {
-							navigate(`${path}?season=${newSeasonId}`)
-						} else {
-							navigate(path)
-						}
+						const searchParams = new URLSearchParams(location.search)
+						searchParams.set('season', newSeasonId)
+						navigate(`${path}?${searchParams.toString()}`)
 					}}
 				>
 					<DropdownMenuRadioItem value="all">All seasons</DropdownMenuRadioItem>

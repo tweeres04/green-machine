@@ -12,12 +12,13 @@ import {
 	WandSparkles,
 } from 'lucide-react'
 import React from 'react'
+import mixpanel from 'mixpanel-browser'
 import { Instagram } from '~/components/ui/icons/instagram'
 import { TikTok } from '~/components/ui/icons/tiktok'
 import { Youtube } from '~/components/ui/icons/youtube'
 import { faqs } from '~/lib/faqs'
 
-function Cta() {
+function Cta({ location }: { location: string }) {
 	return (
 		<div className="text-center space-y-3 py-6">
 			<div className="flex justify-center">
@@ -26,10 +27,27 @@ function Cta() {
 					asChild
 					className="transition-all ease-linear hover:shadow-xl hover:scale-105 hover:bg-gray-800"
 				>
-					<Link to="/teams/new" className="w-full">
-						Set up your team in 2 minutes
+					<Link
+						to="/green-machine?season=all&demo=1"
+						className="w-full"
+						onClick={() => {
+							mixpanel.track('click explore a live team', { location })
+						}}
+					>
+						Explore a live team
 					</Link>
 				</Button>
+			</div>
+			<div>
+				<Link
+					to="/teams/new"
+					className="text-sm underline"
+					onClick={() => {
+						mixpanel.track('click set up team link', { location })
+					}}
+				>
+					Or set up your team in 2 minutes
+				</Link>
 			</div>
 			<small className="block text-sm leading-tight font-light">
 				Early access: <span className="line-through opacity-70">$39</span> $19
@@ -81,7 +99,7 @@ export default function HomeLandingPage() {
 							Players get their own page with streaks and per-game averages.
 						</p>
 					</div>
-					<Cta />
+					<Cta location="hero" />
 					<img
 						src="/leaderboard.webp"
 						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
@@ -108,7 +126,7 @@ export default function HomeLandingPage() {
 						<span className="whitespace-nowrap">- Jeremy W., on two teams</span>
 					</blockquote>
 				</div>
-				<Cta />
+				<Cta location="after-testimonials" />
 				<div className="features space-y-10">
 					<h3 className="text-2xl">Why TeamStats?</h3>
 					<FeatureList>
@@ -143,7 +161,7 @@ export default function HomeLandingPage() {
 							</p>
 						</FeatureListItem>
 					</FeatureList>
-					<Cta />
+					<Cta location="mid-features" />
 					<FeatureList>
 						<FeatureListItem icon={<Focus />} title="Small and focused">
 							<p>
@@ -176,7 +194,7 @@ export default function HomeLandingPage() {
 						</FeatureListItem>
 					</FeatureList>
 				</div>
-				<Cta />
+				<Cta location="after-features" />
 				<div id="faq" className="faq space-y-8">
 					<h3 className="text-2xl">Frequently asked questions</h3>
 					<dl className="space-y-8 [&_div]:space-y-2 [&_dt]:font-semibold">
@@ -188,7 +206,7 @@ export default function HomeLandingPage() {
 						))}
 					</dl>
 				</div>
-				<Cta />
+				<Cta location="after-faq" />
 				<footer className="py-16 space-y-5">
 					<div>
 						<Button variant="link" className="p-0" asChild>

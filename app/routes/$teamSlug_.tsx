@@ -39,6 +39,7 @@ import {
 import { upperFirst } from 'lodash-es'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
+import { DemoCtaBar } from '~/components/ui/demo-cta-bar'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
 import { useEffect, useState, useRef } from 'react'
 import Trash from '~/components/ui/icons/trash'
@@ -87,11 +88,7 @@ import mixpanel from 'mixpanel-browser'
 import { getGameForecast } from '~/lib/weather-service'
 import { ogImageVersion } from '~/lib/og-image-version.server'
 import { slugEquals } from '~/lib/team-slug.server'
-import {
-	oncePerGameStatTypes,
-	statEmoji,
-	statLabel,
-} from '~/lib/stat-types'
+import { oncePerGameStatTypes, statEmoji, statLabel } from '~/lib/stat-types'
 import { TrialStatus } from '~/components/ui/trial-status'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
@@ -493,7 +490,11 @@ const statLetter: Record<string, string> = {
 // matches what's visibly burning in the table. Returns the run length and
 // the type that achieved it (goals win ties).
 function bestStreak(
-	statEntries: { type: string; timestamp: string; game?: { timestamp: string | null } | null }[],
+	statEntries: {
+		type: string
+		timestamp: string
+		game?: { timestamp: string | null } | null
+	}[],
 	allColumnKeys: string[],
 	columnKeyForStatEntry: (statEntry: {
 		timestamp: string
@@ -503,7 +504,10 @@ function bestStreak(
 	const typesByColumnKey = new Map<string, Set<string>>()
 	for (const se of statEntries) {
 		const key = columnKeyForStatEntry(se)
-		typesByColumnKey.set(key, (typesByColumnKey.get(key) ?? new Set()).add(se.type))
+		typesByColumnKey.set(
+			key,
+			(typesByColumnKey.get(key) ?? new Set()).add(se.type)
+		)
 	}
 
 	const bestByType = ['goal', 'assist'].map((type) => {
@@ -579,8 +583,7 @@ function StatDeleteDialog({
 	}
 
 	const isSubmitting =
-		fetcher.state === 'submitting' &&
-		fetcher.formAction === `/stats/${data.id}`
+		fetcher.state === 'submitting' && fetcher.formAction === `/stats/${data.id}`
 
 	return (
 		<Dialog
@@ -641,8 +644,7 @@ function PlayerRow({
 	const [statDeleteDialog, setStatDeleteDialog] =
 		useState<StatDeleteDialogData>(null)
 
-	const sort =
-		new URLSearchParams(useLocation().search).get('sort') ?? 'goals'
+	const sort = new URLSearchParams(useLocation().search).get('sort') ?? 'goals'
 
 	const goalCount = player.statEntries.filter((s) => s.type === 'goal').length
 	const assistCount = player.statEntries.filter(
@@ -652,22 +654,21 @@ function PlayerRow({
 		sort === 'streak'
 			? bestStreak(player.statEntries, columnKeys(), columnKeyForStatEntry)
 			: null
-	const statEntriesByColumn: [string, StatEntry[]][] = player.statEntries.reduce(
-		(acc: [string, StatEntry[]][], se) => {
-			const columnKey = columnKeyForStatEntry(se)
-			const columnEntryPair = acc.find(([k]) => k === columnKey)
-			invariant(columnEntryPair, 'columnEntryPair not found')
-			columnEntryPair[1]?.push(se)
+	const statEntriesByColumn: [string, StatEntry[]][] =
+		player.statEntries.reduce(
+			(acc: [string, StatEntry[]][], se) => {
+				const columnKey = columnKeyForStatEntry(se)
+				const columnEntryPair = acc.find(([k]) => k === columnKey)
+				invariant(columnEntryPair, 'columnEntryPair not found')
+				columnEntryPair[1]?.push(se)
 
-			return acc
-		},
-		columnKeys().map((k) => [k, []])
-	)
+				return acc
+			},
+			columnKeys().map((k) => [k, []])
+		)
 
 	const missedGameIds = new Set(
-		player.rsvps
-			.filter((r) => r.rsvp === 'no')
-			.map((r) => r.gameId)
+		player.rsvps.filter((r) => r.rsvp === 'no').map((r) => r.gameId)
 	)
 
 	return (
@@ -680,7 +681,9 @@ function PlayerRow({
 						<PopoverTrigger>
 							<Avatar title={player.name} className="shadow">
 								<AvatarImage
-									src={`https://files.tweeres.com/teamstats/players/${player.id}/image${
+									src={`https://files.tweeres.com/teamstats/players/${
+										player.id
+									}/image${
 										player.imageUpdatedAt
 											? `?v=${encodeURIComponent(player.imageUpdatedAt)}`
 											: ''
@@ -691,14 +694,20 @@ function PlayerRow({
 							</Avatar>
 						</PopoverTrigger>
 						<PopoverContent>
-							<Link to={`/${teamSlug}/players/${player.id}`} className="hover:underline">
+							<Link
+								to={`/${teamSlug}/players/${player.id}`}
+								className="hover:underline"
+							>
 								{player.name}
 							</Link>
 						</PopoverContent>
 					</Popover>
 				</td>
 				<td className="hidden md:table-cell">
-					<Link to={`/${teamSlug}/players/${player.id}`} className="hover:underline">
+					<Link
+						to={`/${teamSlug}/players/${player.id}`}
+						className="hover:underline"
+					>
 						{player.name}
 					</Link>
 				</td>
@@ -781,7 +790,7 @@ function PlayerRow({
 					</td>
 				))}
 				<td
-					className={`text-xl text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
+					className={`text-base min-[480px]:text-xl text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
 				>
 					{streak !== null
 						? streak.length > 1
@@ -1204,8 +1213,7 @@ function AddStatsButton({
 										<div className="text-[0.6rem]">
 											{Object.keys(statEmoji).map((type) => {
 												const count = savedStatsForSelectedGame.filter(
-													(s) =>
-														s.playerId === player.id && s.type === type
+													(s) => s.playerId === player.id && s.type === type
 												).length
 												return count ? (
 													<span key={type}>
@@ -1218,8 +1226,7 @@ function AddStatsButton({
 										<div>
 											{Object.keys(statEmoji).map((type) => {
 												const added = stats.filter(
-													(s) =>
-														s.playerId === player.id && s.type === type
+													(s) => s.playerId === player.id && s.type === type
 												).length
 												const removed = savedStatsForSelectedGame.filter(
 													(s) =>
@@ -1276,8 +1283,7 @@ function AddStatsButton({
 														key={type}
 														onClick={() => addStat(player.id, type)}
 													>
-														{statEmoji[type]}{' '}
-														{upperFirst(statLabel[type])}
+														{statEmoji[type]} {upperFirst(statLabel[type])}
 													</DropdownMenuItem>
 												))}
 												<DropdownMenuSeparator />
@@ -1329,7 +1335,6 @@ function AddStatsButton({
 		</Dialog>
 	)
 }
-
 
 function SortDropdown() {
 	const path = useLocation().pathname
@@ -1387,6 +1392,10 @@ export default function Home() {
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
+	// The landing page's "Explore a live team" CTA links here with ?demo=1;
+	// real teammates never see the bar because their links don't carry the param
+	const isDemo = Boolean(new URLSearchParams(useLocation().search).get('demo'))
+
 	const { columnKeyForGameTimestamp, columnKeyForStatEntry } = makeColumnKeys(
 		team.games
 	)
@@ -1415,6 +1424,52 @@ export default function Home() {
 		const tableContainer = document.getElementById('table_container')
 		invariant(tableContainer, 'tableContainer not found')
 		tableContainer.scrollLeft = tableContainer.scrollWidth
+
+		const wrapper = tableContainer.parentElement
+		invariant(wrapper, 'table wrapper not found')
+
+		const table = tableContainer.querySelector('table')
+		invariant(table, 'table not found')
+
+		const headerCells = tableContainer.querySelectorAll<HTMLElement>('thead th')
+
+		// Attributes and style props rather than state so scrolling doesn't
+		// re-render the table
+		function updateScrollShadows() {
+			invariant(tableContainer, 'tableContainer not found')
+			invariant(wrapper, 'table wrapper not found')
+
+			// The shadow strips sit just outside the sticky columns, whose
+			// widths shift when the web font loads in and at the tally's 480px
+			// size change, so they're remeasured on every table resize
+			wrapper.style.setProperty(
+				'--sticky-left-width',
+				`${headerCells[0].offsetWidth}px`
+			)
+			wrapper.style.setProperty(
+				'--sticky-right-width',
+				`${headerCells[headerCells.length - 1].offsetWidth}px`
+			)
+
+			const { scrollLeft, scrollWidth, clientWidth } = tableContainer
+			wrapper.toggleAttribute('data-scroll-left', scrollLeft > 0)
+			wrapper.toggleAttribute(
+				'data-scroll-right',
+				scrollLeft + clientWidth < scrollWidth - 1
+			)
+		}
+
+		// Fires once on observe, which covers the initial placement. The table
+		// is w-full, so viewport resizes fire it too
+		const resizeObserver = new ResizeObserver(updateScrollShadows)
+		resizeObserver.observe(table)
+		tableContainer.addEventListener('scroll', updateScrollShadows, {
+			passive: true,
+		})
+		return () => {
+			resizeObserver.disconnect()
+			tableContainer.removeEventListener('scroll', updateScrollShadows)
+		}
 	}, [])
 
 	const nextGame = team.games.filter(
@@ -1475,109 +1530,119 @@ export default function Home() {
 						<SeasonDropdown seasons={seasons} season={season} />
 					)}
 				</div>
-				<div className="overflow-x-auto w-full" id="table_container">
-					<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
-						<thead>
-							<tr>
-								<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
-								{/* Avatar */}
-								<th className="hidden md:table-cell"></th> {/* Name */}
-								{columnKeys().map((columnKey) => {
-									const game = team.games.find(
-										(g) =>
-											g.timestamp &&
-											columnKeyForGameTimestamp(g.timestamp) === columnKey
-									)
-									return (
-										<th
-											key={columnKey}
-											className={cn(
-												'text-xs rotate-45',
-												hasLongHeaderLabels ? 'h-14' : 'h-10'
-											)}
-										>
-											{game && game.statEntries.length > 0 ? (
-												<StatsDialog game={game} statEntries={game.statEntries} player={player}>
-													<button className="cursor-pointer hover:underline">
-														<ColumnHeaderLabel columnKey={columnKey} />
-													</button>
-												</StatsDialog>
-											) : (
-												<ColumnHeaderLabel columnKey={columnKey} />
-											)}
-										</th>
-									)
-								})}
-								{/* Totals */}
-								<th className={`sticky right-0 bg-${team.color}-50 z-10`}></th>
-							</tr>
-						</thead>
-						<tbody>
-							{players.map((p) => (
-								<PlayerRow
-									key={p.id}
-									teamSlug={team.slug}
-									teamColor={team.color}
-									userHasAccessToTeam={userHasAccessToTeam}
-									player={p}
-									columnKeys={columnKeys}
-									columnKeyForStatEntry={columnKeyForStatEntry}
-									gameIdByColumnKey={gameIdByColumnKey}
-								/>
-							))}
-						</tbody>
-					</table>
+				<div className="relative">
+					<div className="overflow-x-auto w-full" id="table_container">
+						<table className="w-full [&_td]:px-2 [&_td]:py-2 [&_th]:pb-2">
+							<thead>
+								<tr>
+									<th className={`sticky left-0 bg-${team.color}-50 z-10`}></th>
+									{/* Avatar */}
+									<th className="hidden md:table-cell"></th> {/* Name */}
+									{columnKeys().map((columnKey) => {
+										const game = team.games.find(
+											(g) =>
+												g.timestamp &&
+												columnKeyForGameTimestamp(g.timestamp) === columnKey
+										)
+										return (
+											<th
+												key={columnKey}
+												className={cn(
+													'text-xs rotate-45',
+													hasLongHeaderLabels ? 'h-14' : 'h-10'
+												)}
+											>
+												{game && game.statEntries.length > 0 ? (
+													<StatsDialog
+														game={game}
+														statEntries={game.statEntries}
+														player={player}
+													>
+														<button className="cursor-pointer hover:underline">
+															<ColumnHeaderLabel columnKey={columnKey} />
+														</button>
+													</StatsDialog>
+												) : (
+													<ColumnHeaderLabel columnKey={columnKey} />
+												)}
+											</th>
+										)
+									})}
+									{/* Totals */}
+									<th
+										className={`sticky right-0 bg-${team.color}-50 z-10`}
+									></th>
+								</tr>
+							</thead>
+							<tbody>
+								{players.map((p) => (
+									<PlayerRow
+										key={p.id}
+										teamSlug={team.slug}
+										teamColor={team.color}
+										userHasAccessToTeam={userHasAccessToTeam}
+										player={p}
+										columnKeys={columnKeys}
+										columnKeyForStatEntry={columnKeyForStatEntry}
+										gameIdByColumnKey={gameIdByColumnKey}
+									/>
+								))}
+							</tbody>
+						</table>
+					</div>
+					<div className="stats-scroll-shadow-left"></div>
+					<div className="stats-scroll-shadow-right"></div>
 				</div>
 			</div>
-			<div
-				className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 pl-6 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
-			>
-				<button
-					className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-2 border-${team.color}-200 rounded-full p-1 shadown bg-${team.color}-50`}
-					onClick={(event) => {
-						const parentElement = event.currentTarget.parentElement
-						const rightArrow = parentElement?.querySelector(
-							'[data-toggle-id=right_circle]'
-						)
-						const translateClassname = 'translate-x-[calc(100%-19px)]' // offsetwidth was returning undefined, so I'm hardcoding this for now
-						const rotateClassname = 'rotate-180'
+			{isDemo ? null : (
+				<div
+					className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 pl-6 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
+				>
+					<button
+						className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-2 border-${team.color}-200 rounded-full p-1 shadown bg-${team.color}-50`}
+						onClick={(event) => {
+							const parentElement = event.currentTarget.parentElement
+							const rightArrow = parentElement?.querySelector(
+								'[data-toggle-id=right_circle]'
+							)
+							const translateClassname = 'translate-x-[calc(100%-19px)]' // offsetwidth was returning undefined, so I'm hardcoding this for now
+							const rotateClassname = 'rotate-180'
 
-						if (parentElement?.classList.contains(translateClassname)) {
-							parentElement.classList.remove(translateClassname)
-							rightArrow?.classList.remove(rotateClassname)
-						} else {
-							parentElement?.classList.add(translateClassname)
-							rightArrow?.classList.add(rotateClassname)
-						}
-					}}
-				>
-					<ArrowRightCircle
-						className={`text-${team.color}-900 transition-transform duration-500 ease-out`}
-						data-toggle-id="right_circle"
-					/>
-				</button>
-				<ShareStandingsButton
-					slug={team.slug}
-					teamName={team.name}
-					players={players}
-					season={season}
-				/>{' '}
-				{userHasAccessToTeam ? (
-					<AddStatsButton
-						teamId={team.id}
+							if (parentElement?.classList.contains(translateClassname)) {
+								parentElement.classList.remove(translateClassname)
+								rightArrow?.classList.remove(rotateClassname)
+							} else {
+								parentElement?.classList.add(translateClassname)
+								rightArrow?.classList.add(rotateClassname)
+							}
+						}}
+					>
+						<ArrowRightCircle
+							className={`text-${team.color}-900 transition-transform duration-500 ease-out`}
+							data-toggle-id="right_circle"
+						/>
+					</button>
+					<ShareStandingsButton
+						slug={team.slug}
+						teamName={team.name}
 						players={players}
-						games={team.games}
-					/>
-				) : null}
-			</div>
+						season={season}
+					/>{' '}
+					{userHasAccessToTeam ? (
+						<AddStatsButton
+							teamId={team.id}
+							players={players}
+							games={team.games}
+						/>
+					) : null}
+				</div>
+			)}
 			<footer className="text-center pt-8 pb-24">
-				<a
-					href="/"
-					className="text-sm underline"
-				>
+				<a href="/" className="text-sm underline">
 					Powered by TeamStats
 				</a>
 			</footer>
+			{isDemo ? <DemoCtaBar teamSlug={team.slug} /> : null}
 			<Toaster />
 		</>
 	)

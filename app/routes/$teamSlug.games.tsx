@@ -24,6 +24,7 @@ import { Skeleton } from '~/components/ui/skeleton'
 import { Input } from '~/components/ui/input'
 import { Textarea } from '~/components/ui/textarea'
 import Nav from '~/components/ui/nav'
+import { DemoCtaBar } from '~/components/ui/demo-cta-bar'
 import { Badge } from '~/components/ui/badge'
 import { getDb } from '~/lib/getDb'
 import { z } from 'zod'
@@ -1152,6 +1153,10 @@ export default function Games() {
 	const [newGameModal, setNewGameModal] = useState(false)
 	const [importScheduleModal, setImportScheduleModal] = useState(false)
 
+	const isDemo = Boolean(
+		new URLSearchParams(useLocation().search).get('demo')
+	)
+
 	const now = new Date()
 	const upcomingGames = team.games.filter(
 		(game) => game.timestamp && new Date(game.timestamp) > now
@@ -1294,6 +1299,7 @@ export default function Games() {
 			) : (
 				<p>No games yet</p>
 			)}
+			{isDemo ? <DemoCtaBar teamSlug={team.slug} /> : null}
 		</>
 	)
 }

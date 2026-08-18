@@ -22,8 +22,12 @@ type Props = {
 }
 
 export default function Nav({ title, team }: Props) {
-	const { pathname } = useLocation()
+	const { pathname, search } = useLocation()
 	const { user, userHasAccessToTeam } = useContext(UserContext) ?? {}
+
+	// Keeps demo visitors in demo mode as they explore, so the demo cta bar
+	// doesn't vanish on their first navigation
+	const demoSuffix = new URLSearchParams(search).get('demo') ? '?demo=1' : ''
 
 	const [menuIsOpen, setMenuIsOpen] = useState(false)
 
@@ -60,12 +64,12 @@ export default function Nav({ title, team }: Props) {
 								<DropdownMenuLabel>{team.name}</DropdownMenuLabel>
 								{pathname !== `/${team.slug}` ? (
 									<DropdownMenuItem asChild>
-										<Link to={`/${team.slug}`}>Home</Link>
+										<Link to={`/${team.slug}${demoSuffix}`}>Home</Link>
 									</DropdownMenuItem>
 								) : null}
 								{pathname !== `/${team.slug}/games` ? (
 									<DropdownMenuItem asChild>
-										<Link to={`/${team.slug}/games`}>Games</Link>
+										<Link to={`/${team.slug}/games${demoSuffix}`}>Games</Link>
 									</DropdownMenuItem>
 								) : null}
 								{userHasAccessToTeam && pathname !== `/${team.slug}/players` ? (
