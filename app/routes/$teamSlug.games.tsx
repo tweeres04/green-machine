@@ -272,9 +272,11 @@ const GameResultSchema = z.object({
 function ImportScheduleForm({
 	closeModal,
 	teamId,
+	teamName,
 }: {
 	closeModal: () => void
 	teamId: number
+	teamName: string
 }) {
 	const fetcher = useFetcher()
 	const saving = fetcher.state !== 'idle'
@@ -421,7 +423,13 @@ function ImportScheduleForm({
 				)}
 				<div>
 					<label htmlFor="team_name_input">Team Name</label>
-					<Input id="team_name_input" required name="team_name" type="text" />
+					<Input
+							id="team_name_input"
+							required
+							name="team_name"
+							type="text"
+							defaultValue={teamName}
+						/>
 				</div>
 				{(() => {
 					const footer = (
@@ -1202,6 +1210,7 @@ export default function Games() {
 								<ImportScheduleForm
 									closeModal={() => setImportScheduleModal(false)}
 									teamId={team.id}
+									teamName={team.name}
 								/>
 							</DialogContent>
 						</Dialog>

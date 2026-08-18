@@ -14,6 +14,7 @@ interface ParseRequest {
 	text: string
 	players: Player[]
 	gameId: string | null
+	teamId: number
 	timestamp: string
 }
 
@@ -39,22 +40,29 @@ export const action: ActionFunction = async ({ request }) => {
 			return json({ error: 'Missing required fields' }, { status: 400 })
 		}
 
-		// Validate team access via gameId
-		if (!body.gameId) {
-			return json({ error: 'Game ID required' }, { status: 400 })
+		// Validate team access. A gameId means an existing game, so its team is
+		// the source of truth. No gameId means the save will create the game
+		// (manual date path), so access is checked against the submitted teamId
+		let teamId: number
+		if (body.gameId) {
+			const db = getDb()
+			const game = await db.query.games.findFirst({
+				where: eq(games.id, Number(body.gameId)),
+				columns: { teamId: true },
+			})
+
+			if (!game || !game.teamId) {
+				return json({ error: 'Invalid game' }, { status: 400 })
+			}
+			teamId = game.teamId
+		} else {
+			if (!body.teamId) {
+				return json({ error: 'Team ID required' }, { status: 400 })
+			}
+			teamId = Number(body.teamId)
 		}
 
-		const db = getDb()
-		const game = await db.query.games.findFirst({
-			where: eq(games.id, Number(body.gameId)),
-			columns: { teamId: true },
-		})
-
-		if (!game || !game.teamId) {
-			return json({ error: 'Invalid game' }, { status: 400 })
-		}
-
-		const userHasAccessToTeam = await hasAccessToTeam(user, game.teamId)
+		const userHasAccessToTeam = await hasAccessToTeam(user, teamId)
 		if (!userHasAccessToTeam) {
 			return json({ error: 'Not authorized' }, { status: 403 })
 		}
@@ -67,7 +75,7 @@ export const action: ActionFunction = async ({ request }) => {
 			.join(', ')
 
 		console.log('Parse request:', {
-			teamId: game.teamId,
+			teamId,
 			userId: user?.id,
 			allowedPlayerIds: Array.from(allowedPlayerIds),
 			playerCount: body.players.length,
@@ -135,7 +143,7 @@ Examples:
 				(s: Omit<ParsedStat, 'timestamp' | 'gameId'>) => ({
 					...s,
 					timestamp: body.timestamp,
-					gameId: Number(body.gameId),
+					gameId: body.gameId ? Number(body.gameId) : null,
 				})
 			)
 

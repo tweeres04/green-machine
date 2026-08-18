@@ -29,7 +29,7 @@ You're in.
 
 Add your players and a game, then start logging goals. You'll have a golden boot race going by the weekend.
 
-Set up your team: ${process.env.BASE_URL}
+Set up your team: ${process.env.BASE_URL}/teams/new
 
 Your first three games are free. After that it's $19 a year for the whole team.
 
@@ -39,7 +39,7 @@ Tyler`,
 		html: emailHtml(`<p>Hi ${escapeHtml(user.name)},</p>
 <p>You're in.</p>
 <p>Add your players and a game, then start logging goals. You'll have a golden boot race going by the weekend.</p>
-<p><a href="${process.env.BASE_URL}">Set up your team</a></p>
+<p><a href="${process.env.BASE_URL}/teams/new">Set up your team</a></p>
 <p>Your first three games are free. After that it's $19 a year for the whole team.</p>
 <p>Hit reply if something breaks or doesn't make sense. I read every one.</p>
 <p>Tyler</p>`),

@@ -832,7 +832,7 @@ function AddStatsButton({
 
 	const [dialogOpen, setDialogOpen] = useState(false)
 	const fetcher = useFetcher<number>()
-	const aiFetcher = useFetcher<Omit<StatEntry, 'id'>[]>()
+	const aiFetcher = useFetcher<Omit<StatEntry, 'id'>[] | { error: string }>()
 	const [stats, setStats] = useState<Omit<StatEntry, 'id'>[]>([])
 	// Saved entries staged for deletion. Like added stats, they only take
 	// effect on save, so undo means the same thing for both
@@ -1164,7 +1164,9 @@ function AddStatsButton({
 						/>
 						{typeof aiFetcher.data === 'object' && 'error' in aiFetcher.data ? (
 							<p className="text-sm text-red-600 mb-2 sm:text-right">
-								Rate limit was hit. Try again later.
+								{aiFetcher.data.error === 'Rate limit reached'
+									? 'Rate limit was hit. Try again later.'
+									: "We couldn't read that. Try rewording it, or add the stats with the buttons below."}
 							</p>
 						) : null}
 						<div className="sm:flex sm:flex-row-reverse">
@@ -1180,6 +1182,7 @@ function AddStatsButton({
 											players: players.map((p) => ({ id: p.id, name: p.name })),
 											gameId:
 												selectedGameId === 'manual' ? null : selectedGameId,
+											teamId,
 											timestamp: timestampValue,
 										},
 										{
