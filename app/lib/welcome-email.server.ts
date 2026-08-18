@@ -1,6 +1,7 @@
 import Mailgun from 'mailgun.js'
 import invariant from 'tiny-invariant'
 import { User } from '~/schema'
+import { emailHtml, escapeHtml } from '~/lib/email-html.server'
 
 export async function sendWelcomeEmail(user: User) {
 	invariant(process.env.MAILGUN_API_KEY, 'No MAILGUN_API_KEY')
@@ -35,5 +36,12 @@ Your first three games are free. After that it's $19 a year for the whole team.
 Hit reply if something breaks or doesn't make sense. I read every one.
 
 Tyler`,
+		html: emailHtml(`<p>Hi ${escapeHtml(user.name)},</p>
+<p>You're in.</p>
+<p>Add your players and a game, then start logging goals. You'll have a golden boot race going by the weekend.</p>
+<p><a href="${process.env.BASE_URL}">Set up your team</a></p>
+<p>Your first three games are free. After that it's $19 a year for the whole team.</p>
+<p>Hit reply if something breaks or doesn't make sense. I read every one.</p>
+<p>Tyler</p>`),
 	})
 }

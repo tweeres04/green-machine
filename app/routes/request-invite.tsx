@@ -10,6 +10,7 @@ import { userInviteRequests } from '~/schema'
 import Nav from '~/components/ui/nav'
 import { useLoaderData } from '@remix-run/react'
 import { mixpanelServer } from '~/lib/mixpanel.server'
+import { emailHtml } from '~/lib/email-html.server'
 
 async function sendInviteRequestEmail({
 	teamId,
@@ -52,6 +53,9 @@ async function sendInviteRequestEmail({
 		to: email,
 		subject: `${requesterName} has requested to join ${teamName} on TeamStats`,
 		text: `Accept their request here: ${process.env.BASE_URL}/invite-requests/${inviteRequestId}?token=${randomToken}`,
+		html: emailHtml(
+			`<p><a href="${process.env.BASE_URL}/invite-requests/${inviteRequestId}?token=${randomToken}">Accept their request</a></p>`
+		),
 	})
 }
 

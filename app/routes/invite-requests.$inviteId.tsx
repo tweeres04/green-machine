@@ -24,6 +24,7 @@ import Nav from '~/components/ui/nav'
 import { formatISO } from 'date-fns'
 import { eq } from 'drizzle-orm'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { emailHtml, escapeHtml } from '~/lib/email-html.server'
 import Mailgun from 'mailgun.js'
 
 async function sendInviteRequestAcceptedEmail({
@@ -64,10 +65,15 @@ async function sendInviteRequestAcceptedEmail({
 		to: email,
 		subject: `TeamStats - Your request to join ${teamName} has been accepted!`,
 		text: `Hi${name ? ` ${name}` : ''},
-		
+
 Check out stats here: ${process.env.BASE_URL}/${teamRecord.slug}
-		
+
 Check out games here: ${process.env.BASE_URL}/${teamRecord.slug}/games`,
+		html: emailHtml(`<p>Hi${name ? ` ${escapeHtml(name)}` : ''},</p>
+<p><a href="${process.env.BASE_URL}/${teamRecord.slug}">Check out stats</a></p>
+<p><a href="${process.env.BASE_URL}/${
+			teamRecord.slug
+		}/games">Check out games</a></p>`),
 	})
 }
 

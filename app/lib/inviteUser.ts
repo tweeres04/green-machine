@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { userInvites } from '~/schema'
 import { formatISO } from 'date-fns'
 import { mixpanelServer } from './mixpanel.server'
+import { emailHtml } from './email-html.server'
 
 async function sendInviteEmail({
 	teamId,
@@ -47,6 +48,9 @@ async function sendInviteEmail({
 		to: email,
 		subject: `${inviterName} invited you to join ${teamName} on TeamStats`,
 		text: `Accept your invite here: ${process.env.BASE_URL}/invites/${inviteId}?token=${randomToken}`,
+		html: emailHtml(
+			`<p><a href="${process.env.BASE_URL}/invites/${inviteId}?token=${randomToken}">Accept your invite</a></p>`
+		),
 	})
 }
 
