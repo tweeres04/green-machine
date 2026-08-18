@@ -4,7 +4,6 @@ import {
 	MetaFunction,
 	defer,
 } from '@remix-run/node'
-import { eq } from 'drizzle-orm'
 import {
 	useFetcher,
 	useLoaderData,
@@ -99,6 +98,7 @@ import { StatsDialog } from '~/components/ui/stats-dialog'
 import { RsvpForm } from '~/components/ui/rsvp-form'
 import { getGameForecast, WeatherData } from '~/lib/weather-service'
 import { ogImageVersion } from '~/lib/og-image-version.server'
+import { slugEquals } from '~/lib/team-slug.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -686,7 +686,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	const teamQuery = db
 		.select({ id: teams.id })
 		.from(teams)
-		.where(eq(teams.slug, teamSlug))
+		.where(slugEquals(teamSlug))
 	const season = seasonId
 		? seasonId === 'all'
 			? null
@@ -707,7 +707,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 		  })
 
 	const teamPromise = db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		where: () => slugEquals(teamSlug),
 		with: {
 			games: {
 				orderBy: (games, { asc }) => asc(games.timestamp),

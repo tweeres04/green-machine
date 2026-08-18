@@ -21,6 +21,7 @@ import { cn } from '~/lib/utils'
 import { getDb } from '~/lib/getDb'
 import { authenticator } from '~/lib/auth.server'
 import { resolveSeason } from '~/lib/resolveSeason'
+import { slugEquals } from '~/lib/team-slug.server'
 import type { Team } from '~/schema'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
@@ -48,7 +49,7 @@ export async function loader({
 	const seasonParam = searchParams.get('season')
 
 	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		where: () => slugEquals(teamSlug),
 		with: {
 			seasons: {
 				orderBy: (seasons, { desc }) => [desc(seasons.startDate)],

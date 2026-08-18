@@ -49,9 +49,13 @@ async function handlePost(request: Request, playerId: number) {
 }
 
 export async function action({ params, request }: ActionFunctionArgs) {
-	const { playerId } = params
+	const playerId = Number(params.playerId)
 
-	invariant(playerId, 'Missing playerId parameter')
+	// Straight off the URL, so a non-numeric id is a bad request rather than
+	// NaN reaching the driver as a bind error
+	if (!Number.isInteger(playerId)) {
+		throw new Response('Player not found', { status: 404 })
+	}
 
 	const db = getDb()
 
@@ -62,7 +66,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
 				id: true,
 				teamId: true,
 			},
-			where: (players, { eq }) => eq(players.id, Number(playerId)),
+			where: (players, { eq }) => eq(players.id, playerId),
 		}),
 	])
 

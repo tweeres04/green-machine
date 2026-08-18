@@ -3,7 +3,6 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import { eq } from 'drizzle-orm'
 import {
 	defer,
 	Link,
@@ -87,6 +86,7 @@ import {
 import mixpanel from 'mixpanel-browser'
 import { getGameForecast } from '~/lib/weather-service'
 import { ogImageVersion } from '~/lib/og-image-version.server'
+import { slugEquals } from '~/lib/team-slug.server'
 import {
 	oncePerGameStatTypes,
 	statEmoji,
@@ -236,7 +236,7 @@ export async function loader({
 	const teamQuery = db
 		.select({ id: teams.id })
 		.from(teams)
-		.where(eq(teams.slug, teamSlug))
+		.where(slugEquals(teamSlug))
 	const season = seasonId
 		? seasonId === 'all'
 			? null
@@ -257,7 +257,7 @@ export async function loader({
 		  })
 
 	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		where: () => slugEquals(teamSlug),
 		with: {
 			players: {
 				with: {

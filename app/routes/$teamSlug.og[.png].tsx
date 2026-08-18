@@ -4,6 +4,7 @@ import invariant from 'tiny-invariant'
 
 import { getDb } from '~/lib/getDb'
 import { renderTeamOgImage, teamPalette } from '~/lib/og-image.server'
+import { slugEquals } from '~/lib/team-slug.server'
 
 export async function loader({ params: { teamSlug } }: LoaderFunctionArgs) {
 	invariant(teamSlug, 'Missing teamSlug parameter')
@@ -11,7 +12,7 @@ export async function loader({ params: { teamSlug } }: LoaderFunctionArgs) {
 	const db = getDb()
 
 	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		where: () => slugEquals(teamSlug),
 	})
 
 	if (!team) {

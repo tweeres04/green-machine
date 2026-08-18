@@ -11,7 +11,6 @@ import { getDb } from '~/lib/getDb'
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import invariant from 'tiny-invariant'
-import { eq } from 'drizzle-orm'
 import { Player, teams, type Team } from '~/schema'
 import Nav from '~/components/ui/nav'
 import {
@@ -25,6 +24,7 @@ import {
 	DialogTrigger,
 } from '~/components/ui/dialog'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { slugEquals } from '~/lib/team-slug.server'
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -81,11 +81,11 @@ export async function loader({
 	const teamIdQuery = db
 		.select({ id: teams.id })
 		.from(teams)
-		.where(eq(teams.slug, teamSlug))
+		.where(slugEquals(teamSlug))
 
 	const [team, user, admins] = await Promise.all([
 		db.query.teams.findFirst({
-			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+			where: () => slugEquals(teamSlug),
 			with: {
 				players: {
 					with: {
@@ -441,64 +441,66 @@ export default function EditTeam() {
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Change image</DialogTitle>
-						<imageFetcher.Form
-							method="post"
-							action={`/players/${changeImageDialog?.id}/image`}
-							className="space-y-3"
-							encType="multipart/form-data"
-						>
-							<fieldset disabled={imageSaving} className="space-y-3">
-								<Input
-									type="file"
-									accept="image/*"
-									name="name"
-									id="image_input"
-									onChange={async (e) => {
-										setImageError(null)
+						{changeImageDialog ? (
+							<imageFetcher.Form
+								method="post"
+								action={`/players/${changeImageDialog.id}/image`}
+								className="space-y-3"
+								encType="multipart/form-data"
+							>
+								<fieldset disabled={imageSaving} className="space-y-3">
+									<Input
+										type="file"
+										accept="image/*"
+										name="name"
+										id="image_input"
+										onChange={async (e) => {
+											setImageError(null)
 
-										const file = e.currentTarget.files?.[0]
+											const file = e.currentTarget.files?.[0]
 
-										if (!file) {
-											return
-										}
+											if (!file) {
+												return
+											}
 
-										// iOS hands back photos it cannot always read, when the
-										// original only lives in iCloud
-										try {
-											await file.slice(0, 1).arrayBuffer()
-										} catch (error) {
-											// Report it either way. A photo stranded in iCloud
-											// is the likely cause, but swallowing this would
-											// hide anything else that broke the read
-											captureException(error)
-											setImageError(
-												`We couldn't read that photo. If it lives in iCloud, open it in Photos first, then try again.`
-											)
-										}
-									}}
-								/>
-								{imageError ? (
-									<p className="text-sm text-destructive">{imageError}</p>
-								) : null}
-								<DialogFooter className="flex-col sm:flex-row">
-									<DialogClose>
-										<Button variant="secondary" type="button">
-											Cancel
+											// iOS hands back photos it cannot always read, when the
+											// original only lives in iCloud
+											try {
+												await file.slice(0, 1).arrayBuffer()
+											} catch (error) {
+												// Report it either way. A photo stranded in iCloud
+												// is the likely cause, but swallowing this would
+												// hide anything else that broke the read
+												captureException(error)
+												setImageError(
+													`We couldn't read that photo. If it lives in iCloud, open it in Photos first, then try again.`
+												)
+											}
+										}}
+									/>
+									{imageError ? (
+										<p className="text-sm text-destructive">{imageError}</p>
+									) : null}
+									<DialogFooter className="flex-col sm:flex-row">
+										<DialogClose>
+											<Button variant="secondary" type="button">
+												Cancel
+											</Button>
+										</DialogClose>
+										<Button type="submit" disabled={Boolean(imageError)}>
+											{imageSaving ? (
+												<>
+													Saving
+													<LoaderCircle className="size-4 animate-spin" />
+												</>
+											) : (
+												'Save'
+											)}
 										</Button>
-									</DialogClose>
-									<Button type="submit" disabled={Boolean(imageError)}>
-										{imageSaving ? (
-											<>
-												Saving
-												<LoaderCircle className="size-4 animate-spin" />
-											</>
-										) : (
-											'Save'
-										)}
-									</Button>
-								</DialogFooter>
-							</fieldset>
-						</imageFetcher.Form>
+									</DialogFooter>
+								</fieldset>
+							</imageFetcher.Form>
+						) : null}
 					</DialogHeader>
 				</DialogContent>
 			</Dialog>

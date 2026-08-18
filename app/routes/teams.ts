@@ -7,6 +7,7 @@ import { mixpanelServer } from '~/lib/mixpanel.server'
 import { sendCapiEvent } from '~/lib/facebook.server'
 import { notifyOwner } from '~/lib/owner-notification.server'
 import { captureException } from '@sentry/remix'
+import { slugEquals } from '~/lib/team-slug.server'
 
 export const action: ActionFunction = async ({ request }) => {
 	const user = await authenticator.isAuthenticated(request)
@@ -28,6 +29,21 @@ export const action: ActionFunction = async ({ request }) => {
 
 	const db = getDb()
 
+	// Lowercase from here on, so the two teams that already have capitals stay
+	// as they are but nothing new adds to them
+	const canonicalSlug = slug.toLowerCase()
+
+	// The unique index is case sensitive, so it wouldn't catch "ogms" colliding
+	// with an existing "OGMS", and two teams matching the same lowercased slug
+	// would make lookups return an arbitrary one
+	const slugTaken = await db.query.teams.findFirst({
+		where: () => slugEquals(canonicalSlug),
+	})
+
+	if (slugTaken) {
+		throw new Response('Team URL already taken', { status: 409 })
+	}
+
 	let results
 	try {
 		results = await db.transaction(async (tx) => {
@@ -35,7 +51,7 @@ export const action: ActionFunction = async ({ request }) => {
 				.insert(teams)
 				.values({
 					name: name,
-					slug: slug,
+					slug: canonicalSlug,
 					ownerId: user.id,
 				})
 				.returning()

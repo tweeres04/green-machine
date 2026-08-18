@@ -28,6 +28,7 @@ import {
 
 import { useEffect, useState } from 'react'
 import { authenticator, hasAccessToTeam } from '~/lib/auth.server'
+import { slugEquals } from '~/lib/team-slug.server'
 
 type Season = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
@@ -198,7 +199,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	const db = getDb()
 
 	const teamPromise = db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		where: () => slugEquals(teamSlug),
 		with: {
 			seasons: {
 				orderBy: (seasons, { desc }) => desc(seasons.startDate),

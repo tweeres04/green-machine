@@ -20,6 +20,7 @@ import { upperFirst } from 'lodash-es'
 import { Checkbox } from '~/components/ui/checkbox'
 import { eq } from 'drizzle-orm'
 import { geocodeLocation } from '~/lib/weather-service'
+import { slugEquals } from '~/lib/team-slug.server'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -61,7 +62,7 @@ export async function loader({
 
 	const [team, user] = await Promise.all([
 		db.query.teams.findFirst({
-			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+			where: () => slugEquals(teamSlug),
 			with: {
 				subscription: true,
 			},
@@ -93,7 +94,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 
 	const [team, user] = await Promise.all([
 		db.query.teams.findFirst({
-			where: (teams, { eq }) => eq(teams.slug, teamSlug),
+			where: () => slugEquals(teamSlug),
 		}),
 		authenticator.isAuthenticated(request),
 	])
@@ -115,23 +116,36 @@ export const action: ActionFunction = async ({ request, params }) => {
 	const formData = await request.formData()
 	const location = formData.get('location')
 	const nextGameForecast = formData.get('nextGameForecast')
+	const name = formData.get('name')
 
 	if (
 		(location !== null && typeof location !== 'string') ||
-		(nextGameForecast !== null && typeof nextGameForecast !== 'string')
+		(nextGameForecast !== null && typeof nextGameForecast !== 'string') ||
+		(name !== null && typeof name !== 'string')
 	) {
 		throw new Response('Invalid form data', { status: 400 })
 	}
 
+	// A team with a blank name renders as nothing everywhere it appears
+	if (name !== null && !name.trim()) {
+		throw new Response('Team name is required', { status: 400 })
+	}
+
+	// Each form on this page posts only its own fields, so anything absent has
+	// to be left alone rather than cleared
+	const locationSubmitted = formData.has('location')
+
 	// Geocode here so weather lookups can skip Nominatim at request time
-	const locationChanged = (location || null) !== team.location
+	const locationChanged =
+		locationSubmitted && (location || null) !== team.location
 	const geocoded =
 		locationChanged && location ? await geocodeLocation(location) : null
 
 	await db
 		.update(teams)
 		.set({
-			location: location || null,
+			...(name !== null ? { name: name.trim() } : {}),
+			...(locationSubmitted ? { location: location || null } : {}),
 			...(locationChanged
 				? {
 						latitude: geocoded?.latitude ?? null,
@@ -250,6 +264,8 @@ export default function EditTeam() {
 	)
 	const [isSavingWeather, setIsSavingWeather] = useState(false)
 
+	const nameFetcher = useFetcher()
+
 	// Debounced submission when location or forecast changes
 	const debouncedWeatherSubmit = useDebouncedCallback(
 		(location: string, nextGameForecast: boolean) => {
@@ -280,6 +296,19 @@ export default function EditTeam() {
 		<>
 			<Nav title="Team settings" team={team} />
 			<div className="space-y-3">
+				<h3 className="text-xl">Team name</h3>
+				<nameFetcher.Form method="post" className="space-y-3">
+					<Input
+						type="text"
+						name="name"
+						id="name_input"
+						defaultValue={team.name}
+						required
+					/>
+					<Button disabled={nameFetcher.state !== 'idle'}>
+						{nameFetcher.state === 'idle' ? 'Save name' : 'Saving'}
+					</Button>
+				</nameFetcher.Form>
 				<h3 className="text-xl">Subscription status</h3>
 				{team.subscription
 					? upperFirst(team.subscription.subscriptionStatus)

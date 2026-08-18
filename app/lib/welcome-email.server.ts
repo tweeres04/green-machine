@@ -13,8 +13,6 @@ export async function sendWelcomeEmail(user: User) {
 		key: process.env.MAILGUN_API_KEY,
 	})
 
-	const firstName = user.name.split(' ')[0]
-
 	return mg.messages.create(process.env.MAILGUN_DOMAIN, {
 		from: 'Tyler at TeamStats <hello@teamstats.tweeres.com>',
 		to: user.email,
@@ -24,7 +22,7 @@ export async function sendWelcomeEmail(user: User) {
 			? { 'h:Reply-To': process.env.SUPPORT_EMAIL }
 			: {}),
 		subject: 'Welcome to TeamStats',
-		text: `Hi ${firstName},
+		text: `Hi ${user.name},
 
 You're in.
 

@@ -10,6 +10,7 @@ import { Input } from '~/components/ui/input'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
 import { mixpanelServer } from '~/lib/mixpanel.server'
+import { slugEquals } from '~/lib/team-slug.server'
 import {
 	elevate,
 	isSupportUser,
@@ -35,7 +36,7 @@ async function findTeam(teamSlug: string | undefined) {
 
 	const db = getDb()
 	const team = await db.query.teams.findFirst({
-		where: (teams, { eq }) => eq(teams.slug, teamSlug),
+		where: () => slugEquals(teamSlug),
 		columns: { id: true, name: true, slug: true },
 	})
 

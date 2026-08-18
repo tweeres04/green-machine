@@ -1,10 +1,11 @@
-import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
+import { captureRemixErrorBoundaryError, withSentry } from '@sentry/remix'
 import {
 	Links,
 	Meta,
 	Outlet,
 	Scripts,
 	ScrollRestoration,
+	isRouteErrorResponse,
 	useRouteError,
 	useRouteLoaderData,
 } from '@remix-run/react'
@@ -20,7 +21,9 @@ import invariant from 'tiny-invariant'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import { useFacebookPixel } from '~/lib/useFacebookPixel'
 import { elevationFor } from '~/lib/support.server'
+import { requireCanonicalSlug, slugEquals } from '~/lib/team-slug.server'
 import { SupportBanner } from '~/components/ui/support-banner'
+import Nav from '~/components/ui/nav'
 
 export async function loader({
 	params: { teamSlug },
@@ -32,11 +35,18 @@ export async function loader({
 		authenticator.isAuthenticated(request),
 		teamSlug
 			? db.query.teams.findFirst({
-					where: (teams, { eq }) => eq(teams.slug, teamSlug),
-					columns: { id: true, color: true },
+					where: () => slugEquals(teamSlug),
+					columns: { id: true, color: true, slug: true },
 			  })
 			: Promise.resolve(null),
 	])
+
+	// Every HTML team route renders through here, so one check covers them all.
+	// Resource routes like the og images don't run this loader, which is fine:
+	// nothing shares those URLs by hand
+	if (teamSlug && team) {
+		requireCanonicalSlug(request, teamSlug, team.slug)
+	}
 
 	const userHasAccessToTeam = team
 		? await hasAccessToTeam(user, Number(team.id))
@@ -141,23 +151,45 @@ function App() {
 	return <Outlet />
 }
 
-export default withSentry(App);
+export default withSentry(App)
 
 export function ErrorBoundary() {
-    const error = useRouteError()
-    console.error(error)
-    captureRemixErrorBoundaryError(error);
-    return (
-		<html lang="en">
-			<head>
-				<title>There was an unexpected error</title>
-				<Meta />
-				<Links />
-			</head>
-			<body>
-				Whoops, there was an unexpected error
-				<Scripts />
-			</body>
-		</html>
+	const error = useRouteError()
+	const notFound = isRouteErrorResponse(error) && error.status === 404
+
+	// A 404 is a normal outcome, not something to page us about. Everything
+	// else still reports
+	if (!notFound) {
+		console.error(error)
+		captureRemixErrorBoundaryError(error)
+	}
+
+	// Remix renders this inside the Layout export, so it returns page content
+	// rather than a second html document
+	return (
+		<div className="space-y-3">
+			{/* Both Nav props are optional, so it renders fine without a team and
+			    gives people a way off the error page */}
+			<Nav title="TeamStats" />
+			<h1 className="text-2xl">
+				{notFound ? "We couldn't find that page" : 'Something went wrong'}
+			</h1>
+			{notFound ? (
+				<>
+					<p>
+						{`That team doesn't exist, or its address changed after the link was shared.`}
+					</p>
+					<p>
+						<a href="/" className="underline">
+							Go to your teams
+						</a>
+					</p>
+				</>
+			) : (
+				<p>
+					{`Sorry about that. Try again. If it keeps happening, let me know.`}
+				</p>
+			)}
+		</div>
 	)
 }
