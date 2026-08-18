@@ -35,6 +35,9 @@ function Cta() {
 				Early access: <span className="line-through opacity-70">$39</span> $19
 				USD/year for your whole team
 			</small>
+			<small className="block text-sm leading-tight font-light">
+				Only you need an account. Your team just gets a link.
+			</small>
 		</div>
 	)
 }
@@ -69,10 +72,13 @@ export default function HomeLandingPage() {
 			<div className="space-y-20">
 				<div className="hero space-y-8">
 					<div className="space-y-3">
-						<h2 className="text-3xl">Make every game more fun</h2>
+						<h2 className="text-3xl">
+							Stat leaderboards for chill soccer teams
+						</h2>
 						<p>
-							Give your social soccer team something to celebrate. Track goals
-							and assists, see who's playing next, and build team spirit
+							Track goals, assists, clean sheets, and MVPs. The leaderboard
+							updates with every game and it&apos;s made for your group chat.
+							Players get their own page with streaks and per-game averages.
 						</p>
 					</div>
 					<Cta />
@@ -91,23 +97,6 @@ export default function HomeLandingPage() {
 						loading="lazy"
 						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
 					/>
-					<blockquote className="border-l-8 pl-4 italic relative pt-10">
-						<span className="text-[96px] block absolute -top-5 left-3">“</span>
-						It's so fun to enter in the stats after a game. We love following
-						the golden boot race over the season.{' '}
-						<span className="whitespace-nowrap">
-							-{' '}
-							<Button
-								variant="link"
-								asChild
-								className="px-0 py-0 h-auto underline"
-							>
-								<a href="https://teamstats.tweeres.com/green-machine">
-									Green Machine
-								</a>
-							</Button>
-						</span>
-					</blockquote>
 					<blockquote className="border-l-8 pl-4 italic relative pt-10">
 						<span className="text-[96px] block absolute -top-5 left-3">“</span>
 						TeamStats is SICK. It's a dopamine hit to look at your stats.{' '}
