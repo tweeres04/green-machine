@@ -31,10 +31,10 @@ function Cta({ location }: { location: string }) {
 						to="/green-machine?season=all&demo=1"
 						className="w-full"
 						onClick={() => {
-							mixpanel.track('click explore a live team', { location })
+							mixpanel.track('click check out a live team', { location })
 						}}
 					>
-						Explore a live team
+						Check out a live team
 					</Link>
 				</Button>
 			</div>
