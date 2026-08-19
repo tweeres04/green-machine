@@ -293,14 +293,23 @@ function ImportScheduleForm({
 
 	const [selectedTimestamps, setSelectedTimestamps] = useState<string[]>([])
 	const [source, setSource] = useState<'url' | 'paste'>('url')
+	// Shows the form again after a failed attempt. The inputs unmount when a
+	// result shows, so their values are captured on submit for the prefill
+	const [retrying, setRetrying] = useState(false)
+	const [lastSubmission, setLastSubmission] = useState<{
+		scheduleUrl: string
+		scheduleText: string
+		teamName: string
+	} | null>(null)
 
 	useEffect(() => {
 		if (games) {
 			setSelectedTimestamps(games.map((g) => g.timestamp))
+			setRetrying(false)
 		}
 	}, [games])
 
-	return games ? (
+	return games && !retrying ? (
 		games.length > 0 ? (
 			<>
 				<p>Select which games to add:</p>
@@ -365,17 +374,51 @@ function ImportScheduleForm({
 							)}
 						/>
 						<input type="hidden" name="team_id" value={teamId} />
-						<Button type="submit" onClick={closeModal}>
+						<Button
+							type="submit"
+							onClick={closeModal}
+							className="w-full sm:w-auto"
+						>
 							Import games
 						</Button>
 					</fetcher.Form>
 				</DialogFooter>
 			</>
 		) : (
-			<p>Couldn't find any games</p>
+			<>
+				<p>
+					We couldn't find any games in there. Pasting the schedule text
+					sometimes works better than a URL. Or close this and add your games
+					one at a time.
+				</p>
+				<DialogFooter>
+					<Button onClick={closeModal} variant="secondary">
+						Close
+					</Button>
+					<Button
+						onClick={() => {
+							setRetrying(true)
+							mixpanel.track('retry import schedule')
+						}}
+					>
+						Try again
+					</Button>
+				</DialogFooter>
+			</>
 		)
 	) : (
-		<fetcher.Form action="/import-schedule" method="post">
+		<fetcher.Form
+			action="/import-schedule"
+			method="post"
+			onSubmit={(event) => {
+				const formData = new FormData(event.currentTarget)
+				setLastSubmission({
+					scheduleUrl: String(formData.get('schedule_url') ?? ''),
+					scheduleText: String(formData.get('schedule_text') ?? ''),
+					teamName: String(formData.get('team_name') ?? ''),
+				})
+			}}
+		>
 			<fieldset className="space-y-3" disabled={saving}>
 				<div className="flex gap-4">
 					<label className="flex items-center gap-2">
@@ -407,6 +450,7 @@ function ImportScheduleForm({
 							required
 							name="schedule_url"
 							type="url"
+							defaultValue={lastSubmission?.scheduleUrl}
 						/>
 					</div>
 				) : (
@@ -418,6 +462,7 @@ function ImportScheduleForm({
 							name="schedule_text"
 							rows={8}
 							placeholder="Paste your schedule here"
+							defaultValue={lastSubmission?.scheduleText}
 						/>
 					</div>
 				)}
@@ -428,7 +473,7 @@ function ImportScheduleForm({
 							required
 							name="team_name"
 							type="text"
-							defaultValue={teamName}
+							defaultValue={lastSubmission?.teamName ?? teamName}
 						/>
 				</div>
 				{(() => {
@@ -440,7 +485,7 @@ function ImportScheduleForm({
 						</DialogFooter>
 					)
 					return fetcher.state === 'submitting' ? (
-						<div className="flex items-center">
+						<div className="flex items-center gap-3">
 							<div className="flex flex-grow items-center">
 								Looking for games
 								<LoaderCircle className="ml-2 animate-spin" />

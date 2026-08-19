@@ -90,7 +90,7 @@ export const action: ActionFunction = async ({ request }) => {
 			messages: [
 				{
 					role: 'system',
-					content: `Extract a JSON formatted list of games from the schedule provided. Only include games for the team called ${teamName}. Include the timestamp in ISO format but without the Z character, opponent, and location. Only respond with JSON. Do not include any other enclosing text.`,
+					content: `The input is text or webpage content that may or may not contain a sports schedule. Extract a JSON formatted list of the games in the input for the team called ${teamName}. Include the timestamp in ISO format but without the Z character, opponent, and location. Never invent games that are not in the input. If the input contains no games, respond with an empty JSON array. Only respond with JSON. Do not include any other enclosing text.`,
 				},
 				{
 					role: 'user',

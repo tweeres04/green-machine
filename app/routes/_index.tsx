@@ -13,7 +13,10 @@ import { cn } from '~/lib/utils'
 import { useMixpanelIdentify } from '~/lib/useMixpanelIdentify'
 import HomeLandingPage from '~/components/home-landing-page'
 import { GameCard } from '~/routes/$teamSlug.games'
-import { teamHasActiveSubscription } from '~/lib/teamHasActiveSubscription'
+import {
+	FREE_GAMES_LIMIT,
+	teamHasActiveSubscription,
+} from '~/lib/teamHasActiveSubscription'
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -121,7 +124,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			teams.id,
 			teams.name,
 			teams.slug,
-			team_subscriptions.subscription_status subscriptionStatus
+			team_subscriptions.subscription_status subscriptionStatus,
+			(
+				select count(distinct stat_entries.game_id)
+				from stat_entries
+					inner join players on stat_entries.player_id = players.id
+				where players.team_id = teams.id
+					and stat_entries.game_id is not null
+			) gamesWithStatsCount
 		from teams
 			left join users_teams on teams.id = users_teams.team_id
 			left join players players_for_users on teams.id = players_for_users.team_id
@@ -132,7 +142,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		order by teams.name
 	`
 
-	const teams_ = await db.all(sql_)
+	const teams_ = (await db.all(sql_)) as {
+		id: number
+		name: string
+		slug: string
+		subscriptionStatus: string | null
+		gamesWithStatsCount: number
+	}[]
 
 	const teamIds = teams_.map((t) => t.id)
 
@@ -273,19 +289,27 @@ export default function Index() {
 								!t.subscriptionStatus ||
 								t.subscriptionStatus === 'canceled' ||
 								t.subscriptionStatus === 'unpaid'
+							// Free games left is a normal state, not an alarm; red is
+							// reserved for the limit being reached
+							const onFreeGames =
+								noSubscription && t.gamesWithStatsCount < FREE_GAMES_LIMIT
 							return (
 								<li key={t.id}>
 									<Button
 										asChild
 										variant="link"
 										className={cn('pl-0 gap-1', {
-											'text-red-900': noSubscription,
+											'text-red-900': noSubscription && !onFreeGames,
 										})}
 									>
 										<a href={`/${t.slug}`} className="text-xl">
 											{t.name}{' '}
 											{noSubscription ? (
-												<Badge variant="secondary">No subscription</Badge>
+												<Badge variant="secondary">
+													{onFreeGames
+														? `${t.gamesWithStatsCount} of ${FREE_GAMES_LIMIT} free games`
+														: 'No subscription'}
+												</Badge>
 											) : null}
 										</a>
 									</Button>
