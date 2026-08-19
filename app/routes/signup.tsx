@@ -101,11 +101,17 @@ export async function action({ request }: ActionFunctionArgs) {
 	// we call the method with the name of the strategy we want to use and the
 	// request object, optionally we pass an object with the URLs we want the user
 	// to be redirected to after a success or a failure
+	// New signups detour through /welcome (how did you hear about us?)
+	// before continuing to wherever they were headed
+	const destination = inviteRequestTeamId
+		? `/request-invite?team_id=${inviteRequestTeamId}`
+		: redirectTo ?? '/'
+
 	try {
 		return await authenticator.authenticate('user-pass', request, {
-			successRedirect: inviteRequestTeamId
-				? `/request-invite?team_id=${inviteRequestTeamId}`
-				: redirectTo ?? '/',
+			successRedirect: `/welcome?redirectTo=${encodeURIComponent(
+				destination
+			)}`,
 		})
 	} catch (err) {
 		if (err instanceof Response) {
