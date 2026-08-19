@@ -246,11 +246,14 @@ export default function EditTeam() {
 								{p.name}
 							</Link>
 							<div className="grow sm:hidden" />
-							<span className="text-2xl">
+							<Link
+								to={`/${team.slug}/players/${p.id}`}
+								className="text-2xl hover:underline"
+							>
 								{p.statEntries.length === 0
 									? '-'
 									: `${goalCount}G ${assistCount}A`}
-							</span>
+							</Link>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button size="icon" variant="secondary">

@@ -802,13 +802,18 @@ function PlayerRow({
 				<td
 					className={`text-base min-[480px]:text-xl text-right text-nowrap sticky right-0 bg-${teamColor}-50`}
 				>
-					{streak !== null
-						? streak.length > 1
-							? `${streak.length}${statLetter[streak.type!] ?? ''}`
-							: '-'
-						: player.statEntries.length === 0
-						? '-'
-						: `${goalCount}G ${assistCount}A`}
+					<Link
+						to={`/${teamSlug}/players/${player.id}`}
+						className="hover:underline"
+					>
+						{streak !== null
+							? streak.length > 1
+								? `${streak.length}${statLetter[streak.type!] ?? ''}`
+								: '-'
+							: player.statEntries.length === 0
+							? '-'
+							: `${goalCount}G ${assistCount}A`}
+					</Link>
 				</td>
 			</tr>
 			<StatDeleteDialog
