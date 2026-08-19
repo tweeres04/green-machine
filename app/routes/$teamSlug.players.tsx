@@ -260,6 +260,39 @@ export default function EditTeam() {
 								<DropdownMenuContent>
 									<DropdownMenuItem
 										onClick={() => {
+											setMenuDialogState(() => ({
+												title: 'Edit name',
+												description: null,
+												body: (
+													<fetcher.Form method="put" action={`/players/${p.id}`}>
+														<fieldset disabled={saving} className="space-y-3">
+															<div>
+																<label htmlFor="name_input">Name</label>
+																<Input
+																	id="name_input"
+																	required
+																	name="name"
+																	defaultValue={p.name}
+																/>
+															</div>
+															<DialogFooter>
+																<DialogClose asChild>
+																	<Button variant="secondary" type="button">
+																		Cancel
+																	</Button>
+																</DialogClose>
+																<Button type="submit">Save</Button>
+															</DialogFooter>
+														</fieldset>
+													</fetcher.Form>
+												),
+											}))
+										}}
+									>
+										Edit name
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => {
 											setChangeImageDialog(p)
 										}}
 									>
