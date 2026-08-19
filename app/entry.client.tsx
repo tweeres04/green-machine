@@ -58,6 +58,12 @@ mixpanel.init(window.mixpanelToken, {
 	record_mask_all_inputs: false,
 })
 
+// Super property on every event: was this session launched from the home
+// screen? Tells us how much installed-app usage the install card earns
+mixpanel.register({
+	isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+})
+
 startTransition(() => {
 	hydrateRoot(
 		document,

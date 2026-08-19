@@ -1,5 +1,5 @@
 import { Link } from '@remix-run/react'
-import { Circle, CircleCheck } from 'lucide-react'
+import { Circle, CircleCheck, UserPlus } from 'lucide-react'
 import { ReactNode } from 'react'
 import { Button } from '~/components/ui/button'
 
@@ -64,7 +64,10 @@ export function SetupChecklist({
 			</ul>
 			{hasPlayers ? null : (
 				<Button asChild>
-					<Link to={`/${teamSlug}/players`}>Add your players</Link>
+					<Link to={`/${teamSlug}/players`}>
+						<UserPlus />
+						Add your players
+					</Link>
 				</Button>
 			)}
 		</div>

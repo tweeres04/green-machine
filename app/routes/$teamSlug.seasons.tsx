@@ -6,7 +6,7 @@ import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import Nav from '~/components/ui/nav'
 import { getDb } from '~/lib/getDb'
-import { MoreHorizontal } from 'lucide-react'
+import { CalendarPlus, MoreHorizontal } from 'lucide-react'
 
 import {
 	Dialog,
@@ -268,6 +268,7 @@ export default function Seasons() {
 					<Dialog open={newSeasonModal} onOpenChange={setNewSeasonModal}>
 					<DialogTrigger asChild>
 						<Button className="w-full sm:w-auto">
+							<CalendarPlus />
 							Add season
 						</Button>
 					</DialogTrigger>

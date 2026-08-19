@@ -32,7 +32,7 @@ import {
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
-import { LoaderCircle } from 'lucide-react'
+import { LoaderCircle, UserPlus } from 'lucide-react'
 import { captureException } from '@sentry/remix'
 import {
 	Popover,
@@ -399,7 +399,10 @@ export default function EditTeam() {
 			</Dialog>
 			<Dialog>
 				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto">Add player</Button>
+					<Button className="w-full sm:w-auto">
+						<UserPlus />
+						Add player
+					</Button>
 				</DialogTrigger>
 				<DialogContent>
 					<DialogHeader>

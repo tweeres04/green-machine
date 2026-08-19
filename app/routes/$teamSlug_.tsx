@@ -91,6 +91,7 @@ import { slugEquals } from '~/lib/team-slug.server'
 import { oncePerGameStatTypes, statEmoji, statLabel } from '~/lib/stat-types'
 import { TrialStatus } from '~/components/ui/trial-status'
 import { SetupChecklist } from '~/components/ui/setup-checklist'
+import { AddToHomeScreenCard } from '~/components/ui/add-to-home-screen-card'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -1558,6 +1559,12 @@ export default function Home() {
 					hasActiveSubscription={Boolean(teamHasActiveSubscription)}
 					userHasAccessToTeam={userHasAccessToTeam}
 				/>
+			) : null}
+			{/* By 2 games with stats they've come back at least twice, so
+			    there's a habit to capture. A lighter ask than the pitch above,
+			    and the card hides itself once installed or dismissed */}
+			{userHasAccessToTeam && gamesWithStatsCount >= 2 ? (
+				<AddToHomeScreenCard />
 			) : null}
 			{nextGame ? (
 				<Collapsible className="space-y-3" defaultOpen>
