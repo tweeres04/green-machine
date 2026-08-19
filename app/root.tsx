@@ -8,6 +8,7 @@ import {
 	isRouteErrorResponse,
 	useRouteError,
 	useRouteLoaderData,
+	type ShouldRevalidateFunctionArgs,
 } from '@remix-run/react'
 
 import '@fontsource-variable/nunito-sans'
@@ -24,6 +25,21 @@ import { elevationFor } from '~/lib/support.server'
 import { requireCanonicalSlug, slugEquals } from '~/lib/team-slug.server'
 import { SupportBanner } from '~/components/ui/support-banner'
 import Nav from '~/components/ui/nav'
+import { sql } from 'drizzle-orm'
+import { SidebarProvider } from '~/components/ui/sidebar'
+import { AppSidebar } from '~/components/ui/app-sidebar'
+
+// The sidebar's team links navigate between teams client-side, which leaves
+// this loader's team-scoped data (team, color, sidebar contents) stale:
+// Remix only revalidates a route when its own params change, and the root
+// route has none. Revalidate whenever the path changes instead
+export function shouldRevalidate({
+	currentUrl,
+	nextUrl,
+	defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+	return currentUrl.pathname !== nextUrl.pathname || defaultShouldRevalidate
+}
 
 export async function loader({
 	params: { teamSlug },
@@ -36,7 +52,7 @@ export async function loader({
 		teamSlug
 			? db.query.teams.findFirst({
 					where: () => slugEquals(teamSlug),
-					columns: { id: true, color: true, slug: true },
+					columns: { id: true, color: true, slug: true, name: true },
 			  })
 			: Promise.resolve(null),
 	])
@@ -48,9 +64,21 @@ export async function loader({
 		requireCanonicalSlug(request, teamSlug, team.slug)
 	}
 
-	const userHasAccessToTeam = team
-		? await hasAccessToTeam(user, Number(team.id))
-		: false
+	const [userHasAccessToTeam, userTeams] = await Promise.all([
+		team ? hasAccessToTeam(user, Number(team.id)) : false,
+		user
+			? (db.all(sql`
+					select distinct teams.id, teams.name, teams.slug
+					from teams
+						left join users_teams on teams.id = users_teams.team_id
+						left join players on teams.id = players.team_id
+						left join user_invites on user_invites.player_id = players.id
+					where
+						users_teams.user_id = ${user.id} or user_invites.user_id = ${user.id}
+					order by teams.name
+				`) as Promise<{ id: number; name: string; slug: string }[]>)
+			: ([] as { id: number; name: string; slug: string }[]),
+	])
 
 	invariant(process.env.MIXPANEL_TOKEN, 'MIXPANEL_TOKEN missing in .env')
 	const mixpanelToken = process.env.MIXPANEL_TOKEN
@@ -62,6 +90,8 @@ export async function loader({
 
 	return json({
 		color: team?.color ?? 'gray',
+		team: team ?? null,
+		userTeams,
 		user,
 		userHasAccessToTeam,
 		mixpanelToken,
@@ -76,6 +106,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	// needs a fallback for the error page to render
 	const {
 		color = 'gray',
+		team = null,
+		userTeams = [],
 		user = null,
 		userHasAccessToTeam = false,
 		mixpanelToken = '',
@@ -122,9 +154,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 					<UserContext.Provider
 						value={user ? { user, userHasAccessToTeam } : null}
 					>
-						<div className="max-w-[700px] mx-auto space-y-8 p-2 relative">
-							{children}
-						</div>
+						<SidebarProvider defaultOpen={false}>
+							{/* w-full because the provider makes this a flex item, which
+							    would otherwise shrink to fit its content */}
+							<div className="max-w-[700px] mx-auto space-y-8 p-2 relative w-full">
+								{children}
+							</div>
+							<AppSidebar team={team} userTeams={userTeams} />
+						</SidebarProvider>
 					</UserContext.Provider>
 				</TeamColorContext.Provider>
 				<ScrollRestoration />

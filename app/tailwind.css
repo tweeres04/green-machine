@@ -37,3 +37,17 @@
 		@apply opacity-100;
 	}
 }
+
+/* Sidebar palette, stone-toned to match the rest of the app */
+@layer base {
+	:root {
+		--sidebar-background: 60 9% 98%;
+		--sidebar-foreground: 24 10% 10%;
+		--sidebar-primary: 24 10% 10%;
+		--sidebar-primary-foreground: 60 9% 98%;
+		--sidebar-accent: 60 5% 96%;
+		--sidebar-accent-foreground: 24 10% 10%;
+		--sidebar-border: 20 6% 90%;
+		--sidebar-ring: 24 10% 10%;
+	}
+}
