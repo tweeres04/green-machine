@@ -18,6 +18,7 @@ import {
 	SidebarContent,
 	SidebarFooter,
 	SidebarGroup,
+	SidebarHeader,
 	SidebarGroupContent,
 	SidebarGroupLabel,
 	SidebarMenu,
@@ -91,6 +92,22 @@ export function AppSidebar({
 
 	return (
 		<Sidebar side="right">
+			<SidebarHeader>
+				<SidebarMenu>
+					<SidebarMenuItem>
+						<SidebarMenuButton asChild onClick={closeSidebar}>
+							<Link to="/">
+								<img
+									src="/teamstats-logo.svg"
+									alt=""
+									className="size-5"
+								/>
+								<span className="font-semibold">TeamStats</span>
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+				</SidebarMenu>
+			</SidebarHeader>
 			<SidebarContent>
 				{team ? (
 					<SidebarGroup>
