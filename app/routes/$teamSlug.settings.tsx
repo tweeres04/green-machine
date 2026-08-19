@@ -116,11 +116,13 @@ export const action: ActionFunction = async ({ request, params }) => {
 	const formData = await request.formData()
 	const location = formData.get('location')
 	const nextGameForecast = formData.get('nextGameForecast')
+	const showRsvps = formData.get('showRsvps')
 	const name = formData.get('name')
 
 	if (
 		(location !== null && typeof location !== 'string') ||
 		(nextGameForecast !== null && typeof nextGameForecast !== 'string') ||
+		(showRsvps !== null && typeof showRsvps !== 'string') ||
 		(name !== null && typeof name !== 'string')
 	) {
 		throw new Response('Invalid form data', { status: 400 })
@@ -159,6 +161,8 @@ export const action: ActionFunction = async ({ request, params }) => {
 					: nextGameForecast === 'false'
 					? false
 					: undefined,
+			showRsvps:
+				showRsvps === 'true' ? true : showRsvps === 'false' ? false : undefined,
 		})
 		.where(eq(teams.id, team.id))
 
@@ -265,6 +269,9 @@ export default function EditTeam() {
 	const [isSavingWeather, setIsSavingWeather] = useState(false)
 
 	const nameFetcher = useFetcher()
+
+	const rsvpsFetcher = useFetcher()
+	const [showRsvps, setShowRsvps] = useState(team.showRsvps)
 
 	// Debounced submission when location or forecast changes
 	const debouncedWeatherSubmit = useDebouncedCallback(
@@ -382,6 +389,31 @@ export default function EditTeam() {
 						</label>
 					</div>
 				</weatherFetcher.Form>
+				<h3 className="text-xl">RSVPs</h3>
+				<rsvpsFetcher.Form method="post">
+					<div className="flex items-center space-x-2">
+						<Checkbox
+							id="showRsvps"
+							checked={showRsvps}
+							onCheckedChange={(checked) => {
+								setShowRsvps(checked === true)
+								rsvpsFetcher.submit(
+									{ showRsvps: checked === true },
+									{ method: 'post' }
+								)
+							}}
+						/>
+						<label
+							htmlFor="showRsvps"
+							className="text-sm font-medium leading-none"
+						>
+							Show RSVPs on game cards
+						</label>
+					</div>
+					<p className="text-sm text-muted-foreground">
+						{`When off, game cards only show who can't make it`}
+					</p>
+				</rsvpsFetcher.Form>
 			</div>
 			<fieldset
 				className="space-y-3"

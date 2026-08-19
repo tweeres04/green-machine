@@ -26,6 +26,8 @@ export const teams = sqliteTable('teams', {
 	nextGameForecast: integer('next_game_forecast', { mode: 'boolean' })
 		.notNull()
 		.default(false),
+	// Off hides attendance counts on game cards, showing only who's out
+	showRsvps: integer('show_rsvps', { mode: 'boolean' }).notNull().default(true),
 })
 
 export type Team = typeof teams.$inferSelect

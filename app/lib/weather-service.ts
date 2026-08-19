@@ -159,7 +159,14 @@ const cacheForecast = async (weatherData: WeatherData, gameId: number) => {
 	}
 }
 
-export const getGameForecast = async (gameId: number) => {
+// A geocode failure is the one no-forecast case an admin can actually fix,
+// so it comes back distinguishable from plain "no forecast" (too far out,
+// upstream errors) which render nothing
+export type GameForecastResult = WeatherData | { geocodeFailed: true } | null
+
+export const getGameForecast = async (
+	gameId: number
+): Promise<GameForecastResult> => {
 	try {
 		const db = getDb()
 
@@ -206,7 +213,7 @@ export const getGameForecast = async (gameId: number) => {
 			const geocoded = await geocodeLocation(game.team.location)
 
 			if (!geocoded) {
-				return null
+				return { geocodeFailed: true }
 			}
 
 			coords = geocoded

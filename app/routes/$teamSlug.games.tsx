@@ -12,6 +12,7 @@ import {
 	Await,
 } from '@remix-run/react'
 import {
+	addHours,
 	endOfDay,
 	format,
 	formatDistanceToNowStrict,
@@ -43,6 +44,7 @@ import {
 	Mail,
 	MailCheck,
 	MailX,
+	CalendarPlus,
 } from 'lucide-react'
 
 import {
@@ -97,7 +99,13 @@ import mixpanel from 'mixpanel-browser'
 import { Checkbox } from '~/components/ui/checkbox'
 import { StatsDialog } from '~/components/ui/stats-dialog'
 import { RsvpForm } from '~/components/ui/rsvp-form'
-import { getGameForecast, WeatherData } from '~/lib/weather-service'
+import { GoogleCalendarIcon } from '~/components/ui/google-calendar-icon'
+import { AppleIcon } from '~/components/ui/apple-icon'
+import {
+	getGameForecast,
+	GameForecastResult,
+	WeatherData,
+} from '~/lib/weather-service'
 import { ogImageVersion } from '~/lib/og-image-version.server'
 import { slugEquals } from '~/lib/team-slug.server'
 
@@ -1000,7 +1008,7 @@ type GameCardProps = {
 	player: Player | null | undefined
 	nextGame?: boolean
 	linkToTeamPage?: boolean
-	weatherData?: Promise<WeatherData | null>
+	weatherData?: Promise<GameForecastResult>
 }
 
 export function GameCard({
@@ -1013,6 +1021,24 @@ export function GameCard({
 	weatherData,
 }: GameCardProps) {
 	const [rsvpDialogOpen, setRsvpDialogOpen] = useState(false)
+
+	const notAttendingCount = game.rsvps.filter(
+		(r: Game['rsvps'][number]) => r.rsvp === 'no'
+	).length
+
+	// Floating local times (no timezone), same as the .ics route, so the
+	// event lands at the game's wall clock time
+	const googleCalendarUrl = game.timestamp
+		? `https://calendar.google.com/calendar/render?${new URLSearchParams({
+				action: 'TEMPLATE',
+				text: `${team.name} vs ${game.opponent ?? 'TBD'}`,
+				dates: `${format(game.timestamp, "yyyyMMdd'T'HHmmss")}/${format(
+					addHours(game.timestamp, 1),
+					"yyyyMMdd'T'HHmmss"
+				)}`,
+				...(game.location ? { location: game.location } : {}),
+		  })}`
+		: null
 
 	return (
 		<Card
@@ -1067,11 +1093,26 @@ export function GameCard({
 									>
 										<Await resolve={weatherData}>
 											{(weatherData) =>
-												weatherData && (
+												weatherData &&
+												('geocodeFailed' in weatherData ? (
+													// Only admins can fix the location, so only they
+													// see it. Players would just think the app broke
+													userHasAccessToTeam ? (
+														<p>
+															{`We couldn't find your location on the map, so there's no forecast.`}{' '}
+															<a
+																href={`/${team.slug}/settings`}
+																className="underline"
+															>
+																Fix it in settings
+															</a>
+														</p>
+													) : null
+												) : (
 													<WeatherDisplay
 														weatherData={weatherData as WeatherData}
 													/>
-												)
+												))
 											}
 										</Await>
 									</Suspense>
@@ -1089,12 +1130,18 @@ export function GameCard({
 			})()}
 
 			<CardContent className="space-x-1">
-				<RsvpDialog rsvps={game.rsvps} players={team.players}>
-					<Badge>
-						{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
-						{team.players.length} attending
-					</Badge>
-				</RsvpDialog>
+				{team.showRsvps ? (
+					<RsvpDialog rsvps={game.rsvps} players={team.players}>
+						<Badge>
+							{game.rsvps.filter((r) => r.rsvp === 'yes').length}/
+							{team.players.length} attending
+						</Badge>
+					</RsvpDialog>
+				) : notAttendingCount > 0 ? (
+					<RsvpDialog rsvps={game.rsvps} players={team.players}>
+						<Badge>{notAttendingCount} not attending</Badge>
+					</RsvpDialog>
+				) : null}
 				{game.statEntries.some((se) => se.type === 'goal') && (
 					<StatsDialog
 						game={game}
@@ -1129,6 +1176,53 @@ export function GameCard({
 			{player || nextGame || userHasAccessToTeam ? (
 				<CardFooter className="justify-end gap-1">
 					<>
+						{googleCalendarUrl ? (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										size="icon"
+										variant="secondary"
+										aria-label="Add to calendar"
+									>
+										<CalendarPlus />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent>
+									<DropdownMenuItem asChild>
+										<a
+											href={googleCalendarUrl}
+											target="_blank"
+											rel="noreferrer"
+											className="gap-2"
+											onClick={() => {
+												mixpanel.track('add game to calendar', {
+													gameId: game.id,
+													method: 'google',
+												})
+											}}
+										>
+											<GoogleCalendarIcon />
+											Google Calendar
+										</a>
+									</DropdownMenuItem>
+									<DropdownMenuItem asChild>
+										<a
+											href={`/games/${game.id}/calendar`}
+											className="gap-2"
+											onClick={() => {
+												mixpanel.track('add game to calendar', {
+													gameId: game.id,
+													method: 'ics',
+												})
+											}}
+										>
+											<AppleIcon />
+											Apple Calendar
+										</a>
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						) : null}
 						{player ? (
 							<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
 								<DialogTrigger asChild>

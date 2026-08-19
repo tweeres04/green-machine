@@ -1,0 +1,1 @@
+ALTER TABLE `teams` ADD `show_rsvps` integer DEFAULT true NOT NULL;
