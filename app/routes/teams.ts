@@ -1,7 +1,9 @@
 import { ActionFunction, redirect } from '@remix-run/node'
+import { randomBytes } from 'node:crypto'
+import { formatISO } from 'date-fns'
 import { authenticator } from '~/lib/auth.server'
 import { getDb } from '~/lib/getDb'
-import { teams, teamsUsers } from '~/schema'
+import { players, teams, teamsUsers, userInvites } from '~/schema'
 import { LibsqlError } from '@libsql/client'
 import { mixpanelServer } from '~/lib/mixpanel.server'
 import { sendCapiEvent } from '~/lib/facebook.server'
@@ -58,6 +60,24 @@ export const action: ActionFunction = async ({ request }) => {
 			await tx.insert(teamsUsers).values({
 				teamId: newTeamRows[0].id,
 				userId: user.id,
+			})
+
+			// The creator is almost always a player too, so they join the
+			// roster linked and pre-accepted, getting the player experience
+			// (RSVPs, personal stats) without emailing themselves an invite.
+			// The rare non-playing manager can just remove themselves
+			const newPlayerRows = await tx
+				.insert(players)
+				.values({ teamId: newTeamRows[0].id, name: user.name })
+				.returning()
+			await tx.insert(userInvites).values({
+				userId: user.id,
+				email: user.email,
+				playerId: newPlayerRows[0].id,
+				createdAt: formatISO(new Date()),
+				acceptedAt: formatISO(new Date()),
+				token: randomBytes(16).toString('hex'),
+				inviterId: user.id,
 			})
 
 			return newTeamRows

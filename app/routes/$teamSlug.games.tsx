@@ -44,7 +44,10 @@ import {
 	Mail,
 	MailCheck,
 	MailX,
-	CalendarPlus,
+	Pencil,
+	Ban,
+	Undo2,
+	Trash2,
 } from 'lucide-react'
 
 import {
@@ -99,7 +102,7 @@ import mixpanel from 'mixpanel-browser'
 import { Checkbox } from '~/components/ui/checkbox'
 import { StatsDialog } from '~/components/ui/stats-dialog'
 import { RsvpForm } from '~/components/ui/rsvp-form'
-import { GoogleCalendarIcon } from '~/components/ui/google-calendar-icon'
+import { GoogleIcon } from '~/components/ui/google-icon'
 import { AppleIcon } from '~/components/ui/apple-icon'
 import {
 	getGameForecast,
@@ -210,9 +213,8 @@ function GameForm({
 					<label htmlFor="opponent_input">Opponent</label>
 					<Input
 						id="opponent_input"
-						required
 						name="opponent"
-						defaultValue={game?.opponent}
+						defaultValue={game?.opponent ?? undefined}
 					/>
 				</div>
 				<div>
@@ -513,10 +515,12 @@ function MoreButton({
 	userHasAccessToTeam,
 	game,
 	player,
+	teamName,
 }: {
 	userHasAccessToTeam: boolean
 	game: Game
 	player?: Player | null
+	teamName: string
 }) {
 	const fetcher = useFetcher()
 	const [dialogTitle, setDialogTitle] = useState<string | null>(null)
@@ -524,6 +528,20 @@ function MoreButton({
 		null
 	)
 	const [dialogContent, setDialogContent] = useState<ReactNode | null>(null)
+
+	// Floating local times (no timezone), same as the .ics route, so the
+	// event lands at the game's wall clock time
+	const googleCalendarUrl = game.timestamp
+		? `https://calendar.google.com/calendar/render?${new URLSearchParams({
+				action: 'TEMPLATE',
+				text: `${teamName} vs ${game.opponent ?? 'TBD'}`,
+				dates: `${format(game.timestamp, "yyyyMMdd'T'HHmmss")}/${format(
+					addHours(game.timestamp, 1),
+					"yyyyMMdd'T'HHmmss"
+				)}`,
+				...(game.location ? { location: game.location } : {}),
+		  })}`
+		: null
 
 	const dialogOpen = Boolean(dialogTitle && dialogContent)
 
@@ -554,9 +572,45 @@ function MoreButton({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
+					{googleCalendarUrl ? (
+						<>
+							<DropdownMenuItem asChild>
+								<a
+									href={googleCalendarUrl}
+									target="_blank"
+									rel="noreferrer"
+									className="gap-2"
+									onClick={() => {
+										mixpanel.track('add game to calendar', {
+											gameId: game.id,
+											method: 'google',
+										})
+									}}
+								>
+									<GoogleIcon />
+									Add to Google Calendar
+								</a>
+							</DropdownMenuItem>
+							<DropdownMenuItem asChild>
+								<a
+									href={`/games/${game.id}/calendar`}
+									className="gap-2"
+									onClick={() => {
+										mixpanel.track('add game to calendar', {
+											gameId: game.id,
+											method: 'ics',
+										})
+									}}
+								>
+									<AppleIcon />
+									Add to Apple Calendar
+								</a>
+							</DropdownMenuItem>
+						</>
+					) : null}
 					{player ? (
 						<DropdownMenuItem
-							className="hidden sm:block"
+							className="hidden sm:flex gap-2"
 							onClick={() => {
 								setDialogTitle(
 									`RSVP to game against ${game.opponent ?? 'unknown opponent'}`
@@ -577,11 +631,13 @@ function MoreButton({
 								)
 							}}
 						>
+							<Mail className="size-4" />
 							RSVP
 						</DropdownMenuItem>
 					) : null}
 					{userHasAccessToTeam ? (
 						<DropdownMenuItem
+							className="gap-2"
 							onClick={() => {
 								setDialogTitle(
 									`Edit game against ${game.opponent ?? 'unknown opponent'}`
@@ -591,12 +647,14 @@ function MoreButton({
 								)
 							}}
 						>
+							<Pencil className="size-4" />
 							Edit
 						</DropdownMenuItem>
 					) : null}
 					{userHasAccessToTeam ? (
 						<fetcher.Form>
 							<DropdownMenuItem
+								className="gap-2"
 								onClick={() => {
 									setDialogTitle(
 										`${game.cancelledAt ? 'Uncancel' : 'Cancel'} game against ${
@@ -608,12 +666,18 @@ function MoreButton({
 									)
 								}}
 							>
+								{game.cancelledAt ? (
+									<Undo2 className="size-4" />
+								) : (
+									<Ban className="size-4" />
+								)}
 								{game.cancelledAt ? 'Uncancel' : 'Cancel'}
 							</DropdownMenuItem>
 						</fetcher.Form>
 					) : null}
 					{userHasAccessToTeam ? (
 						<DropdownMenuItem
+							className="gap-2"
 							onClick={() => {
 								setDialogTitle('Are you sure?')
 								setDialogDescription('This action cannot be undone.')
@@ -640,6 +704,7 @@ function MoreButton({
 								)
 							}}
 						>
+							<Trash2 className="size-4" />
 							Remove game
 						</DropdownMenuItem>
 					) : null}
@@ -1026,20 +1091,6 @@ export function GameCard({
 		(r: Game['rsvps'][number]) => r.rsvp === 'no'
 	).length
 
-	// Floating local times (no timezone), same as the .ics route, so the
-	// event lands at the game's wall clock time
-	const googleCalendarUrl = game.timestamp
-		? `https://calendar.google.com/calendar/render?${new URLSearchParams({
-				action: 'TEMPLATE',
-				text: `${team.name} vs ${game.opponent ?? 'TBD'}`,
-				dates: `${format(game.timestamp, "yyyyMMdd'T'HHmmss")}/${format(
-					addHours(game.timestamp, 1),
-					"yyyyMMdd'T'HHmmss"
-				)}`,
-				...(game.location ? { location: game.location } : {}),
-		  })}`
-		: null
-
 	return (
 		<Card
 			className={
@@ -1176,53 +1227,6 @@ export function GameCard({
 			{player || nextGame || userHasAccessToTeam ? (
 				<CardFooter className="justify-end gap-1">
 					<>
-						{googleCalendarUrl ? (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										size="icon"
-										variant="secondary"
-										aria-label="Add to calendar"
-									>
-										<CalendarPlus />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent>
-									<DropdownMenuItem asChild>
-										<a
-											href={googleCalendarUrl}
-											target="_blank"
-											rel="noreferrer"
-											className="gap-2"
-											onClick={() => {
-												mixpanel.track('add game to calendar', {
-													gameId: game.id,
-													method: 'google',
-												})
-											}}
-										>
-											<GoogleCalendarIcon />
-											Google Calendar
-										</a>
-									</DropdownMenuItem>
-									<DropdownMenuItem asChild>
-										<a
-											href={`/games/${game.id}/calendar`}
-											className="gap-2"
-											onClick={() => {
-												mixpanel.track('add game to calendar', {
-													gameId: game.id,
-													method: 'ics',
-												})
-											}}
-										>
-											<AppleIcon />
-											Apple Calendar
-										</a>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						) : null}
 						{player ? (
 							<Dialog open={rsvpDialogOpen} onOpenChange={setRsvpDialogOpen}>
 								<DialogTrigger asChild>
@@ -1280,11 +1284,14 @@ export function GameCard({
 								nextGame={game}
 							/>
 						) : null}
-						{userHasAccessToTeam ? (
+						{/* Players and next-game guests get the menu too, for the
+						    add to calendar links */}
+						{userHasAccessToTeam || game.timestamp ? (
 							<MoreButton
 								userHasAccessToTeam={userHasAccessToTeam}
 								game={game}
 								player={player}
+								teamName={team.name}
 							/>
 						) : null}
 					</>

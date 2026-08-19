@@ -34,15 +34,21 @@ export async function action({ request }: ActionFunctionArgs) {
 	const opponent = formData.get('opponent')
 	const location = formData.get('location')
 
-	if (typeof opponent !== 'string') {
-		throw new Response('Opponent is required', { status: 400 })
+	if (
+		(timestamp !== null && typeof timestamp !== 'string') ||
+		(opponent !== null && typeof opponent !== 'string') ||
+		(location !== null && typeof location !== 'string')
+	) {
+		throw new Response('Invalid form data', { status: 400 })
 	}
 
+	// Blank fields become null so the UI shows its TBD fallbacks instead of
+	// empty strings
 	await db.insert(games).values({
-		teamId,
+		teamId: Number(teamId),
 		timestamp,
-		opponent,
-		location,
+		opponent: opponent || null,
+		location: location || null,
 	})
 
 	mixpanelServer.track('add game', {

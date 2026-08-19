@@ -28,22 +28,30 @@ function ChecklistItem({
 // spot. The last item is the exit condition, so it's never seen checked
 export function SetupChecklist({
 	teamSlug,
-	hasPlayers,
+	hasTeammates,
+	userIsPlayer,
 	hasFutureGame,
 	hasCustomizedSettings,
 }: {
 	teamSlug: string
-	hasPlayers: boolean
+	hasTeammates: boolean
+	userIsPlayer: boolean
 	hasFutureGame: boolean
 	hasCustomizedSettings: boolean
 }) {
+	// A creator who added themselves can already track their own stats, so
+	// the ask shifts to rounding out the roster
+	const addPlayersLabel = userIsPlayer
+		? 'Add your teammates'
+		: 'Add your players'
+
 	return (
 		<div className="space-y-3">
 			<h2 className="text-2xl">Get your team set up</h2>
 			<ul className="space-y-2">
-				<ChecklistItem done={hasPlayers}>
+				<ChecklistItem done={hasTeammates}>
 					<Link to={`/${teamSlug}/players`} className="underline">
-						Add your players
+						{addPlayersLabel}
 					</Link>
 				</ChecklistItem>
 				<ChecklistItem done={hasFutureGame}>
@@ -62,11 +70,11 @@ export function SetupChecklist({
 					Add goals and assists after your first game
 				</ChecklistItem>
 			</ul>
-			{hasPlayers ? null : (
+			{hasTeammates ? null : (
 				<Button asChild>
 					<Link to={`/${teamSlug}/players`}>
 						<UserPlus />
-						Add your players
+						{addPlayersLabel}
 					</Link>
 				</Button>
 			)}

@@ -1527,7 +1527,8 @@ export default function Home() {
 			{userHasAccessToTeam && gamesWithStatsCount === 0 ? (
 				<SetupChecklist
 					teamSlug={team.slug}
-					hasPlayers={players.length > 0}
+					hasTeammates={players.some((p) => p.id !== player?.id)}
+					userIsPlayer={Boolean(player)}
 					hasFutureGame={Boolean(nextGame)}
 					hasCustomizedSettings={
 						team.color !== 'gray' || Boolean(team.location)

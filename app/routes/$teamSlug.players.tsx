@@ -183,6 +183,10 @@ export default function EditTeam() {
 
 	const menuDialogIsOpen = Boolean(title && body)
 
+	const userIsLinkedToTeam = players.some((p) =>
+		p.userInvites.some((ui) => ui.userId === userId && ui.acceptedAt)
+	)
+
 	useClearNewPlayerForm(formRef)
 
 	return (
@@ -306,6 +310,19 @@ export default function EditTeam() {
 											Send invite
 										</DropdownMenuItem>
 									)}
+									{!userIsLinkedToTeam &&
+									!p.userInvites.some((ui) => ui.acceptedAt) ? (
+										<DropdownMenuItem
+											onClick={() => {
+												fetcher.submit(null, {
+													method: 'post',
+													action: `/players/${p.id}/claim`,
+												})
+											}}
+										>
+											This is me
+										</DropdownMenuItem>
+									) : null}
 									{linkedUserId != null ? (
 										isAdmin ? (
 											<DropdownMenuItem
