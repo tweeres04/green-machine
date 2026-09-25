@@ -8,6 +8,7 @@ import {
 	LogIn,
 	LogOut,
 	Settings,
+	Trophy,
 	Users,
 } from 'lucide-react'
 import mixpanel from 'mixpanel-browser'
@@ -53,10 +54,10 @@ export function AppSidebar({
 	const teamLinks = team
 		? [
 				{
-					label: 'Home',
+					label: 'Leaderboard',
 					to: `/${team.slug}${demoSuffix}`,
 					path: `/${team.slug}`,
-					icon: House,
+					icon: Trophy,
 					show: true,
 				},
 				{
@@ -97,11 +98,7 @@ export function AppSidebar({
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild onClick={closeSidebar}>
 							<Link to="/">
-								<img
-									src="/teamstats-logo.svg"
-									alt=""
-									className="size-5"
-								/>
+								<img src="/teamstats-logo.svg" alt="" className="size-5" />
 								<span className="font-semibold">TeamStats</span>
 							</Link>
 						</SidebarMenuButton>

@@ -11,7 +11,7 @@ import {
 	useLocation,
 	useNavigate,
 } from '@remix-run/react'
-import { Button } from '~/components/ui/button'
+import { Button, type ButtonProps } from '~/components/ui/button'
 
 import { getDb } from '~/lib/getDb'
 import { Add } from '~/components/ui/icons/add'
@@ -138,12 +138,14 @@ function ShareStandingsButton({
 	players,
 	season,
 	label,
+	variant = label ? 'default' : 'secondary',
 }: {
 	teamName: string
 	slug: string
 	players: Awaited<ReturnType<typeof loader>>['team']['players']
 	season?: Season | null
 	label?: string
+	variant?: ButtonProps['variant']
 }) {
 	const { toast } = useToast()
 	const location = useLocation()
@@ -174,7 +176,7 @@ function ShareStandingsButton({
 	return (
 		<Button
 			title="Share standings"
-			variant={label ? 'default' : 'secondary'}
+			variant={variant}
 			size={label ? 'default' : 'icon'}
 			onClick={async () => {
 				if (shareAvailable) {
@@ -829,10 +831,12 @@ function AddStatsButton({
 	teamId,
 	players,
 	games,
+	label,
 }: {
 	teamId: number
 	players: PlayerWithStats[]
 	games: Game[]
+	label?: string
 }) {
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
@@ -1036,14 +1040,14 @@ function AddStatsButton({
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 			<Button
-				size="icon"
-				aria-label="Add stats"
+				size={label ? 'default' : 'icon'}
+				aria-label={label ? undefined : 'Add stats'}
 				onClick={() => {
 					setDialogOpen(true)
 					mixpanel.track('open add stats dialog')
 				}}
 			>
-				<Add />
+				<Add /> {label}
 			</Button>
 			<DialogContent className="flex flex-col h-dvh w-dvw max-w-none sm:h-auto sm:max-h-[95dvh] sm:w-[92dvw] sm:max-w-lg">
 				<DialogHeader>
@@ -1620,12 +1624,15 @@ export default function Home() {
 								teamName={team.name}
 								players={players}
 								season={season}
+								label="Share"
+								variant="secondary"
 							/>{' '}
 							{userHasAccessToTeam ? (
 								<AddStatsButton
 									teamId={team.id}
 									players={players}
 									games={team.games}
+									label="Add stats"
 								/>
 							) : null}
 						</div>
