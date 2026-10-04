@@ -2,7 +2,7 @@ export const faqs = [
 	{
 		question: 'What stats can I track?',
 		answer:
-			'Goals and assists for each player, every game. You get a running leaderboard across the whole season so you can follow the golden boot race, see who is on a streak, and share standings in the group chat.',
+			'Goals, assists, clean sheets, and MVPs for each player, every game. You get a running leaderboard across the whole season so you can follow the golden boot race, see who is on a streak, and share standings in the group chat.',
 	},
 	{
 		question: 'Does everyone on the team need an account?',
@@ -32,12 +32,12 @@ export const faqs = [
 	{
 		question: 'Is there a mobile app?',
 		answer:
-			'Yes. TeamStats works on any device with a browser. You can install it to your home screen on iPhone or Android for an app-like experience, no app store needed.',
+			'Yes. TeamStats works on any device with a browser. You can install it to your home screen on iPhone or Android, no app store needed.',
 	},
 	{
 		question: 'Can I track other sports besides soccer?',
 		answer:
-			'TeamStats is designed specifically for soccer. The stats, leaderboards, and experience are all built around goals and assists for soccer teams.',
+			"It's built for soccer. Keeping it focused makes it better. The stats, leaderboards, and experience are all built around goals and assists for soccer teams.",
 	},
 	{
 		question: 'How do I import my schedule?',
