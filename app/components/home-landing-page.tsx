@@ -6,6 +6,7 @@ import {
 	ChartScatter,
 	Focus,
 	Hammer,
+	IdCard,
 	MonitorSmartphone,
 	Share,
 	Wallet,
@@ -146,7 +147,14 @@ export default function HomeLandingPage() {
 						>
 							<p>
 								Quickly see your team's performance over time. See who's winning
-								the golden boot race. Track goal or assist streaks.
+								the golden boot race.
+							</p>
+						</FeatureListItem>
+						<FeatureListItem icon={<IdCard />} title="A page for every player">
+							<p>
+								Every player gets their own page with goal and assist streaks
+								and per-game averages. Send them the link so they can show it
+								off.
 							</p>
 						</FeatureListItem>
 						<FeatureListItem
