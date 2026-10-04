@@ -96,17 +96,27 @@ export default function HomeLandingPage() {
 						<p>
 							Track goals, assists, clean sheets, and MVPs. The leaderboard
 							updates with every game and it&apos;s made for your group chat.
-							Players get their own page with streaks and per-game averages.
 						</p>
 					</div>
+					<Link
+						to="/green-machine?season=all&demo=1"
+						className="block sm:w-2/3 mx-auto"
+						onClick={() => {
+							mixpanel.track('click check out a live team', {
+								location: 'hero-screenshot',
+							})
+						}}
+					>
+						{/* Cropped to the top 3 player rows so the CTA stays on the first screen */}
+						<img
+							src="/leaderboard.webp"
+							srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
+							sizes="(max-width: 600px) 100vw, 800px"
+							alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
+							className="w-full aspect-[40/19] object-cover object-[center_29%] shadow-lg border-2 border-gray-100 rounded-xl p-1"
+						/>
+					</Link>
 					<Cta location="hero" />
-					<img
-						src="/leaderboard.webp"
-						srcSet="/leaderboard-400.webp 400w, /leaderboard-800.webp 800w, /leaderboard.webp 1170w"
-						sizes="(max-width: 600px) 100vw, 800px"
-						alt="A screenshot of the TeamStats leaderboard for the team Green Machine. The leader has 14 goals and 1 assist."
-						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
-					/>
 					<img
 						src="/next-game.webp"
 						srcSet="/next-game-400.webp 400w, /next-game-800.webp 800w, /next-game.webp 1170w"
