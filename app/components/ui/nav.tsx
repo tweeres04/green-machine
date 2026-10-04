@@ -33,7 +33,9 @@ export default function Nav({ title, team }: Props) {
 					></AvatarImage>
 					<AvatarFallback>{team.name[0]}</AvatarFallback>
 				</Avatar>
-			) : null}
+			) : (
+				<img src="/teamstats-logo.svg" alt="" className="size-8" />
+			)}
 			<h1 className="grow text-2xl">{title ?? team?.name}</h1>
 
 			{!user && !team ? (

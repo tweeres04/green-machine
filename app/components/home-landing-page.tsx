@@ -18,10 +18,17 @@ import { Instagram } from '~/components/ui/icons/instagram'
 import { TikTok } from '~/components/ui/icons/tiktok'
 import { Youtube } from '~/components/ui/icons/youtube'
 import { faqs } from '~/lib/faqs'
+import { cn } from '~/lib/utils'
 
-function Cta({ location }: { location: string }) {
+function Cta({
+	location,
+	className,
+}: {
+	location: string
+	className?: string
+}) {
 	return (
-		<div className="text-center space-y-3 py-6">
+		<div className={cn('text-center space-y-3 py-6', className)}>
 			<div className="flex justify-center">
 				<Button
 					size="lg"
@@ -35,7 +42,7 @@ function Cta({ location }: { location: string }) {
 							mixpanel.track('click check out a live team', { location })
 						}}
 					>
-						Check out a live team
+						See a real team's leaderboard
 					</Link>
 				</Button>
 			</div>
@@ -95,8 +102,8 @@ export default function HomeLandingPage() {
 							Stat leaderboards for chill soccer teams
 						</h2>
 						<p>
-							Track goals, assists, clean sheets, and MVPs. The leaderboard
-							updates with every game and it&apos;s made for your group chat.
+							Track goals, assists, clean sheets, and MVPs, then share the
+							leaderboard in your group chat.
 						</p>
 					</div>
 					<Link
@@ -117,15 +124,8 @@ export default function HomeLandingPage() {
 							className="w-full aspect-[40/19] object-cover object-[center_29%] shadow-lg border-2 border-gray-100 rounded-xl p-1"
 						/>
 					</Link>
-					<Cta location="hero" />
-					<img
-						src="/next-game.webp"
-						srcSet="/next-game-400.webp 400w, /next-game-800.webp 800w, /next-game.webp 1170w"
-						sizes="(max-width: 600px) 100vw, 800px"
-						alt="A screenshot of the TeamStats next game schedule for the team Green Machine."
-						loading="lazy"
-						className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
-					/>
+					{/* The screenshot above already separates it, and the hero needs the room on small phones */}
+					<Cta location="hero" className="pt-0" />
 					<blockquote className="border-l-8 pl-4 italic relative pt-10">
 						<span className="text-[96px] block absolute -top-5 left-3">“</span>
 						TeamStats is SICK. It's a dopamine hit to look at your stats.{' '}
@@ -171,6 +171,14 @@ export default function HomeLandingPage() {
 								See your full season schedule, track who's playing, and import
 								games from your league website.
 							</p>
+							<img
+								src="/next-game.webp"
+								srcSet="/next-game-400.webp 400w, /next-game-800.webp 800w, /next-game.webp 1170w"
+								sizes="(max-width: 600px) 100vw, 800px"
+								alt="A screenshot of the TeamStats next game schedule for the team Green Machine."
+								loading="lazy"
+								className="shadow-lg border-2 border-gray-100 rounded-xl p-1 mx-auto sm:w-2/3"
+							/>
 						</FeatureListItem>
 						<FeatureListItem icon={<WandSparkles />} title="Easy to use">
 							<p>

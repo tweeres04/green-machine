@@ -1416,7 +1416,7 @@ export default function Home() {
 	} = useLoaderData<typeof loader>()
 	const { players } = team
 
-	// The landing page's "Explore a live team" CTA links here with ?demo=1;
+	// The landing page's "See a real team's leaderboard" CTA links here with ?demo=1;
 	// real teammates never see the bar because their links don't carry the param
 	const isDemo = Boolean(new URLSearchParams(useLocation().search).get('demo'))
 
