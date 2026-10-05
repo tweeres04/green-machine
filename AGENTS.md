@@ -9,7 +9,7 @@ TeamStats is a simple app for recreational soccer teams to track player stats (g
 - Leaderboards showing the "golden boot" race throughout the season
 - Easy schedule management
 - Shareable stats and game details for group chats
-- AI-powered features (natural language stat entry, schedule imports)
+- AI-powered schedule imports
 - Weather forecasts for upcoming games
 
 The product is positioned as **small, focused, and affordable** ($19/year) vs. bloated competitors. Simplicity is a feature, not a limitation. Users describe checking stats as a "dopamine hit" - the app makes recreational soccer more fun by giving teams something to celebrate together.

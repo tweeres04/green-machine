@@ -21,7 +21,6 @@ A game counts toward the 3-game limit when it has **at least one stat entry** (g
 ### What's Blocked (Free Teams at Limit)
 
 - ❌ Add stats to a 4th game (or any new game beyond the limit)
-- ❌ Parse natural language stats that would create entries for a new game
 
 ### What's Always Allowed (Subscribed Teams)
 
