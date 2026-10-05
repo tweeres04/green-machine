@@ -6,6 +6,7 @@ import { AuthorizationError } from 'remix-auth'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { GoogleSignInForm } from '~/components/google-sign-in-form'
 import { authenticator } from '~/lib/auth.server'
 import { getSession } from '~/lib/session.server'
 import { safeRedirect } from '~/lib/redirect-to.server'
@@ -18,72 +19,76 @@ export default function SignUp() {
 	const redirectTo = searchParams.get('redirectTo')
 
 	return (
-		<Form method="post" className="space-y-3">
-			{redirectTo ? (
-				<input type="hidden" name="redirectTo" value={redirectTo} />
-			) : null}
+		<div className="space-y-3">
 			<h1 className="text-2xl">Sign up</h1>
-			<div>
-				<label htmlFor="email_input">Email</label>
-				<Input
-					type="email"
-					name="email"
-					id="email_input"
-					autoComplete="email"
-					required
-				/>
-			</div>
-			<div>
-				<label htmlFor="name_input">Name</label>
-				<Input
-					type="name"
-					name="name"
-					id="name_input"
-					autoComplete="name"
-					required
-				/>
-			</div>
-			<div>
-				<label htmlFor="password_input">Password</label>
-				<Input
-					type="password"
-					name="password"
-					autoComplete="new-password"
-					required
-					id="password_input"
-				/>
-			</div>
-			<div>
-				<label htmlFor="repeat_password_input">Repeat password</label>
-				<Input
-					type="password"
-					name="repeat_password"
-					autoComplete="new-password"
-					required
-					id="repeat_password_input"
-				/>
-			</div>
-			<p>
-				Already have an account?{' '}
-				<Button asChild variant="link">
-					<Link
-						to={
-							redirectTo
-								? `/login?redirectTo=${encodeURIComponent(redirectTo)}`
-								: '/login'
-						}
-					>
-						Log in
-					</Link>
-				</Button>
-			</p>
-			{actionData?.message && (
-				<Alert variant="destructive">
-					<AlertDescription>{actionData.message}</AlertDescription>
-				</Alert>
-			)}
-			<Button>Sign up</Button>
-		</Form>
+			<GoogleSignInForm redirectTo={redirectTo} />
+			<p className="text-center text-sm text-muted-foreground">or use email</p>
+			<Form method="post" className="space-y-3">
+				{redirectTo ? (
+					<input type="hidden" name="redirectTo" value={redirectTo} />
+				) : null}
+				<div>
+					<label htmlFor="email_input">Email</label>
+					<Input
+						type="email"
+						name="email"
+						id="email_input"
+						autoComplete="email"
+						required
+					/>
+				</div>
+				<div>
+					<label htmlFor="name_input">Name</label>
+					<Input
+						type="name"
+						name="name"
+						id="name_input"
+						autoComplete="name"
+						required
+					/>
+				</div>
+				<div>
+					<label htmlFor="password_input">Password</label>
+					<Input
+						type="password"
+						name="password"
+						autoComplete="new-password"
+						required
+						id="password_input"
+					/>
+				</div>
+				<div>
+					<label htmlFor="repeat_password_input">Repeat password</label>
+					<Input
+						type="password"
+						name="repeat_password"
+						autoComplete="new-password"
+						required
+						id="repeat_password_input"
+					/>
+				</div>
+				<p>
+					Already have an account?{' '}
+					<Button asChild variant="link">
+						<Link
+							to={
+								redirectTo
+									? `/login?redirectTo=${encodeURIComponent(redirectTo)}`
+									: '/login'
+							}
+						>
+							Log in
+						</Link>
+					</Button>
+				</p>
+				{actionData?.message && (
+					<Alert variant="destructive">
+						<AlertDescription>{actionData.message}</AlertDescription>
+					</Alert>
+				)}
+				<Button>Sign up</Button>
+			</Form>
+		</div>
 	)
 }
 
@@ -109,9 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	try {
 		return await authenticator.authenticate('user-pass', request, {
-			successRedirect: `/welcome?redirectTo=${encodeURIComponent(
-				destination
-			)}`,
+			successRedirect: `/welcome?redirectTo=${encodeURIComponent(destination)}`,
 		})
 	} catch (err) {
 		if (err instanceof Response) {

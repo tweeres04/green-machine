@@ -258,7 +258,8 @@ export const statEntrySchema = createInsertSchema(statEntries, {
 export const users = sqliteTable('users', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	email: text('email').notNull().unique(),
-	password: text('password').notNull(),
+	// Null for accounts created with Google sign in
+	password: text('password'),
 	name: text('name').notNull(),
 	stripeCustomerId: text('stripe_customer_id'),
 })

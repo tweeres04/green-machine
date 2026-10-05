@@ -148,6 +148,13 @@
       "when": 1787143731242,
       "tag": "0020_nifty_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1791208316021,
+      "tag": "0021_worthless_jack_flag",
+      "breakpoints": true
     }
   ]
 }

@@ -80,6 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 	})
 
 	invariant(currentUser, 'Signed in user not found')
+	invariant(currentUser.password, 'Support users need a password')
 
 	if (!(await argon2.verify(currentUser.password, password))) {
 		return json({ error: 'That password is wrong' }, { status: 401 })

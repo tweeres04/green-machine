@@ -6,6 +6,7 @@ import { AuthorizationError } from 'remix-auth'
 import { Alert, AlertDescription } from '~/components/ui/alert'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
+import { GoogleSignInForm } from '~/components/google-sign-in-form'
 import { authenticator } from '~/lib/auth.server'
 import { getSession } from '~/lib/session.server'
 import { safeRedirect } from '~/lib/redirect-to.server'
@@ -65,45 +66,49 @@ export default function Login() {
 	const redirectTo = searchParams.get('redirectTo')
 
 	return (
-		<Form method="post" className="space-y-3">
-			{redirectTo ? (
-				<input type="hidden" name="redirectTo" value={redirectTo} />
-			) : null}
+		<div className="space-y-3">
 			<h1 className="text-2xl">Sign in</h1>
-			<div>
-				<label htmlFor="email_input">Email</label>
-				<Input type="email" name="email" id="email_input" required />
-			</div>
-			<div>
-				<label htmlFor="password_input">Password</label>
-				<Input
-					type="password"
-					name="password"
-					autoComplete="current-password"
-					required
-					id="password_input"
-				/>
-			</div>
-			<p>
-				No account?{' '}
-				<Button asChild variant="link">
-					<Link
-						to={
-							redirectTo
-								? `/signup?redirectTo=${encodeURIComponent(redirectTo)}`
-								: '/signup'
-						}
-					>
-						Sign up
-					</Link>
-				</Button>
-			</p>
-			{actionData?.message && (
-				<Alert variant="destructive">
-					<AlertDescription>{actionData.message}</AlertDescription>
-				</Alert>
-			)}
-			<Button>Sign In</Button>
-		</Form>
+			<GoogleSignInForm redirectTo={redirectTo} />
+			<p className="text-center text-sm text-muted-foreground">or use email</p>
+			<Form method="post" className="space-y-3">
+				{redirectTo ? (
+					<input type="hidden" name="redirectTo" value={redirectTo} />
+				) : null}
+				<div>
+					<label htmlFor="email_input">Email</label>
+					<Input type="email" name="email" id="email_input" required />
+				</div>
+				<div>
+					<label htmlFor="password_input">Password</label>
+					<Input
+						type="password"
+						name="password"
+						autoComplete="current-password"
+						required
+						id="password_input"
+					/>
+				</div>
+				<p>
+					No account?{' '}
+					<Button asChild variant="link">
+						<Link
+							to={
+								redirectTo
+									? `/signup?redirectTo=${encodeURIComponent(redirectTo)}`
+									: '/signup'
+							}
+						>
+							Sign up
+						</Link>
+					</Button>
+				</p>
+				{actionData?.message && (
+					<Alert variant="destructive">
+						<AlertDescription>{actionData.message}</AlertDescription>
+					</Alert>
+				)}
+				<Button>Sign In</Button>
+			</Form>
+		</div>
 	)
 }

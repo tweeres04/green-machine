@@ -1,6 +1,7 @@
 import { Authenticator } from 'remix-auth'
 import { sessionStorage } from '~/lib/session.server'
 import { FormStrategy } from 'remix-auth-form'
+import { GoogleStrategy } from 'remix-auth-google'
 import argon2 from 'argon2'
 import { getDb } from './getDb'
 import { User, users } from '~/schema'
@@ -78,8 +79,19 @@ async function signUp(
 
 	const newUser = newUsers[0]
 
+	announceSignUp(newUser, 'password', request)
+
+	return newUser
+}
+
+function announceSignUp(
+	newUser: User,
+	method: 'password' | 'google',
+	request: Request
+) {
 	mixpanelServer.track('sign up', {
 		distinct_id: newUser.id,
+		method,
 	})
 
 	sendWelcomeEmail(newUser).catch(captureException)
@@ -94,8 +106,6 @@ async function signUp(
 		eventName: 'CompleteRegistration',
 		user: newUser,
 	}).catch(console.error)
-
-	return newUser
 }
 
 async function login(email: string, password: string) {
@@ -106,6 +116,12 @@ async function login(email: string, password: string) {
 
 	if (!user) {
 		throw new Error('Invalid email or password')
+	}
+
+	if (!user.password) {
+		throw new Error(
+			'This account uses Google to sign in. Tap Continue with Google instead.'
+		)
 	}
 
 	const validPassword = await argon2.verify(user.password, password)
@@ -167,3 +183,65 @@ authenticator.use(
 	// same strategy multiple times, especially useful for the OAuth2 strategy.
 	'user-pass'
 )
+
+invariant(process.env.GOOGLE_CLIENT_ID, 'No GOOGLE_CLIENT_ID')
+invariant(process.env.GOOGLE_CLIENT_SECRET, 'No GOOGLE_CLIENT_SECRET')
+invariant(process.env.BASE_URL, 'No BASE_URL')
+
+// Used through authenticateWithGoogle rather than registered on the
+// authenticator, so the callback can tell new users (who detour through
+// /welcome) apart from returning ones
+const googleStrategy = new GoogleStrategy<{
+	user: User
+	isNewUser: boolean
+}>(
+	{
+		clientID: process.env.GOOGLE_CLIENT_ID,
+		clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+		callbackURL: `${process.env.BASE_URL}/auth/google/callback`,
+		prompt: 'select_account',
+	},
+	async ({ profile, request }) => {
+		// Google has confirmed they own this address, so it's safe to sign them
+		// into an existing password account with the same email
+		if (!profile._json.email_verified) {
+			throw new Error('Your Google email address is not verified')
+		}
+
+		const email = profile._json.email.toLowerCase()
+		const db = getDb()
+
+		const existingUser = await db.query.users.findFirst({
+			columns: { password: false },
+			where: (users, { eq }) => eq(users.email, email),
+		})
+
+		if (existingUser) {
+			return { user: existingUser, isNewUser: false }
+		}
+
+		const [newUser] = await db
+			.insert(users)
+			.values({ name: profile.displayName, email })
+			.returning({
+				id: users.id,
+				email: users.email,
+				name: users.name,
+				stripeCustomerId: users.stripeCustomerId,
+			})
+
+		announceSignUp(newUser, 'google', request)
+
+		return { user: newUser, isNewUser: true }
+	}
+)
+
+export function authenticateWithGoogle(request: Request) {
+	return googleStrategy.authenticate(request, sessionStorage, {
+		name: 'google',
+		sessionKey: authenticator.sessionKey,
+		sessionErrorKey: authenticator.sessionErrorKey,
+		sessionStrategyKey: authenticator.sessionStrategyKey,
+		throwOnError: true,
+	})
+}
