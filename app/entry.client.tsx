@@ -56,12 +56,17 @@ mixpanel.init(window.mixpanelToken, {
 	record_heatmap_data: true,
 	record_mask_all_text: false,
 	record_mask_all_inputs: false,
-})
-
-// Super property on every event: was this session launched from the home
-// screen? Tells us how much installed-app usage the install card earns
-mixpanel.register({
-	isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+	// Error pages render without root loader data, so the token is empty and
+	// init quietly skips. Registering in loaded avoids calling into the
+	// uninitialized instance, which throws
+	loaded: (loadedMixpanel) => {
+		// Super property on every event: was this session launched from the
+		// home screen? Tells us how much installed-app usage the install card
+		// earns
+		loadedMixpanel.register({
+			isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+		})
+	},
 })
 
 startTransition(() => {
