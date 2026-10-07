@@ -2,6 +2,7 @@ import Nav from '~/components/ui/nav'
 import { Button } from '~/components/ui/button'
 import { Link } from '@remix-run/react'
 import {
+	ArrowRight,
 	CalendarCheck,
 	ChartScatter,
 	Focus,
@@ -9,6 +10,7 @@ import {
 	IdCard,
 	MonitorSmartphone,
 	Share,
+	Trophy,
 	Wallet,
 	WandSparkles,
 } from 'lucide-react'
@@ -29,33 +31,31 @@ function Cta({
 }) {
 	return (
 		<div className={cn('text-center space-y-3 py-6', className)}>
-			<div className="flex justify-center">
+			<div className="flex flex-col gap-3 sm:w-fit sm:mx-auto">
 				<Button
 					size="lg"
 					asChild
 					className="transition-all ease-linear hover:shadow-xl hover:scale-105 hover:bg-gray-800"
 				>
 					<Link
+						to="/teams/new"
+						onClick={() => {
+							mixpanel.track('click set up team link', { location })
+						}}
+					>
+						Set up your team in 2 minutes <ArrowRight />
+					</Link>
+				</Button>
+				<Button size="lg" variant="secondary" asChild>
+					<Link
 						to="/green-machine?season=all&demo=1"
-						className="w-full"
 						onClick={() => {
 							mixpanel.track('click check out a live team', { location })
 						}}
 					>
-						See a real team's leaderboard
+						<Trophy /> See a real team's leaderboard
 					</Link>
 				</Button>
-			</div>
-			<div>
-				<Link
-					to="/teams/new"
-					className="text-sm underline"
-					onClick={() => {
-						mixpanel.track('click set up team link', { location })
-					}}
-				>
-					Or set up your team in 2 minutes
-				</Link>
 			</div>
 			<small className="block text-sm leading-tight font-light">
 				Early access: <span className="line-through opacity-70">$39</span> $19
