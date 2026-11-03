@@ -3,7 +3,7 @@ import type {
 	MetaArgs,
 	MetaFunction,
 } from '@remix-run/node'
-import { Link, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
+import { Link, useFetcher, useLoaderData } from '@remix-run/react'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 
@@ -122,29 +122,13 @@ export async function loader({
 	return { team, adminUserIds, userId: user.id }
 }
 
-function useClearNewPlayerForm(
-	formRef: React.MutableRefObject<HTMLFormElement | null>
-) {
-	const fetchers = useFetchers()
-	const isAddingPlayer = fetchers.some(
-		(fetcher) =>
-			fetcher.state === 'submitting' &&
-			/teams\/.+\/players/.test(fetcher.formAction) &&
-			fetcher.formMethod === 'POST'
-	)
-
-	useEffect(() => {
-		if (!isAddingPlayer) {
-			formRef.current?.reset()
-		}
-	}, [formRef, isAddingPlayer])
-}
-
 export default function EditTeam() {
 	const { team, adminUserIds, userId } = useLoaderData<typeof loader>()
 	const { id, players } = team
 	const formRef = useRef<HTMLFormElement>(null)
+	const nameInputRef = useRef<HTMLInputElement>(null)
 	const fetcher = useFetcher()
+	const addPlayerFetcher = useFetcher()
 
 	const [changeImageDialog, setChangeImageDialog] = useState<Player | null>(
 		null
@@ -187,11 +171,55 @@ export default function EditTeam() {
 		p.userInvites.some((ui) => ui.userId === userId && ui.acceptedAt)
 	)
 
-	useClearNewPlayerForm(formRef)
+	// Clear the add player form after each save so it's obvious it worked,
+	// and put the cursor back in the name field for the next player
+	useEffect(() => {
+		if (
+			addPlayerFetcher.state === 'idle' &&
+			addPlayerFetcher.data !== undefined
+		) {
+			formRef.current?.reset()
+			nameInputRef.current?.focus()
+		}
+	}, [addPlayerFetcher.state, addPlayerFetcher.data])
 
 	return (
 		<>
 			<Nav title="Players" team={team} />
+			<div className="flex flex-col sm:flex-row-reverse">
+				<Dialog>
+					<DialogTrigger asChild>
+						<Button className="w-full sm:w-auto">
+							<UserPlus />
+							Add player
+						</Button>
+					</DialogTrigger>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Add player</DialogTitle>
+						</DialogHeader>
+						<addPlayerFetcher.Form
+							method="post"
+							action={`/teams/${id}/players`}
+							className="space-y-3"
+							ref={formRef}
+						>
+							<div>
+								<label htmlFor="name_input">Name</label>
+								<Input name="name" id="name_input" ref={nameInputRef} />
+							</div>
+							<DialogFooter>
+								<DialogClose asChild>
+									<Button variant="secondary" type="button">
+										Close
+									</Button>
+								</DialogClose>
+								<Button type="submit">Save</Button>
+							</DialogFooter>
+						</addPlayerFetcher.Form>
+					</DialogContent>
+				</Dialog>
+			</div>
 			{players.length === 0 ? (
 				<p>
 					No players yet. Add your first player to get the leaderboard going.
@@ -267,7 +295,10 @@ export default function EditTeam() {
 												title: 'Edit name',
 												description: null,
 												body: (
-													<fetcher.Form method="put" action={`/players/${p.id}`}>
+													<fetcher.Form
+														method="put"
+														action={`/players/${p.id}`}
+													>
 														<fieldset disabled={saving} className="space-y-3">
 															<div>
 																<label htmlFor="name_input">Name</label>
@@ -448,48 +479,6 @@ export default function EditTeam() {
 						) : null}
 					</DialogHeader>
 					{body}
-				</DialogContent>
-			</Dialog>
-			<Dialog>
-				<DialogTrigger asChild>
-					<Button className="w-full sm:w-auto">
-						<UserPlus />
-						Add player
-					</Button>
-				</DialogTrigger>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Add player</DialogTitle>
-					</DialogHeader>
-					<fetcher.Form
-						method="post"
-						action={`/teams/${id}/players`}
-						className="space-y-3"
-						ref={formRef}
-					>
-						<div className="space-y-3">
-							<div>
-								<label htmlFor="name_input">Name</label>
-								<Input name="name" id="name_input" />
-							</div>
-							<div>
-								<label htmlFor="email_input">Email (optional)</label>
-								<Input name="email" id="email_input" />
-								<p className="text-sm text-muted-foreground mt-1">
-									Adding an email invites them to a TeamStats account where they
-									can see this team.
-								</p>
-							</div>
-						</div>
-						<DialogFooter className="flex-col sm:flex-row">
-							<DialogClose asChild>
-								<Button variant="secondary" type="button">
-									Cancel
-								</Button>
-							</DialogClose>
-							<Button type="submit">Save</Button>
-						</DialogFooter>
-					</fetcher.Form>
 				</DialogContent>
 			</Dialog>
 			<Dialog

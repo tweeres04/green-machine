@@ -5,10 +5,10 @@ import type {
 	ActionFunction,
 } from '@remix-run/node'
 import { json } from '@remix-run/node'
-import { Form, useFetcher, useFetchers, useLoaderData } from '@remix-run/react'
+import { Form, useFetcher, useLoaderData } from '@remix-run/react'
 
 import { getDb } from '~/lib/getDb'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 import invariant from 'tiny-invariant'
 import { type Team, teams } from '~/schema'
@@ -173,24 +173,6 @@ export const action: ActionFunction = async ({ request, params }) => {
 	})
 }
 
-function useClearNewPlayerForm(
-	formRef: React.MutableRefObject<HTMLFormElement | null>
-) {
-	const fetchers = useFetchers()
-	const isAddingPlayer = fetchers.some(
-		(fetcher) =>
-			fetcher.state === 'submitting' &&
-			/teams\/.+\/players/.test(fetcher.formAction) &&
-			fetcher.formMethod === 'POST'
-	)
-
-	useEffect(() => {
-		if (!isAddingPlayer) {
-			formRef.current?.reset()
-		}
-	}, [formRef, isAddingPlayer])
-}
-
 type ImageLoadingStatus = 'idle' | 'loading' | 'loaded' | 'error'
 
 function useImageLoadingStatus(
@@ -257,7 +239,6 @@ export default function EditTeam() {
 
 	const { team } = useLoaderData<typeof loader>()
 	const { id, slug, color } = team
-	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher()
 
 	// Weather-specific fetcher for debounced location submission
@@ -294,8 +275,6 @@ export default function EditTeam() {
 		}
 	}, [weatherFetcher.state, isSavingWeather])
 
-	useClearNewPlayerForm(formRef)
-
 	// Include uploading a new logo here at some point
 	const submitting = fetcher.state === 'submitting'
 
@@ -331,11 +310,11 @@ export default function EditTeam() {
 				>
 					<input type="hidden" name="slug" value={slug} />
 					{/* shadcn select box at some point */}
-				<select
-					name="color"
-					className="w-full p-2 border rounded bg-white"
-					defaultValue={color}
-				>
+					<select
+						name="color"
+						className="w-full p-2 border rounded bg-white"
+						defaultValue={color}
+					>
 						<option value="gray">Gray</option>
 						<option value="red">Red</option>
 						<option value="orange">Orange</option>
@@ -415,10 +394,7 @@ export default function EditTeam() {
 					</p>
 				</rsvpsFetcher.Form>
 			</div>
-			<fieldset
-				className="space-y-3"
-				disabled={submitting}
-			>
+			<fieldset className="space-y-3" disabled={submitting}>
 				<h3 className="text-xl">Team Logo</h3>
 				<Logo teamId={id} randomCacheBuster={randomCacheBuster} />
 				<div className="flex flex-col sm:flex-row w-full gap-1">
