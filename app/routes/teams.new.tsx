@@ -96,14 +96,6 @@ export default function NewTeamForm() {
 	return (
 		<>
 			<Nav title="Create team" />
-			<div className="mb-6 space-y-2">
-				<p className="text-lg font-medium">No credit card required</p>
-				<p className="text-sm">
-					Track stats for 3 games free. If you love it, subscribe to unlock
-					unlimited games. Early access pricing is just $19/year, half off the
-					regular $39.
-				</p>
-			</div>
 			<Form action="/teams" method="post">
 				<div className="space-y-4 mx-auto max-w-xs">
 					<div>
