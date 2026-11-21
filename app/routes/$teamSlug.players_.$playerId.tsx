@@ -260,7 +260,9 @@ export default function PlayerStatsPage() {
 									<th className="py-2 pr-3 font-medium">Date</th>
 									<th className="py-2 px-3 font-medium">Opponent</th>
 									<th className="py-2 px-3 font-medium text-center">⚽️</th>
-									<th className="py-2 px-3 font-medium text-center">🍎</th>
+									<th className="py-2 px-3 font-medium text-center">
+										{team.assistEmoji}
+									</th>
 								</tr>
 							</thead>
 							<tbody>

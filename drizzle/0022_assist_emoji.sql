@@ -1,0 +1,1 @@
+ALTER TABLE `teams` ADD `assist_emoji` text DEFAULT '🍎' NOT NULL;

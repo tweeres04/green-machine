@@ -2,11 +2,27 @@
 // action and reflected in the add-stats dialog UI
 export const oncePerGameStatTypes = ['mvp', 'clean_sheet'] as const
 
-export const statEmoji: Record<string, string> = {
-	goal: '⚽️',
-	assist: '🍎',
-	mvp: '🪓',
-	clean_sheet: '🧤',
+// Teams pick their assist emoji in settings. 🍎 is hockey slang ("apples"),
+// which not every team gets
+export const assistEmojiOptions = [
+	{ emoji: '🍎', label: 'Apple' },
+	{ emoji: '🎯', label: 'Dart' },
+	{ emoji: '🤝', label: 'Handshake' },
+	{ emoji: '🎁', label: 'Gift' },
+	{ emoji: '🅰️', label: 'A for assist' },
+]
+
+export function getStatEmoji({
+	assistEmoji,
+}: {
+	assistEmoji: string
+}): Record<string, string> {
+	return {
+		goal: '⚽️',
+		assist: assistEmoji,
+		mvp: '🪓',
+		clean_sheet: '🧤',
+	}
 }
 
 // Natural-language names for popovers and dialog titles. Lowercase where the

@@ -21,6 +21,7 @@ import { Checkbox } from '~/components/ui/checkbox'
 import { eq } from 'drizzle-orm'
 import { geocodeLocation } from '~/lib/weather-service'
 import { slugEquals } from '~/lib/team-slug.server'
+import { assistEmojiOptions } from '~/lib/stat-types'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -118,12 +119,15 @@ export const action: ActionFunction = async ({ request, params }) => {
 	const nextGameForecast = formData.get('nextGameForecast')
 	const showRsvps = formData.get('showRsvps')
 	const name = formData.get('name')
+	const assistEmoji = formData.get('assistEmoji')
 
 	if (
 		(location !== null && typeof location !== 'string') ||
 		(nextGameForecast !== null && typeof nextGameForecast !== 'string') ||
 		(showRsvps !== null && typeof showRsvps !== 'string') ||
-		(name !== null && typeof name !== 'string')
+		(name !== null && typeof name !== 'string') ||
+		(assistEmoji !== null &&
+			!assistEmojiOptions.some((option) => option.emoji === assistEmoji))
 	) {
 		throw new Response('Invalid form data', { status: 400 })
 	}
@@ -147,6 +151,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 		.update(teams)
 		.set({
 			...(name !== null ? { name: name.trim() } : {}),
+			...(typeof assistEmoji === 'string' ? { assistEmoji } : {}),
 			...(locationSubmitted ? { location: location || null } : {}),
 			...(locationChanged
 				? {
@@ -250,6 +255,7 @@ export default function EditTeam() {
 	const [isSavingWeather, setIsSavingWeather] = useState(false)
 
 	const nameFetcher = useFetcher()
+	const assistEmojiFetcher = useFetcher()
 
 	const rsvpsFetcher = useFetcher()
 	const [showRsvps, setShowRsvps] = useState(team.showRsvps)
@@ -325,6 +331,26 @@ export default function EditTeam() {
 						<option value="pink">Pink</option>
 					</select>
 				</fetcher.Form>
+				<h3 className="text-xl">Assist emoji</h3>
+				<assistEmojiFetcher.Form
+					method="post"
+					onChange={(event) => {
+						assistEmojiFetcher.submit(event.currentTarget)
+					}}
+				>
+					<select
+						name="assistEmoji"
+						aria-label="Assist emoji"
+						className="w-full p-2 border rounded bg-white"
+						defaultValue={team.assistEmoji}
+					>
+						{assistEmojiOptions.map(({ emoji, label }) => (
+							<option key={emoji} value={emoji}>
+								{emoji} {label}
+							</option>
+						))}
+					</select>
+				</assistEmojiFetcher.Form>
 				<h3 className="text-xl">Weather Forecast</h3>
 				<weatherFetcher.Form
 					method="post"

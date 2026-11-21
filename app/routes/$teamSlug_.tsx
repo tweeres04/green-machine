@@ -83,7 +83,7 @@ import mixpanel from 'mixpanel-browser'
 import { getGameForecast } from '~/lib/weather-service'
 import { ogImageVersion } from '~/lib/og-image-version.server'
 import { slugEquals } from '~/lib/team-slug.server'
-import { oncePerGameStatTypes, statEmoji, statLabel } from '~/lib/stat-types'
+import { getStatEmoji, oncePerGameStatTypes, statLabel } from '~/lib/stat-types'
 import { TrialStatus } from '~/components/ui/trial-status'
 import { SetupChecklist } from '~/components/ui/setup-checklist'
 import { AddToHomeScreenCard } from '~/components/ui/add-to-home-screen-card'
@@ -636,6 +636,7 @@ function PlayerRow({
 	columnKeys,
 	columnKeyForStatEntry,
 	gameIdByColumnKey,
+	statEmoji,
 }: {
 	teamSlug: string
 	teamColor: string
@@ -647,6 +648,7 @@ function PlayerRow({
 		game?: { timestamp: string | null } | null
 	}) => string
 	gameIdByColumnKey: Map<string, number>
+	statEmoji: Record<string, string>
 }) {
 	const [statDeleteDialog, setStatDeleteDialog] =
 		useState<StatDeleteDialogData>(null)
@@ -827,11 +829,13 @@ function AddStatsButton({
 	players,
 	games,
 	label,
+	statEmoji,
 }: {
 	teamId: number
 	players: PlayerWithStats[]
 	games: Game[]
 	label?: string
+	statEmoji: Record<string, string>
 }) {
 	const datepickerTimestampString = () => formatISO(new Date()).slice(0, 16) // Chop off offset and seconds
 
@@ -980,7 +984,7 @@ function AddStatsButton({
 	const saveBlockedReason = !selectedGameId
 		? 'Pick a game first, so we know where these stats go.'
 		: stats.length === 0 && removedStatIds.length === 0
-		? 'Tap ⚽️ or 🍎 next to a player to add a stat first.'
+		? `Tap ⚽️ or ${statEmoji.assist} next to a player to add a stat first.`
 		: null
 
 	function submit(e: MouseEvent) {
@@ -1186,7 +1190,7 @@ function AddStatsButton({
 											className="relative"
 											onClick={() => addStat(player.id, 'assist')}
 										>
-											🍎
+											{statEmoji.assist}
 											<Add className={cn('absolute top-0 right-0 size-4')} />
 										</Button>
 										<Button
@@ -1333,6 +1337,7 @@ export default function Home() {
 		weatherData,
 	} = useLoaderData<typeof loader>()
 	const { players } = team
+	const statEmoji = getStatEmoji(team)
 
 	// The landing page's "See a real team's leaderboard" CTA links here with ?demo=1;
 	// real teammates never see the bar because their links don't carry the param
@@ -1348,9 +1353,12 @@ export default function Home() {
 			// Soccer fireworks: goals and assists mixed with regular confetti
 			import('canvas-confetti').then(({ default: confetti }) => {
 				const ball = confetti.shapeFromText({ text: '⚽️', scalar: 2 })
-				const apple = confetti.shapeFromText({ text: '🍎', scalar: 2 })
+				const assist = confetti.shapeFromText({
+					text: team.assistEmoji,
+					scalar: 2,
+				})
 				confetti({
-					shapes: [ball, apple],
+					shapes: [ball, assist],
 					scalar: 2,
 					particleCount: 30,
 					spread: 100,
@@ -1360,7 +1368,7 @@ export default function Home() {
 			})
 		}
 		previousGamesWithStatsCount.current = gamesWithStatsCount
-	}, [gamesWithStatsCount])
+	}, [gamesWithStatsCount, team.assistEmoji])
 
 	const { columnKeyForGameTimestamp, columnKeyForStatEntry } = makeColumnKeys(
 		team.games
@@ -1550,6 +1558,7 @@ export default function Home() {
 									teamId={team.id}
 									players={players}
 									games={team.games}
+									statEmoji={statEmoji}
 									label="Add stats"
 								/>
 							) : null}
@@ -1616,6 +1625,7 @@ export default function Home() {
 											columnKeys={columnKeys}
 											columnKeyForStatEntry={columnKeyForStatEntry}
 											gameIdByColumnKey={gameIdByColumnKey}
+											statEmoji={statEmoji}
 										/>
 									))}
 								</tbody>
@@ -1643,6 +1653,7 @@ export default function Home() {
 							teamId={team.id}
 							players={players}
 							games={team.games}
+							statEmoji={statEmoji}
 							label="Add stats"
 						/>
 					) : null}
