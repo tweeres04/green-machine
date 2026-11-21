@@ -56,7 +56,6 @@ import {
 	DropdownMenuSeparator,
 } from '~/components/ui/dropdown-menu'
 import {
-	ArrowRightCircle,
 	ArrowUpDown,
 	ChevronsUpDown,
 	MoreHorizontal,
@@ -978,6 +977,12 @@ function AddStatsButton({
 		}
 	}
 
+	const saveBlockedReason = !selectedGameId
+		? 'Pick a game first, so we know where these stats go.'
+		: stats.length === 0 && removedStatIds.length === 0
+		? 'Tap ⚽️ or 🍎 next to a player to add a stat first.'
+		: null
+
 	function submit(e: MouseEvent) {
 		e.preventDefault()
 
@@ -1024,7 +1029,7 @@ function AddStatsButton({
 			>
 				<Add /> {label}
 			</Button>
-			<DialogContent className="flex flex-col h-dvh w-dvw max-w-none sm:h-auto sm:max-h-[95dvh] sm:w-[92dvw] sm:max-w-lg">
+			<DialogContent className="flex flex-col h-dvh max-h-none w-dvw max-w-none sm:h-auto sm:max-h-[95dvh] sm:w-[92dvw] sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>Add stats</DialogTitle>
 				</DialogHeader>
@@ -1247,16 +1252,25 @@ function AddStatsButton({
 								Cancel
 							</Button>
 						</DialogClose>
-						<Button
-							type="submit"
-							onClick={submit}
-							disabled={
-								!selectedGameId ||
-								(stats.length === 0 && removedStatIds.length === 0)
-							}
-						>
-							Save
-						</Button>
+						{saveBlockedReason ? (
+							// Disabled buttons ignore taps, so the wrapper opens the popover
+							<Popover>
+								<PopoverTrigger asChild>
+									<span className="w-full sm:w-auto">
+										<Button type="submit" disabled>
+											Save
+										</Button>
+									</span>
+								</PopoverTrigger>
+								<PopoverContent className="max-w-xs">
+									{saveBlockedReason}
+								</PopoverContent>
+							</Popover>
+						) : (
+							<Button type="submit" onClick={submit}>
+								Save
+							</Button>
+						)}
 					</DialogFooter>
 				</fieldset>
 			</DialogContent>
@@ -1613,44 +1627,23 @@ export default function Home() {
 				</div>
 			)}
 			{isDemo || players.length === 0 ? null : (
+				// Grid, not flex, so the mobile w-full on the Add stats button fills
+				// its own column instead of stretching across the whole bar
 				<div
-					className={`sm:hidden fixed bottom-4 right-0 border-${team.color}-200 p-4 pl-6 bg-${team.color}-50 border border-${team.color}-200 rounded-lg z-10 shadow transition-transform duration-100 ease-out rounded-r-none`}
+					className={`sm:hidden fixed bottom-4 right-0 grid grid-flow-col gap-2 p-4 bg-${team.color}-50 border border-${team.color}-200 rounded-lg rounded-r-none z-10 shadow`}
 				>
-					<button
-						className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 border-2 border-${team.color}-200 rounded-full p-1 shadown bg-${team.color}-50`}
-						onClick={(event) => {
-							const parentElement = event.currentTarget.parentElement
-							const rightArrow = parentElement?.querySelector(
-								'[data-toggle-id=right_circle]'
-							)
-							const translateClassname = 'translate-x-[calc(100%-19px)]' // offsetwidth was returning undefined, so I'm hardcoding this for now
-							const rotateClassname = 'rotate-180'
-
-							if (parentElement?.classList.contains(translateClassname)) {
-								parentElement.classList.remove(translateClassname)
-								rightArrow?.classList.remove(rotateClassname)
-							} else {
-								parentElement?.classList.add(translateClassname)
-								rightArrow?.classList.add(rotateClassname)
-							}
-						}}
-					>
-						<ArrowRightCircle
-							className={`text-${team.color}-900 transition-transform duration-500 ease-out`}
-							data-toggle-id="right_circle"
-						/>
-					</button>
 					<ShareStandingsButton
 						slug={team.slug}
 						teamName={team.name}
 						players={players}
 						season={season}
-					/>{' '}
+					/>
 					{userHasAccessToTeam ? (
 						<AddStatsButton
 							teamId={team.id}
 							players={players}
 							games={team.games}
+							label="Add stats"
 						/>
 					) : null}
 				</div>

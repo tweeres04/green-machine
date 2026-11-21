@@ -32,13 +32,15 @@ import {
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import More from '~/components/ui/icons/more'
-import { LoaderCircle, UserPlus } from 'lucide-react'
+import { CircleCheck, LoaderCircle, UserPlus } from 'lucide-react'
 import { captureException } from '@sentry/remix'
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '~/components/ui/popover'
+import { Alert, AlertDescription } from '~/components/ui/alert'
+import type { action as addPlayerAction } from './teams.$teamId.players'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -128,7 +130,10 @@ export default function EditTeam() {
 	const formRef = useRef<HTMLFormElement>(null)
 	const nameInputRef = useRef<HTMLInputElement>(null)
 	const fetcher = useFetcher()
-	const addPlayerFetcher = useFetcher()
+	const addPlayerFetcher = useFetcher<typeof addPlayerAction>()
+	// Lives in state (not read straight off fetcher.data) so closing the
+	// dialog clears it and it doesn't greet you again next time you open it
+	const [addedPlayerName, setAddedPlayerName] = useState<string | null>(null)
 
 	const [changeImageDialog, setChangeImageDialog] = useState<Player | null>(
 		null
@@ -171,13 +176,14 @@ export default function EditTeam() {
 		p.userInvites.some((ui) => ui.userId === userId && ui.acceptedAt)
 	)
 
-	// Clear the add player form after each save so it's obvious it worked,
+	// Clear the add player form after each save, confirm who was added,
 	// and put the cursor back in the name field for the next player
 	useEffect(() => {
 		if (
 			addPlayerFetcher.state === 'idle' &&
 			addPlayerFetcher.data !== undefined
 		) {
+			setAddedPlayerName(addPlayerFetcher.data.name)
 			formRef.current?.reset()
 			nameInputRef.current?.focus()
 		}
@@ -187,7 +193,13 @@ export default function EditTeam() {
 		<>
 			<Nav title="Players" team={team} />
 			<div className="flex flex-col sm:flex-row-reverse">
-				<Dialog>
+				<Dialog
+					onOpenChange={(open) => {
+						if (!open) {
+							setAddedPlayerName(null)
+						}
+					}}
+				>
 					<DialogTrigger asChild>
 						<Button className="w-full sm:w-auto">
 							<UserPlus />
@@ -198,6 +210,14 @@ export default function EditTeam() {
 						<DialogHeader>
 							<DialogTitle>Add player</DialogTitle>
 						</DialogHeader>
+						{addedPlayerName ? (
+							<Alert>
+								<CircleCheck className="size-4" />
+								<AlertDescription>
+									{addedPlayerName} has been added to the team
+								</AlertDescription>
+							</Alert>
+						) : null}
 						<addPlayerFetcher.Form
 							method="post"
 							action={`/teams/${id}/players`}

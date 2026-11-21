@@ -39,5 +39,5 @@ export async function action({
 		'team id': Number(teamId),
 	})
 
-	return null
+	return { name }
 }
