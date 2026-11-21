@@ -29,8 +29,8 @@ export const teams = sqliteTable('teams', {
 	// Off hides attendance counts on game cards, showing only who's out
 	showRsvps: integer('show_rsvps', { mode: 'boolean' }).notNull().default(true),
 	// One of assistEmojiOptions / mvpEmojiOptions in ~/lib/stat-types
-	assistEmoji: text('assist_emoji').notNull().default('🍎'),
-	mvpEmoji: text('mvp_emoji').notNull().default('🪓'),
+	assistEmoji: text('assist_emoji').notNull().default('🎯'),
+	mvpEmoji: text('mvp_emoji').notNull().default('⭐'),
 })
 
 export type Team = typeof teams.$inferSelect
