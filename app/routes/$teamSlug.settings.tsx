@@ -21,7 +21,7 @@ import { Checkbox } from '~/components/ui/checkbox'
 import { eq } from 'drizzle-orm'
 import { geocodeLocation } from '~/lib/weather-service'
 import { slugEquals } from '~/lib/team-slug.server'
-import { assistEmojiOptions } from '~/lib/stat-types'
+import { assistEmojiOptions, mvpEmojiOptions } from '~/lib/stat-types'
 
 export const meta: MetaFunction = ({ data }: MetaArgs) => {
 	const {
@@ -120,6 +120,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 	const showRsvps = formData.get('showRsvps')
 	const name = formData.get('name')
 	const assistEmoji = formData.get('assistEmoji')
+	const mvpEmoji = formData.get('mvpEmoji')
 
 	if (
 		(location !== null && typeof location !== 'string') ||
@@ -127,7 +128,9 @@ export const action: ActionFunction = async ({ request, params }) => {
 		(showRsvps !== null && typeof showRsvps !== 'string') ||
 		(name !== null && typeof name !== 'string') ||
 		(assistEmoji !== null &&
-			!assistEmojiOptions.some((option) => option.emoji === assistEmoji))
+			!assistEmojiOptions.some((option) => option.emoji === assistEmoji)) ||
+		(mvpEmoji !== null &&
+			!mvpEmojiOptions.some((option) => option.emoji === mvpEmoji))
 	) {
 		throw new Response('Invalid form data', { status: 400 })
 	}
@@ -152,6 +155,7 @@ export const action: ActionFunction = async ({ request, params }) => {
 		.set({
 			...(name !== null ? { name: name.trim() } : {}),
 			...(typeof assistEmoji === 'string' ? { assistEmoji } : {}),
+			...(typeof mvpEmoji === 'string' ? { mvpEmoji } : {}),
 			...(locationSubmitted ? { location: location || null } : {}),
 			...(locationChanged
 				? {
@@ -256,6 +260,7 @@ export default function EditTeam() {
 
 	const nameFetcher = useFetcher()
 	const assistEmojiFetcher = useFetcher()
+	const mvpEmojiFetcher = useFetcher()
 
 	const rsvpsFetcher = useFetcher()
 	const [showRsvps, setShowRsvps] = useState(team.showRsvps)
@@ -351,6 +356,26 @@ export default function EditTeam() {
 						))}
 					</select>
 				</assistEmojiFetcher.Form>
+				<h3 className="text-xl">MVP emoji</h3>
+				<mvpEmojiFetcher.Form
+					method="post"
+					onChange={(event) => {
+						mvpEmojiFetcher.submit(event.currentTarget)
+					}}
+				>
+					<select
+						name="mvpEmoji"
+						aria-label="MVP emoji"
+						className="w-full p-2 border rounded bg-white"
+						defaultValue={team.mvpEmoji}
+					>
+						{mvpEmojiOptions.map(({ emoji, label }) => (
+							<option key={emoji} value={emoji}>
+								{emoji} {label}
+							</option>
+						))}
+					</select>
+				</mvpEmojiFetcher.Form>
 				<h3 className="text-xl">Weather Forecast</h3>
 				<weatherFetcher.Form
 					method="post"

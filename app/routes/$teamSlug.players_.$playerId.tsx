@@ -283,6 +283,7 @@ export default function PlayerStatsPage() {
 												}}
 												statEntries={game.statEntries}
 												player={userIsPlayer ? { rsvps: game.rsvps } : null}
+												mvpEmoji={team.mvpEmoji}
 											>
 												<button className="cursor-pointer hover:underline">
 													{game.date
@@ -300,6 +301,7 @@ export default function PlayerStatsPage() {
 												}}
 												statEntries={game.statEntries}
 												player={userIsPlayer ? { rsvps: game.rsvps } : null}
+												mvpEmoji={team.mvpEmoji}
 											>
 												<button className="cursor-pointer hover:underline text-left">
 													<div>{game.opponent ?? '—'}</div>

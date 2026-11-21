@@ -1597,6 +1597,7 @@ export default function Home() {
 															game={game}
 															statEntries={game.statEntries}
 															player={player}
+															mvpEmoji={statEmoji.mvp}
 														>
 															<button className="cursor-pointer hover:underline">
 																<ColumnHeaderLabel columnKey={columnKey} />

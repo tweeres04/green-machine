@@ -1198,6 +1198,7 @@ export function GameCard({
 						game={game}
 						statEntries={game.statEntries}
 						player={player}
+						mvpEmoji={team.mvpEmoji}
 					>
 						<Badge variant="secondary">
 							{game.statEntries.filter((se) => se.type === 'goal').length} goal
@@ -1212,6 +1213,7 @@ export function GameCard({
 						game={game}
 						statEntries={game.statEntries}
 						player={player}
+						mvpEmoji={team.mvpEmoji}
 					>
 						<Badge variant="secondary">
 							{game.statEntries.filter((se) => se.type === 'assist').length}{' '}

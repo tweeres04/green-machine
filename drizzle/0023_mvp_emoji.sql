@@ -1,0 +1,1 @@
+ALTER TABLE `teams` ADD `mvp_emoji` text DEFAULT '🪓' NOT NULL;

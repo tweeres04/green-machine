@@ -12,15 +12,32 @@ export const assistEmojiOptions = [
 	{ emoji: '🅰️', label: 'A for assist' },
 ]
 
+// Every team has its own MVP symbol, so this list runs longer
+export const mvpEmojiOptions = [
+	{ emoji: '🏆', label: 'Trophy' },
+	{ emoji: '🏅', label: 'Medal' },
+	{ emoji: '👑', label: 'Crown' },
+	{ emoji: '⭐', label: 'Star' },
+	{ emoji: '🐐', label: 'GOAT' },
+	{ emoji: '🪓', label: 'Axe' },
+	{ emoji: '🔨', label: 'Hammer' },
+	{ emoji: '🛡️', label: 'Shield' },
+	{ emoji: '⚔️', label: 'Swords' },
+	{ emoji: '🎩', label: 'Top hat' },
+	{ emoji: '🦆', label: 'Duck' },
+]
+
 export function getStatEmoji({
 	assistEmoji,
+	mvpEmoji,
 }: {
 	assistEmoji: string
+	mvpEmoji: string
 }): Record<string, string> {
 	return {
 		goal: '⚽️',
 		assist: assistEmoji,
-		mvp: '🪓',
+		mvp: mvpEmoji,
 		clean_sheet: '🧤',
 	}
 }

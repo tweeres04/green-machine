@@ -35,11 +35,13 @@ export function StatsDialog({
 	statEntries,
 	game,
 	player,
+	mvpEmoji,
 }: {
 	children: ReactNode
 	statEntries: StatEntryWithPlayer[]
 	game: StatsDialogGame
 	player?: StatsDialogPlayer | null
+	mvpEmoji: string
 }) {
 	const [open, setOpen] = useState(false)
 	const [showRsvpForm, setShowRsvpForm] = useState(false)
@@ -96,7 +98,7 @@ export function StatsDialog({
 						if (assists > 0)
 							parts.push(`${assists} assist${assists === 1 ? '' : 's'}`)
 						if (entries.some((entry) => entry.type === 'mvp'))
-							parts.push('MVP 🪓')
+							parts.push(`MVP ${mvpEmoji}`)
 						if (entries.some((entry) => entry.type === 'clean_sheet'))
 							parts.push('clean sheet 🧤')
 						return (
